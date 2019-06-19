@@ -1,0 +1,9 @@
+name: 'Setup Dotnet for use with actions'
+description: 'Setup a Dotnet environment and add it to the PATH, additionally providing proxy support'
+author: 'GitHub'
+inputs: 
+  version:
+    description: 'Version to use. E.g. 2.2.104'
+runs:
+  using: 'node'
+  main: 'lib/setup-dotnet.js'
