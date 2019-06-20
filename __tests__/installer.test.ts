@@ -10,6 +10,8 @@ process.env['RUNNER_TOOLSDIRECTORY'] = toolDir;
 process.env['RUNNER_TEMPDIRECTORY'] = tempDir;
 import * as installer from '../src/installer';
 
+const IS_WINDOWS = process.platform === 'win32';
+
 describe('installer tests', () => {
   beforeAll(() => {});
   beforeAll(async () => {
@@ -31,7 +33,11 @@ describe('installer tests', () => {
     const nodeDir = path.join(toolDir, 'dncs', '2.2.104', os.arch());
 
     expect(fs.existsSync(`${nodeDir}.complete`)).toBe(true);
-    expect(fs.existsSync(path.join(nodeDir, 'dotnet.exe'))).toBe(true);
+    if (IS_WINDOWS) {
+      expect(fs.existsSync(path.join(nodeDir, 'dotnet.exe'))).toBe(true);
+    } else {
+      expect(fs.existsSync(path.join(nodeDir, 'dotnet'))).toBe(true);
+    }
   }, 100000);
 
   it('Throws if no location contains correct dotnet version', async () => {
