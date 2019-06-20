@@ -13,7 +13,6 @@ import * as installer from '../src/installer';
 const IS_WINDOWS = process.platform === 'win32';
 
 describe('installer tests', () => {
-  beforeAll(() => {});
   beforeAll(async () => {
     await io.rmRF(toolDir);
     await io.rmRF(tempDir);
