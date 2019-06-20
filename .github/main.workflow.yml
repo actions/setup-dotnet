@@ -12,10 +12,11 @@ jobs:
       with:
         version: 10.x
 
-    - name: npm install
       # Explicitly uninstall husky so that we avoid issues with git hooks/node versioning.
       # Should switch to clean checkout instead when supported.
-      run: npm prune --production && npm install && npm uninstall husky
+    - run: npm prune --production
+    - run: npm install
+    - run: npm uninstall husky
 
     - name: Lint
       run: npm run format-check
