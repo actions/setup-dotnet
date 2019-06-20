@@ -30,13 +30,13 @@ describe('installer tests', () => {
 
   it('Acquires version of dotnet if no matching version is installed', async () => {
     await getDotnet('2.2.104');
-    const nodeDir = path.join(toolDir, 'dncs', '2.2.104', os.arch());
+    const dotnetDir = path.join(toolDir, 'dncs', '2.2.104', os.arch());
 
-    expect(fs.existsSync(`${nodeDir}.complete`)).toBe(true);
+    expect(fs.existsSync(`${dotnetDir}.complete`)).toBe(true);
     if (IS_WINDOWS) {
-      expect(fs.existsSync(path.join(nodeDir, 'dotnet.exe'))).toBe(true);
+      expect(fs.existsSync(path.join(dotnetDir, 'dotnet.exe'))).toBe(true);
     } else {
-      expect(fs.existsSync(path.join(nodeDir, 'dotnet'))).toBe(true);
+      expect(fs.existsSync(path.join(dotnetDir, 'dotnet'))).toBe(true);
     }
   }, 100000);
 
