@@ -2,6 +2,7 @@ import io = require('@actions/io');
 import fs = require('fs');
 import os = require('os');
 import path = require('path');
+import httpClient = require('typed-rest-client/HttpClient');
 
 const toolDir = path.join(__dirname, 'runner', 'tools');
 const tempDir = path.join(__dirname, 'runner', 'temp');
@@ -71,7 +72,54 @@ describe('installer tests', () => {
     expect(thrown).toBe(true);
     return;
   });
+
+  it('Uses an up to date bash download script', async () => {
+    var httpCallbackClient = new httpClient.HttpClient(
+      'setup-dotnet-test',
+      [],
+      {}
+    );
+    const response: httpClient.HttpClientResponse = await httpCallbackClient.get(
+      'https://dot.net/v1/dotnet-install.sh'
+    );
+    const upToDateContents: string = await response.readBody();
+    const currentContents: string = fs
+      .readFileSync(
+        path.join(__dirname, '..', 'externals', 'install-dotnet.sh')
+      )
+      .toString();
+    expect(normalizeFileContents(currentContents)).toBe(
+      normalizeFileContents(upToDateContents)
+    );
+  });
+
+  it('Uses an up to date powershell download script', async () => {
+    var httpCallbackClient = new httpClient.HttpClient(
+      'setup-dotnet-test',
+      [],
+      {}
+    );
+    const response: httpClient.HttpClientResponse = await httpCallbackClient.get(
+      'https://dot.net/v1/dotnet-install.ps1'
+    );
+    const upToDateContents: string = await response.readBody();
+    const currentContents: string = fs
+      .readFileSync(
+        path.join(__dirname, '..', 'externals', 'install-dotnet.ps1')
+      )
+      .toString();
+    expect(normalizeFileContents(currentContents)).toBe(
+      normalizeFileContents(upToDateContents)
+    );
+  });
 });
+
+function normalizeFileContents(contents: string): string {
+  return contents
+    .trim()
+    .replace(new RegExp('\r\n', 'g'), '\n')
+    .replace(new RegExp('\r', 'g'), '\n');
+}
 
 async function getDotnet(version: string): Promise<void> {
   const dotnetInstaller = new installer.DotnetCoreInstaller(version);

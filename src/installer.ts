@@ -5,7 +5,6 @@ import * as exec from '@actions/exec';
 import * as io from '@actions/io';
 import * as tc from '@actions/tool-cache';
 import httpClient = require('typed-rest-client/HttpClient');
-import httpInterfaces = require('typed-rest-client/Interfaces');
 import {HttpClientResponse} from 'typed-rest-client/HttpClient';
 import {chmodSync} from 'fs';
 import * as os from 'os';
@@ -61,26 +60,6 @@ export class DotnetCoreInstaller {
 
     // Prepend the tools path. instructs the agent to prepend for future tasks
     core.addPath(toolPath);
-
-    try {
-      let globalToolPath: string = '';
-      if (IS_WINDOWS) {
-        globalToolPath = path.join(
-          process.env.USERPROFILE || '',
-          '.dotnet\\tools'
-        );
-      } else {
-        globalToolPath = path.join(process.env.HOME || '', '.dotnet/tools');
-      }
-
-      await io.mkdirP(globalToolPath);
-      core.addPath(globalToolPath);
-    } catch (error) {
-      //nop
-    }
-
-    // Set DOTNET_ROOT for dotnet core Apphost to find runtime since it is installed to a non well-known location.
-    core.exportVariable('DOTNET_ROOT', toolPath);
   }
 
   private getLocalTool(): string {
@@ -140,7 +119,7 @@ export class DotnetCoreInstaller {
     }
 
     if (resultCode != 0) {
-      throw `Failed to detect os with result code ${resultCode}`;
+      throw `Failed to detect os with result code ${resultCode}. Output: ${output}`;
     }
 
     let index;
@@ -205,6 +184,7 @@ export class DotnetCoreInstaller {
   ): Promise<string[]> {
     let downloadUrls = [];
     let releasesJSON = await this.getReleasesJson();
+    core.debug('Releases: ' + releasesJSON);
 
     let releasesInfo = JSON.parse(await releasesJSON.readBody());
     releasesInfo = releasesInfo.filter((releaseInfo: any) => {
@@ -320,7 +300,7 @@ export class DotnetCoreInstaller {
     }
 
     if (resultCode != 0) {
-      throw `Failed to get download urls with result code ${resultCode}`;
+      throw `Failed to get download urls with result code ${resultCode}. ${output}`;
     }
 
     let primaryUrl: string = '';
