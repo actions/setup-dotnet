@@ -33,11 +33,11 @@ describe('installer tests', () => {
     expect(fs.existsSync(`${nodeDir}.complete`)).toBe(true);
     expect(fs.existsSync(path.join(nodeDir, 'dotnet.exe'))).toBe(true);
   }, 100000);
-  
+
   it('Throws if no location contains correct dotnet version', async () => {
     let thrown = false;
     try {
-      await getDotnet('1000.0.0')
+      await getDotnet('1000.0.0');
     } catch {
       thrown = true;
     }
