@@ -48,7 +48,7 @@ describe('installer tests', () => {
       thrown = true;
     }
     expect(thrown).toBe(true);
-  });
+  }, 100000);
 
   it('Uses version of dotnet installed in cache', async () => {
     const dotnetDir: string = path.join(toolDir, 'dncs', '250.0.0', os.arch());
