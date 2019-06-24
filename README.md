@@ -2,8 +2,8 @@
 
 This action sets by Dotnet environment for use in actions by:
 
-- TODO: optionally downloading and caching a version of Dotnet
-- TODO: registering problem matchers for error output 
+- optionally downloading and caching a version of Dotnet
+- registering problem matchers for error output 
 - TODO: configuring proxy if the runner is configured to use a proxy (coming with private runners)
 
 # License
