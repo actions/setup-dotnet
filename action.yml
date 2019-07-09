@@ -5,5 +5,5 @@ inputs:
   version:
     description: 'Version to use. E.g. 2.2.104'
 runs:
-  using: 'node'
+  using: 'node12'
   main: 'lib/setup-dotnet.js'
