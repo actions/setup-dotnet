@@ -274,8 +274,8 @@ export class DotnetCoreInstaller {
         }
       );
 
-      primaryUrlSearchString = 'dotnet-install: Primary - ';
-      legacyUrlSearchString = 'dotnet-install: Legacy - ';
+      primaryUrlSearchString = 'dotnet-install: Primary named payload URL: ';
+      legacyUrlSearchString = 'dotnet-install: Legacy named payload URL: ';
     } else {
       let escapedScript = path
         .join(__dirname, '..', 'externals', 'install-dotnet.sh')
@@ -295,8 +295,8 @@ export class DotnetCoreInstaller {
         }
       );
 
-      primaryUrlSearchString = 'dotnet-install: Payload URL: ';
-      legacyUrlSearchString = 'dotnet-install: Legacy payload URL: ';
+      primaryUrlSearchString = 'dotnet-install: Primary named payload URL: ';
+      legacyUrlSearchString = 'dotnet-install: Legacy named payload URL: ';
     }
 
     if (resultCode != 0) {
