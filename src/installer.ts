@@ -232,6 +232,8 @@ export class DotnetCoreInstaller {
       throw `Could not construct download URL. Please ensure that specified version ${version} is valid.`;
     }
 
+    core.debug(`Got download urls ${downloadUrls}`);
+
     return downloadUrls;
   }
 
@@ -307,6 +309,11 @@ export class DotnetCoreInstaller {
     let legacyUrl: string = '';
     if (!!output && output.length > 0) {
       let lines: string[] = output.split(os.EOL);
+
+      // Fallback to \n if initial split doesn't work (not consistent across versions)
+      if (lines.length === 1) {
+        lines = output.split('\n');
+      }
       if (!!lines && lines.length > 0) {
         lines.forEach((line: string) => {
           if (!line) {
