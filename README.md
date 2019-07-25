@@ -12,7 +12,8 @@ See [action.yml](action.yml)
 Basic:
 ```yaml
 actions:
-- uses: actions/setup-dotnet@latest
+- uses: actions/checkout@master
+- uses: actions/setup-dotnet@master
   with:
     version: 2.2.103 // Version to use.
 - run: dotnet build <my project>
@@ -27,8 +28,9 @@ jobs:
         dotnet: [ 2.2.103, 3.5.2, 4.5.1 ]
     name: Dotnet ${{ matrix.dotnet }} sample
     actions:
+      - uses: actions/checkout@master
       - name: Setup dotnet
-        uses: actions/setup-dotnet@latest
+        uses: actions/setup-dotnet@master
         with:
           version: ${{ matrix.dotnet }}
       - run: dotnet build <my project>
