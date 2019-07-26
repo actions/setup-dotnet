@@ -11,7 +11,7 @@ See [action.yml](action.yml)
 
 Basic:
 ```yaml
-actions:
+steps:
 - uses: actions/checkout@master
 - uses: actions/setup-dotnet@master
   with:
@@ -27,7 +27,7 @@ jobs:
       matrix:
         dotnet: [ 2.2.103, 3.5.2, 4.5.1 ]
     name: Dotnet ${{ matrix.dotnet }} sample
-    actions:
+    steps:
       - uses: actions/checkout@master
       - name: Setup dotnet
         uses: actions/setup-dotnet@master
