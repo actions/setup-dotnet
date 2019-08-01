@@ -13,7 +13,7 @@ Basic:
 ```yaml
 steps:
 - uses: actions/checkout@master
-- uses: actions/setup-dotnet@master
+- uses: actions/setup-dotnet@v1
   with:
     version: 2.2.103 // Version to use.
 - run: dotnet build <my project>
@@ -30,7 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - name: Setup dotnet
-        uses: actions/setup-dotnet@master
+        uses: actions/setup-dotnet@v1
         with:
           version: ${{ matrix.dotnet }}
       - run: dotnet build <my project>
