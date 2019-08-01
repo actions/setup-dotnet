@@ -3,7 +3,7 @@ description: 'Setup a Dotnet environment and add it to the PATH, additionally pr
 author: 'GitHub'
 inputs: 
   version:
-    description: 'Version to use. E.g. 2.2.104'
+    description: 'SDK version to use. E.g. 2.2.104'
 runs:
   using: 'node12'
   main: 'lib/setup-dotnet.js'

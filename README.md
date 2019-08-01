@@ -2,7 +2,7 @@
 
 This action sets up a dotnet environment for use in actions by:
 
-- optionally downloading and caching a version of dotnet by version and adding to PATH
+- optionally downloading and caching a version of dotnet by SDK version and adding to PATH
 - registering problem matchers for error output
 
 # Usage
@@ -15,7 +15,7 @@ steps:
 - uses: actions/checkout@master
 - uses: actions/setup-dotnet@v1
   with:
-    version: '2.2.103' // Version to use.
+    version: '2.2.103' // SDK Version to use.
 - run: dotnet build <my project>
 ```
 
