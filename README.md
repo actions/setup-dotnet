@@ -15,7 +15,7 @@ steps:
 - uses: actions/checkout@master
 - uses: actions/setup-dotnet@v1
   with:
-    version: 2.2.103 // Version to use.
+    version: '2.2.103' // Version to use.
 - run: dotnet build <my project>
 ```
 
@@ -23,9 +23,10 @@ Matrix Testing:
 ```yaml
 jobs:
   build:
+    runs-on: ubuntu-16.04
     strategy:
       matrix:
-        dotnet: [ 2.2.103, 3.5.2, 4.5.1 ]
+        dotnet: [ '2.2.103', '3.5.2', '4.5.1' ]
     name: Dotnet ${{ matrix.dotnet }} sample
     steps:
       - uses: actions/checkout@master
