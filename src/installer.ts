@@ -171,6 +171,10 @@ export class DotnetCoreInstaller {
       this.version,
       this.arch
     );
+
+    // Need to set this so that .NET Core global tools find the right locations.
+    core.exportVariable('DOTNET_ROOT', cachedDir);
+
     console.log('Successfully installed', this.version);
     return cachedDir;
   }
