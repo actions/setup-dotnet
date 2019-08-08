@@ -59,7 +59,7 @@ export class DotnetCoreInstaller {
     }
 
     // Need to set this so that .NET Core global tools find the right locations.
-    core.exportVariable('DOTNET_ROOT', toolPath);
+    core.exportVariable('DOTNET_ROOT', path.join(toolPath, '../..'));
 
     // Prepend the tools path. instructs the agent to prepend for future tasks
     core.addPath(toolPath);
