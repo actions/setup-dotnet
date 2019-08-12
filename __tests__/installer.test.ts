@@ -45,8 +45,8 @@ describe('installer tests', () => {
     const dotnetDir = path.join(toolDir, 'dncs', '2.2.105', os.arch());
 
     const globalJsonPath = path.join(process.cwd(), 'global.json');
-    const jsonContents = `{${os.EOL}"sdk": {${os.EOL}"version": "2.2.105"${os.EOL}}${os.EOL}}`
-    if(!fs.existsSync(globalJsonPath)) {
+    const jsonContents = `{${os.EOL}"sdk": {${os.EOL}"version": "2.2.105"${os.EOL}}${os.EOL}}`;
+    if (!fs.existsSync(globalJsonPath)) {
       fs.writeFileSync(globalJsonPath, jsonContents);
     }
     await setup.run();
