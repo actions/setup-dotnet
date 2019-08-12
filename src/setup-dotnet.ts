@@ -3,15 +3,16 @@ import * as installer from './installer';
 import * as fs from 'fs';
 import * as path from 'path';
 
-async function run() {
+export async function run() {
   try {
     //
     // Version is optional.  If supplied, install / use from the tool cache
     // If not supplied then task is still used to setup proxy, auth, etc...
     //
-    let version = core.getInput('version');
+    let version: string = core.getInput('version');
     if (!version) {
       // Try to fall back to global.json
+      core.debug('No version found, trying to find version from global.json');
       const globalJsonPath = path.join(process.cwd(), 'global.json');
       if (fs.existsSync(globalJsonPath)) {
         const globalJson = JSON.parse(
