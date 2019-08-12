@@ -1,5 +1,6 @@
 import * as core from '@actions/core';
 import * as installer from './installer';
+import * as fs from 'fs';
 import * as path from 'path';
 
 async function run() {
@@ -8,7 +9,20 @@ async function run() {
     // Version is optional.  If supplied, install / use from the tool cache
     // If not supplied then task is still used to setup proxy, auth, etc...
     //
-    const version = core.getInput('version');
+    let version = core.getInput('version');
+    if (!version) {
+      // Try to fall back to global.json
+      const globalJsonPath = path.join(process.cwd(), 'global.json');
+      if (fs.existsSync(globalJsonPath)) {
+        const globalJson = JSON.parse(
+          fs.readFileSync(globalJsonPath, {encoding: 'utf8'})
+        );
+        if (globalJson.sdk && globalJson.sdk.version) {
+          version = globalJson.sdk.version;
+        }
+      }
+    }
+
     if (version) {
       const dotnetInstaller = new installer.DotnetCoreInstaller(version);
       await dotnetInstaller.installDotnet();
