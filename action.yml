@@ -1,9 +1,12 @@
-name: 'Setup Dotnet for use with actions'
+name: 'Setup Dotnet environment'
 description: 'Setup a Dotnet environment and add it to the PATH, additionally providing proxy support'
 author: 'GitHub'
 inputs: 
-  version:
+  dotnet-version:
     description: 'SDK version to use. E.g. 2.2.104'
+# Deprecated option, do not use. Will not be supported after October 1, 2019
+  version:
+    description: 'Deprecated. Use dotnet-version instead. Will not be supported after October 1, 2019'
 runs:
   using: 'node12'
   main: 'lib/setup-dotnet.js'

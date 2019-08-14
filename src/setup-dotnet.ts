@@ -11,6 +11,9 @@ export async function run() {
     //
     let version: string = core.getInput('version');
     if (!version) {
+      version = core.getInput('dotnet-version');
+    }
+    if (!version) {
       // Try to fall back to global.json
       core.debug('No version found, trying to find version from global.json');
       const globalJsonPath = path.join(process.cwd(), 'global.json');

@@ -1,5 +1,9 @@
 # setup-dotnet
 
+<p align="left">
+  <a href="https://github.com/actions/setup-dotnet"><img alt="GitHub Actions status" src="https://github.com/actions/setup-dotnet/workflows/Main%20workflow/badge.svg"></a>
+</p>
+
 This action sets up a dotnet environment for use in actions by:
 
 - optionally downloading and caching a version of dotnet by SDK version and adding to PATH
@@ -15,7 +19,7 @@ steps:
 - uses: actions/checkout@master
 - uses: actions/setup-dotnet@v1
   with:
-    version: '2.2.103' // SDK Version to use.
+    dotnet-version: '2.2.103' // SDK Version to use.
 - run: dotnet build <my project>
 ```
 
@@ -33,7 +37,7 @@ jobs:
       - name: Setup dotnet
         uses: actions/setup-dotnet@v1
         with:
-          version: ${{ matrix.dotnet }}
+          dotnet-version: ${{ matrix.dotnet }}
       - run: dotnet build <my project>
 ```
 
