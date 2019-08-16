@@ -91,7 +91,7 @@ describe('installer tests', () => {
     expect(normalizeFileContents(currentContents)).toBe(
       normalizeFileContents(upToDateContents)
     );
-  });
+  }, 100000);
 
   it('Uses an up to date powershell download script', async () => {
     var httpCallbackClient = new httpClient.HttpClient(
@@ -111,7 +111,7 @@ describe('installer tests', () => {
     expect(normalizeFileContents(currentContents)).toBe(
       normalizeFileContents(upToDateContents)
     );
-  });
+  }, 100000);
 });
 
 function normalizeFileContents(contents: string): string {
