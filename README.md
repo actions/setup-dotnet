@@ -19,7 +19,7 @@ steps:
 - uses: actions/checkout@master
 - uses: actions/setup-dotnet@v1
   with:
-    dotnet-version: '2.2.103' // SDK Version to use.
+    dotnet-version: '2.2.103' # SDK Version to use.
 - run: dotnet build <my project>
 ```
 
