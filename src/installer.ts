@@ -188,8 +188,12 @@ export class DotnetCoreInstaller {
   ): Promise<string[]> {
     let downloadUrls: string[] = [];
 
-    var httpCallbackClient = new httpClient.HttpClient('setup-dotnet', [], {});
-    const releasesJsonUrl = await this.getReleasesJsonUrl(
+    const httpCallbackClient = new httpClient.HttpClient(
+      'actions/setup-dotnet',
+      [],
+      {}
+    );
+    const releasesJsonUrl: string = await this.getReleasesJsonUrl(
       httpCallbackClient,
       version.split('.')
     );
@@ -208,7 +212,7 @@ export class DotnetCoreInstaller {
 
     if (releasesInfo.length != 0) {
       let release = releasesInfo[0];
-      let files = release['sdk']['files'];
+      let files: any[] = release['sdk']['files'];
       files = files.filter((file: any) => {
         if (file['rid'] == osSuffixes[0] || file['rid'] == osSuffixes[1]) {
           return (
@@ -244,22 +248,24 @@ export class DotnetCoreInstaller {
     httpCallbackClient: httpClient.HttpClient,
     versionParts: string[]
   ): Promise<string> {
-    // First, get the location of the correct releases.json then get that.
     const releasesIndex: HttpClientResponse = await httpCallbackClient.get(
       DotNetCoreIndexUrl
     );
-    let releasesInfo = JSON.parse(await releasesIndex.readBody())[
+    let releasesInfo: any[] = JSON.parse(await releasesIndex.readBody())[
       'releases-index'
     ];
-    releasesInfo = releasesInfo.filter((releaseInfo: any) => {
-      const sdkParts: string[] = releaseInfo['channel-version'].split('.');
+    releasesInfo = releasesInfo.filter((info: any) => {
+      // channel-version is the first 2 elements of the version (e.g. 2.1), filter out versions that don't match 2.1.x.
+      const sdkParts: string[] = info['channel-version'].split('.');
       if (versionParts.length >= 2 && versionParts[1] != 'x') {
         return versionParts[0] == sdkParts[0] && versionParts[1] == sdkParts[1];
       }
       return versionParts[0] == sdkParts[0];
     });
     if (releasesInfo.length === 0) {
-      throw `Could not find info for this version at ${DotNetCoreIndexUrl}`;
+      throw `Could not find info for version ${versionParts.join(
+        '.'
+      )} at ${DotNetCoreIndexUrl}`;
     }
     return releasesInfo[0]['releases.json'];
   }
