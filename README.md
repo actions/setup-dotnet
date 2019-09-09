@@ -41,6 +41,27 @@ jobs:
       - run: dotnet build <my project>
 ```
 
+Authentication to GPR:
+```yaml
+steps:
+- uses: actions/checkout@master
+- uses: actions/setup-dotnet@v1
+  with:
+    dotnet-version: '2.2.103' # SDK Version to use.
+    source-url: https://nuget.pkg.github.com
+  env:
+    NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+- run: dotnet build <my project>
+- name: Create the package
+  run: dotnet pack --configuration Release <my project>
+  env:
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+ - name: Publish the package
+  run: dotnet nuget push <my project>/bin/Release/*.nupkg
+  env:
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+```
+
 # License
 
 The scripts and documentation in this project are released under the [MIT License](LICENSE)

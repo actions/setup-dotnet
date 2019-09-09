@@ -71,7 +71,7 @@ export class DotnetCoreInstaller {
   }
 
   private async detectMachineOS(): Promise<string[]> {
-    let osSuffix = [];
+    let osSuffix: string[] = [];
     let output = '';
 
     let resultCode = 0;
@@ -186,7 +186,7 @@ export class DotnetCoreInstaller {
     osSuffixes: string[],
     version: string
   ): Promise<string[]> {
-    let downloadUrls = [];
+    let downloadUrls: string[] = [];
     let releasesJSON = await this.getReleasesJson();
     core.debug('Releases: ' + releasesJSON);
 

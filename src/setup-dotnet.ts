@@ -1,6 +1,7 @@
 import * as core from '@actions/core';
 import * as installer from './installer';
 import * as path from 'path';
+import * as auth from './authutil';
 
 async function run() {
   try {
@@ -17,6 +18,10 @@ async function run() {
       await dotnetInstaller.installDotnet();
     }
 
+    const sourceUrl: string = core.getInput('source-url');
+    if (sourceUrl) {
+      auth.configAuthentication(sourceUrl);
+    }
     // TODO: setup proxy from runner proxy config
 
     const matchersPath = path.join(__dirname, '..', '.github');

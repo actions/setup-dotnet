@@ -1,0 +1,139 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`authutil tests Existing config not in repo root, sets up a partial NuGet.config user/PAT for GPR 1`] = `
+"<?xml version=\\"1.0\\"?>
+<configuration>
+  <config>
+    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com/OwnerName\\"/>
+  </config>
+  <packageSourceCredentials>
+    <GPR>
+      <add key=\\"Username\\" value=\\"OwnerName\\"/>
+      <add key=\\"ClearTextPassword\\" value=\\"TEST_FAKE_AUTH_TOKEN\\"/>
+    </GPR>
+  </packageSourceCredentials>
+</configuration>"
+`;
+
+exports[`authutil tests Existing config w/ GPR source and NuGet.org, sets up a partial NuGet.config user/PAT for GPR 1`] = `
+"<?xml version=\\"1.0\\"?>
+<configuration>
+  <config>
+    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com/OwnerName\\"/>
+  </config>
+  <packageSourceCredentials>
+    <GPR>
+      <add key=\\"Username\\" value=\\"OwnerName\\"/>
+      <add key=\\"ClearTextPassword\\" value=\\"TEST_FAKE_AUTH_TOKEN\\"/>
+    </GPR>
+  </packageSourceCredentials>
+</configuration>"
+`;
+
+exports[`authutil tests Existing config w/ no GPR sources, sets up a full NuGet.config with URL and user/PAT for GPR 1`] = `
+"<?xml version=\\"1.0\\"?>
+<configuration>
+  <config>
+    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com/OwnerName\\"/>
+  </config>
+  <packageSources>
+    <add key=\\"GPR\\" value=\\"https://nuget.pkg.github.com/OwnerName\\"/>
+  </packageSources>
+  <packageSourceCredentials>
+    <GPR>
+      <add key=\\"Username\\" value=\\"OwnerName\\"/>
+      <add key=\\"ClearTextPassword\\" value=\\"TEST_FAKE_AUTH_TOKEN\\"/>
+    </GPR>
+  </packageSourceCredentials>
+</configuration>"
+`;
+
+exports[`authutil tests Existing config w/ no sources, sets up a full NuGet.config with URL and user/PAT for GPR 1`] = `
+"<?xml version=\\"1.0\\"?>
+<configuration>
+  <config>
+    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com/OwnerName\\"/>
+  </config>
+  <packageSources>
+    <add key=\\"GPR\\" value=\\"https://nuget.pkg.github.com/OwnerName\\"/>
+  </packageSources>
+  <packageSourceCredentials>
+    <GPR>
+      <add key=\\"Username\\" value=\\"OwnerName\\"/>
+      <add key=\\"ClearTextPassword\\" value=\\"TEST_FAKE_AUTH_TOKEN\\"/>
+    </GPR>
+  </packageSourceCredentials>
+</configuration>"
+`;
+
+exports[`authutil tests Existing config w/ only GPR source, sets up a partial NuGet.config user/PAT for GPR 1`] = `
+"<?xml version=\\"1.0\\"?>
+<configuration>
+  <config>
+    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com/OwnerName\\"/>
+  </config>
+  <packageSourceCredentials>
+    <GPR>
+      <add key=\\"Username\\" value=\\"OwnerName\\"/>
+      <add key=\\"ClearTextPassword\\" value=\\"TEST_FAKE_AUTH_TOKEN\\"/>
+    </GPR>
+  </packageSourceCredentials>
+</configuration>"
+`;
+
+exports[`authutil tests Existing config w/ two GPR sources, sets up a partial NuGet.config user/PAT for GPR 1`] = `
+"<?xml version=\\"1.0\\"?>
+<configuration>
+  <config>
+    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com/OwnerName\\"/>
+  </config>
+  <packageSourceCredentials>
+    <GPR-GitHub>
+      <add key=\\"Username\\" value=\\"OwnerName\\"/>
+      <add key=\\"ClearTextPassword\\" value=\\"TEST_FAKE_AUTH_TOKEN\\"/>
+    </GPR-GitHub>
+    <packageSourceCredentials>
+      <GPR-Actions>
+        <add key=\\"Username\\" value=\\"OwnerName\\"/>
+        <add key=\\"ClearTextPassword\\" value=\\"TEST_FAKE_AUTH_TOKEN\\"/>
+      </GPR-Actions>
+    </packageSourceCredentials>
+  </packageSourceCredentials>
+</configuration>"
+`;
+
+exports[`authutil tests No existing config, sets up a full NuGet.config with URL and other owner/PAT for GPR 1`] = `
+"<?xml version=\\"1.0\\"?>
+<configuration>
+  <config>
+    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com/otherorg\\"/>
+  </config>
+  <packageSources>
+    <add key=\\"GPR\\" value=\\"https://nuget.pkg.github.com/otherorg\\"/>
+  </packageSources>
+  <packageSourceCredentials>
+    <GPR>
+      <add key=\\"Username\\" value=\\"otherorg\\"/>
+      <add key=\\"ClearTextPassword\\" value=\\"TEST_FAKE_AUTH_TOKEN\\"/>
+    </GPR>
+  </packageSourceCredentials>
+</configuration>"
+`;
+
+exports[`authutil tests No existing config, sets up a full NuGet.config with URL and user/PAT for GPR 1`] = `
+"<?xml version=\\"1.0\\"?>
+<configuration>
+  <config>
+    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com/OwnerName\\"/>
+  </config>
+  <packageSources>
+    <add key=\\"GPR\\" value=\\"https://nuget.pkg.github.com/OwnerName\\"/>
+  </packageSources>
+  <packageSourceCredentials>
+    <GPR>
+      <add key=\\"Username\\" value=\\"OwnerName\\"/>
+      <add key=\\"ClearTextPassword\\" value=\\"TEST_FAKE_AUTH_TOKEN\\"/>
+    </GPR>
+  </packageSourceCredentials>
+</configuration>"
+`;
