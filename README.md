@@ -13,7 +13,7 @@ This action sets up a dotnet environment for use in actions by:
 
 See [action.yml](action.yml)
 
-##Basic:
+## Basic:
 ```yaml
 steps:
 - uses: actions/checkout@master
@@ -23,7 +23,7 @@ steps:
 - run: dotnet build <my project>
 ```
 
-##Matrix Testing:
+## Matrix Testing:
 ```yaml
 jobs:
   build:
@@ -41,7 +41,7 @@ jobs:
       - run: dotnet build <my project>
 ```
 
-##Publishing a standalone copy for Release execution (include all dependencies):
+## Publishing a standalone copy for Release execution (include all dependencies):
 ```yaml
 steps:
 - uses: actions/checkout@v1
@@ -52,7 +52,7 @@ steps:
   run: dotnet publish --configuration Release
 ```
 
-##Publishing a standalone copy for Release execution (include all dependencies with specified NuGet sources):
+## Publishing a standalone copy for Release execution (include all dependencies with specified NuGet sources):
 ```yaml
 steps:
 - uses: actions/checkout@v1
@@ -62,7 +62,7 @@ steps:
 - name: Build + Publish with dotnet
   run: dotnet publish --configuration Release
 ```
-###Your nuget.config may look like so, just add your sources under the default source
+### Your nuget.config may look like so, just add your sources under the default source
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
