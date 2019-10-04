@@ -2,7 +2,7 @@ import io = require('@actions/io');
 import fs = require('fs');
 import path = require('path');
 
-const tempDir = path.join(
+const fakeSourcesDirForTesting = path.join(
   __dirname,
   'runner',
   path.join(
@@ -10,7 +10,7 @@ const tempDir = path.join(
       .toString(36)
       .substring(7)
   ),
-  'temp'
+  's'
 );
 
 const invalidNuGetConfig: string = `<?xml version="1.0" encoding="utf-8"?>`;
@@ -56,16 +56,32 @@ const spaceNuGetConfig: string = `<?xml version="1.0" encoding="utf-8"?>
   </packageSources>
 </configuration>`;
 
-const nugetConfigFile = path.join(tempDir, '../nuget.config');
+const azureartifactsNuGetConfig: string = `<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <add key="AzureArtifacts" value="https://pkgs.dev.azure.com/amullans/_packaging/GitHubBuilds/nuget/v3/index.json" protocolVersion="3" />
+  </packageSources>
+</configuration>`;
+
+const azureartifactsnugetorgNuGetConfig: string = `<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <add key="AzureArtifacts" value="https://pkgs.dev.azure.com/amullans/_packaging/GitHubBuilds/nuget/v3/index.json" protocolVersion="3" />
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+  </packageSources>
+</configuration>`;
+
+// We want a NuGet.config one level above the sources directory, so it doesn't trample a user's NuGet.config but is still picked up by NuGet/dotnet.
+const nugetConfigFile = path.join(fakeSourcesDirForTesting, '../nuget.config');
 
 process.env['GITHUB_REPOSITORY'] = 'OwnerName/repo';
-process.env['RUNNER_TEMP'] = tempDir;
+process.env['RUNNER_TEMP'] = fakeSourcesDirForTesting;
 import * as auth from '../src/authutil';
 
 describe('authutil tests', () => {
-  beforeAll(async () => {
-    await io.rmRF(tempDir);
-    await io.mkdirP(tempDir);
+  beforeEach(async () => {
+    await io.rmRF(fakeSourcesDirForTesting);
+    await io.mkdirP(fakeSourcesDirForTesting);
   }, 100000);
 
   beforeEach(() => {
@@ -107,7 +123,10 @@ describe('authutil tests', () => {
 
   it('Existing config (invalid), tries to parse an invalid NuGet.config and throws', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
-    const inputNuGetConfigPath: string = path.join(tempDir, 'nuget.config');
+    const inputNuGetConfigPath: string = path.join(
+      fakeSourcesDirForTesting,
+      'nuget.config'
+    );
     fs.writeFileSync(inputNuGetConfigPath, invalidNuGetConfig);
     let thrown = false;
     try {
@@ -120,7 +139,10 @@ describe('authutil tests', () => {
 
   it('Existing config w/ no sources, sets up a full NuGet.config with URL and user/PAT for GPR', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
-    const inputNuGetConfigPath: string = path.join(tempDir, 'nuget.config');
+    const inputNuGetConfigPath: string = path.join(
+      fakeSourcesDirForTesting,
+      'nuget.config'
+    );
     fs.writeFileSync(inputNuGetConfigPath, emptyNuGetConfig);
     await auth.configAuthentication('https://nuget.pkg.github.com');
     expect(fs.existsSync(nugetConfigFile)).toBe(true);
@@ -131,7 +153,10 @@ describe('authutil tests', () => {
 
   it('Existing config w/ no GPR sources, sets up a full NuGet.config with URL and user/PAT for GPR', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
-    const inputNuGetConfigPath: string = path.join(tempDir, 'nuget.config');
+    const inputNuGetConfigPath: string = path.join(
+      fakeSourcesDirForTesting,
+      'nuget.config'
+    );
     fs.writeFileSync(inputNuGetConfigPath, nugetorgNuGetConfig);
     await auth.configAuthentication('https://nuget.pkg.github.com');
     expect(fs.existsSync(nugetConfigFile)).toBe(true);
@@ -142,7 +167,10 @@ describe('authutil tests', () => {
 
   it('Existing config w/ only GPR source, sets up a partial NuGet.config user/PAT for GPR', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
-    const inputNuGetConfigPath: string = path.join(tempDir, 'nuget.config');
+    const inputNuGetConfigPath: string = path.join(
+      fakeSourcesDirForTesting,
+      'nuget.config'
+    );
     fs.writeFileSync(inputNuGetConfigPath, gprNuGetConfig);
     await auth.configAuthentication('https://nuget.pkg.github.com');
     expect(fs.existsSync(nugetConfigFile)).toBe(true);
@@ -153,7 +181,10 @@ describe('authutil tests', () => {
 
   it('Existing config w/ GPR source and NuGet.org, sets up a partial NuGet.config user/PAT for GPR', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
-    const inputNuGetConfigPath: string = path.join(tempDir, 'nuget.config');
+    const inputNuGetConfigPath: string = path.join(
+      fakeSourcesDirForTesting,
+      'nuget.config'
+    );
     fs.writeFileSync(inputNuGetConfigPath, gprnugetorgNuGetConfig);
     await auth.configAuthentication('https://nuget.pkg.github.com');
     expect(fs.existsSync(nugetConfigFile)).toBe(true);
@@ -164,7 +195,10 @@ describe('authutil tests', () => {
 
   it('Existing config w/ two GPR sources, sets up a partial NuGet.config user/PAT for GPR', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
-    const inputNuGetConfigPath: string = path.join(tempDir, 'nuget.config');
+    const inputNuGetConfigPath: string = path.join(
+      fakeSourcesDirForTesting,
+      'nuget.config'
+    );
     fs.writeFileSync(inputNuGetConfigPath, twogprNuGetConfig);
     await auth.configAuthentication('https://nuget.pkg.github.com');
     expect(fs.existsSync(nugetConfigFile)).toBe(true);
@@ -175,7 +209,10 @@ describe('authutil tests', () => {
 
   it('Existing config w/ spaces in key, throws for now', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
-    const inputNuGetConfigPath: string = path.join(tempDir, 'nuget.config');
+    const inputNuGetConfigPath: string = path.join(
+      fakeSourcesDirForTesting,
+      'nuget.config'
+    );
     fs.writeFileSync(inputNuGetConfigPath, spaceNuGetConfig);
     let thrown = false;
     try {
@@ -188,7 +225,10 @@ describe('authutil tests', () => {
 
   it('Existing config not in repo root, sets up a partial NuGet.config user/PAT for GPR', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
-    const inputNuGetConfigDirectory: string = path.join(tempDir, 'subfolder');
+    const inputNuGetConfigDirectory: string = path.join(
+      fakeSourcesDirForTesting,
+      'subfolder'
+    );
     const inputNuGetConfigPath: string = path.join(
       inputNuGetConfigDirectory,
       'nuget.config'
@@ -198,6 +238,49 @@ describe('authutil tests', () => {
     await auth.configAuthentication(
       'https://nuget.pkg.github.com',
       'subfolder/nuget.config'
+    );
+    expect(fs.existsSync(nugetConfigFile)).toBe(true);
+    expect(
+      fs.readFileSync(nugetConfigFile, {encoding: 'utf8'})
+    ).toMatchSnapshot();
+  });
+
+  it('Existing config w/ only Azure Artifacts source, sets up a partial NuGet.config user/PAT for GPR', async () => {
+    process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
+    const inputNuGetConfigPath: string = path.join(
+      fakeSourcesDirForTesting,
+      'nuget.config'
+    );
+    fs.writeFileSync(inputNuGetConfigPath, azureartifactsNuGetConfig);
+    await auth.configAuthentication(
+      'https://pkgs.dev.azure.com/amullans/_packaging/GitHubBuilds/nuget/v3/index.json'
+    );
+    expect(fs.existsSync(nugetConfigFile)).toBe(true);
+    expect(
+      fs.readFileSync(nugetConfigFile, {encoding: 'utf8'})
+    ).toMatchSnapshot();
+  });
+
+  it('Existing config w/ Azure Artifacts source and NuGet.org, sets up a partial NuGet.config user/PAT for GPR', async () => {
+    process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
+    const inputNuGetConfigPath: string = path.join(
+      fakeSourcesDirForTesting,
+      'nuget.config'
+    );
+    fs.writeFileSync(inputNuGetConfigPath, azureartifactsnugetorgNuGetConfig);
+    await auth.configAuthentication(
+      'https://pkgs.dev.azure.com/amullans/_packaging/GitHubBuilds/nuget/v3/index.json'
+    );
+    expect(fs.existsSync(nugetConfigFile)).toBe(true);
+    expect(
+      fs.readFileSync(nugetConfigFile, {encoding: 'utf8'})
+    ).toMatchSnapshot();
+  });
+
+  it('No existing config, sets up a full NuGet.config with URL and token for other source', async () => {
+    process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
+    await auth.configAuthentication(
+      'https://pkgs.dev.azure.com/amullans/_packaging/GitHubBuilds/nuget/v3/index.json'
     );
     expect(fs.existsSync(nugetConfigFile)).toBe(true);
     expect(

@@ -34,12 +34,15 @@ function writeFeedToFile(
     `dotnet-auth: Finding any source references in ${existingFileLocation}, writing a new temporary configuration file with credentials to ${tempFileLocation}`
   );
   let xml: xmlbuilder.XMLElement;
-  let gprKeys: string[] = [];
+  let sourceKeys: string[] = [];
   let owner: string = core.getInput('owner');
-  if (!owner && feedUrl.indexOf('nuget.pkg.github.com') > -1) {
+  let sourceUrl: string = feedUrl;
+  if (!owner) {
     owner = github.context.repo.owner;
   }
-  let sourceUrl: string = 'https://nuget.pkg.github.com/' + owner;
+  if (feedUrl.indexOf('nuget.pkg.github.com') > -1) {
+    sourceUrl = 'https://nuget.pkg.github.com/' + owner;
+  }
 
   if (!process.env.NUGET_AUTH_TOKEN || process.env.NUGET_AUTH_TOKEN == '') {
     throw new Error(
@@ -63,11 +66,11 @@ function writeFeedToFile(
           if (
             json.configuration.packageSources.add['@_value']
               .toLowerCase()
-              .includes('nuget.pkg.github.com')
+              .includes(feedUrl.toLowerCase())
           ) {
             let key = json.configuration.packageSources.add['@_key'];
-            gprKeys.push(key);
-            core.debug(`Found a GPR URL with key ${key}`);
+            sourceKeys.push(key);
+            core.debug(`Found a URL with key ${key}`);
           }
         } else {
           // file has 2+ <add>
@@ -80,11 +83,11 @@ function writeFeedToFile(
             if (
               json.configuration.packageSources.add[i]['@_value']
                 .toLowerCase()
-                .includes('nuget.pkg.github.com')
+                .includes(feedUrl.toLowerCase())
             ) {
               let key = json.configuration.packageSources.add[i]['@_key'];
-              gprKeys.push(key);
-              core.debug(`Found a GPR URL with key ${key}`);
+              sourceKeys.push(key);
+              core.debug(`Found a URL with key ${key}`);
             }
           }
         }
@@ -99,16 +102,18 @@ function writeFeedToFile(
     .up()
     .up();
 
-  if (gprKeys.length == 0) {
-    let keystring = 'GPR';
+  if (sourceKeys.length == 0) {
+    let keystring = 'Source';
     xml = xml
       .ele('packageSources')
       .ele('add', {key: keystring, value: sourceUrl})
       .up()
       .up();
-    gprKeys.push(keystring);
+    sourceKeys.push(keystring);
   }
-  gprKeys.forEach(key => {
+  xml = xml.ele('packageSourceCredentials');
+
+  sourceKeys.forEach(key => {
     if (key.indexOf(' ') > -1) {
       throw new Error(
         "This action currently can't handle source names with spaces. Remove the space from your repo's NuGet.config and try again."
@@ -116,7 +121,6 @@ function writeFeedToFile(
     }
 
     xml = xml
-      .ele('packageSourceCredentials')
       .ele(key)
       .ele('add', {key: 'Username', value: owner})
       .up()

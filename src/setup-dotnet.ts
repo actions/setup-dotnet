@@ -19,8 +19,9 @@ async function run() {
     }
 
     const sourceUrl: string = core.getInput('source-url');
+    const configFile: string = core.getInput('config-file');
     if (sourceUrl) {
-      auth.configAuthentication(sourceUrl);
+      auth.configAuthentication(sourceUrl, configFile);
     }
     // TODO: setup proxy from runner proxy config
 
