@@ -4,7 +4,7 @@ exports[`authutil tests Existing config not in repo root, sets up a partial NuGe
 "<?xml version=\\"1.0\\"?>
 <configuration>
   <config>
-    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com/OwnerName\\"/>
+    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com/OwnerName/index.json\\"/>
   </config>
   <packageSourceCredentials>
     <GPR>
@@ -34,7 +34,7 @@ exports[`authutil tests Existing config w/ GPR source and NuGet.org, sets up a p
 "<?xml version=\\"1.0\\"?>
 <configuration>
   <config>
-    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com/OwnerName\\"/>
+    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com/OwnerName/index.json\\"/>
   </config>
   <packageSourceCredentials>
     <GPR>
@@ -49,10 +49,10 @@ exports[`authutil tests Existing config w/ no GPR sources, sets up a full NuGet.
 "<?xml version=\\"1.0\\"?>
 <configuration>
   <config>
-    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com/OwnerName\\"/>
+    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com/OwnerName/index.json\\"/>
   </config>
   <packageSources>
-    <add key=\\"Source\\" value=\\"https://nuget.pkg.github.com/OwnerName\\"/>
+    <add key=\\"Source\\" value=\\"https://nuget.pkg.github.com/OwnerName/index.json\\"/>
   </packageSources>
   <packageSourceCredentials>
     <Source>
@@ -67,10 +67,10 @@ exports[`authutil tests Existing config w/ no sources, sets up a full NuGet.conf
 "<?xml version=\\"1.0\\"?>
 <configuration>
   <config>
-    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com/OwnerName\\"/>
+    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com/OwnerName/index.json\\"/>
   </config>
   <packageSources>
-    <add key=\\"Source\\" value=\\"https://nuget.pkg.github.com/OwnerName\\"/>
+    <add key=\\"Source\\" value=\\"https://nuget.pkg.github.com/OwnerName/index.json\\"/>
   </packageSources>
   <packageSourceCredentials>
     <Source>
@@ -100,7 +100,7 @@ exports[`authutil tests Existing config w/ only GPR source, sets up a partial Nu
 "<?xml version=\\"1.0\\"?>
 <configuration>
   <config>
-    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com/OwnerName\\"/>
+    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com/OwnerName/index.json\\"/>
   </config>
   <packageSourceCredentials>
     <GPR>
@@ -115,7 +115,7 @@ exports[`authutil tests Existing config w/ two GPR sources, sets up a partial Nu
 "<?xml version=\\"1.0\\"?>
 <configuration>
   <config>
-    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com/OwnerName\\"/>
+    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com/OwnerName/index.json\\"/>
   </config>
   <packageSourceCredentials>
     <GPR-GitHub>
@@ -134,10 +134,10 @@ exports[`authutil tests No existing config, sets up a full NuGet.config with URL
 "<?xml version=\\"1.0\\"?>
 <configuration>
   <config>
-    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com/otherorg\\"/>
+    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com/otherorg/index.json\\"/>
   </config>
   <packageSources>
-    <add key=\\"Source\\" value=\\"https://nuget.pkg.github.com/otherorg\\"/>
+    <add key=\\"Source\\" value=\\"https://nuget.pkg.github.com/otherorg/index.json\\"/>
   </packageSources>
   <packageSourceCredentials>
     <Source>
@@ -170,10 +170,10 @@ exports[`authutil tests No existing config, sets up a full NuGet.config with URL
 "<?xml version=\\"1.0\\"?>
 <configuration>
   <config>
-    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com/OwnerName\\"/>
+    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com/OwnerName/index.json\\"/>
   </config>
   <packageSources>
-    <add key=\\"Source\\" value=\\"https://nuget.pkg.github.com/OwnerName\\"/>
+    <add key=\\"Source\\" value=\\"https://nuget.pkg.github.com/OwnerName/index.json\\"/>
   </packageSources>
   <packageSourceCredentials>
     <Source>

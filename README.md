@@ -62,6 +62,27 @@ steps:
     DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
 ```
 
+Authentication to Azure Artifacts:
+```yaml
+steps:
+- uses: actions/checkout@master
+- uses: actions/setup-dotnet@v1
+  with:
+    dotnet-version: '2.2.103' # SDK Version to use.
+    source-url: https://pkgs.dev.azure.com/<your-organization>/_packaging/<your-feed-name>/nuget/v3/index.json
+  env:
+    NUGET_AUTH_TOKEN: ${{secrets.AZURE_DEVOPS_PAT}} # Note, create a secret with this name in Settings
+- run: dotnet build <my project>
+- name: Create the package
+  run: dotnet pack --configuration Release <my project>
+  env:
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+ - name: Publish the package
+  run: dotnet nuget push <my project>/bin/Release/*.nupkg
+  env:
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+```
+
 # License
 
 The scripts and documentation in this project are released under the [MIT License](LICENSE)
