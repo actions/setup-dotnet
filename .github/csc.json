@@ -1,10 +1,10 @@
 {
     "problemMatcher": [
         {
-            "owner": "csc",
+            "owner": "msCompile",
             "pattern": [
                 {
-                    "regexp": "^([^\\s].*)\\((\\d+|\\d+,\\d+|\\d+,\\d+,\\d+,\\d+)\\):\\s+(error|warning|info)\\s+(CS\\d+)\\s*:\\s*(.*)$",
+                    "regexp": "^(?:\\s+\\d+\\>)?([^\\s].*)\\((\\d+|\\d+,\\d+|\\d+,\\d+,\\d+,\\d+)\\)\\s*:\\s+(error|warning|info)\\s+(\\w{1,2}\\d+)\\s*:\\s*(.*)$",
                     "file": 1,
                     "location": 2,
                     "severity": 3,
