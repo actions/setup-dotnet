@@ -3,7 +3,7 @@ import * as installer from './installer';
 import * as fs from 'fs';
 import * as path from 'path';
 
-async function run() {
+export async function run() {
   try {
     //
     // Version is optional.  If supplied, install / use from the tool cache

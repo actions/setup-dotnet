@@ -8,6 +8,7 @@ const toolDir = path.join(__dirname, 'runner', 'tools');
 const tempDir = path.join(__dirname, 'runner', 'temp');
 
 process.env['RUNNER_TOOL_CACHE'] = toolDir;
+process.env['DOTNET_INSTALL_DIR'] = toolDir;
 process.env['RUNNER_TEMP'] = tempDir;
 import * as installer from '../src/installer';
 
@@ -30,7 +31,7 @@ describe('installer tests', () => {
 
   it('Acquires version of dotnet if no matching version is installed', async () => {
     await getDotnet('2.2.104');
-    const dotnetDir = path.join(toolDir, 'dncs', '2.2.104', os.arch());
+    const dotnetDir = path.join(toolDir);
 
     expect(fs.existsSync(`${dotnetDir}.complete`)).toBe(true);
     if (IS_WINDOWS) {
@@ -56,20 +57,6 @@ describe('installer tests', () => {
     fs.writeFileSync(`${dotnetDir}.complete`, 'hello');
     // This will throw if it doesn't find it in the cache (because no such version exists)
     await getDotnet('250.0.0');
-    return;
-  });
-
-  it('Doesnt use version of dotnet that was only partially installed in cache', async () => {
-    const dotnetDir: string = path.join(toolDir, 'dncs', '251.0.0', os.arch());
-    await io.mkdirP(dotnetDir);
-    let thrown = false;
-    try {
-      // This will throw if it doesn't find it in the cache (because no such version exists)
-      await getDotnet('251.0.0');
-    } catch {
-      thrown = true;
-    }
-    expect(thrown).toBe(true);
     return;
   });
 
