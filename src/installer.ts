@@ -9,7 +9,7 @@ import * as semver from 'semver';
 const IS_WINDOWS = process.platform === 'win32';
 
 export class DotnetCoreInstaller {
-  constructor(version: string = "", jsonfile: string = "") {
+  constructor(version: string = '', jsonfile: string = '') {
     if (semver.valid(semver.clean(version) || '') == null) {
       throw 'Implicit version not permitted';
     }
@@ -70,17 +70,13 @@ export class DotnetCoreInstaller {
         scriptArguments.concat(['--jsonfile', this.jsonfile]);
       }
 
-      resultCode = await exec.exec(
-        `"${scriptPath}"`,
-        scriptArguments,
-        {
-          listeners: {
-            stdout: (data: Buffer) => {
-              output += data.toString();
-            }
+      resultCode = await exec.exec(`"${scriptPath}"`, scriptArguments, {
+        listeners: {
+          stdout: (data: Buffer) => {
+            output += data.toString();
           }
         }
-      );
+      });
     }
 
     if (resultCode != 0) {

@@ -5,7 +5,7 @@
   "description": "setup dotnet action",
   "main": "lib/setup-dotnet.js",
   "scripts": {
-    "build": "tsc",
+    "build": "npm install && tsc",
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts",
     "test": "jest"

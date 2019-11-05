@@ -23,7 +23,10 @@ async function run() {
       core.debug('No version found, falling back to global.json');
       const globalJsonPath = path.join(process.cwd(), 'global.json');
       if (fs.existsSync(globalJsonPath)) {
-        const dotnetInstaller = new installer.DotnetCoreInstaller(undefined, globalJsonPath);
+        const dotnetInstaller = new installer.DotnetCoreInstaller(
+          undefined,
+          globalJsonPath
+        );
         await dotnetInstaller.installDotnet();
       }
     }
