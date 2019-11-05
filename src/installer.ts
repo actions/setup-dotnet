@@ -9,11 +9,12 @@ import * as semver from 'semver';
 const IS_WINDOWS = process.platform === 'win32';
 
 export class DotnetCoreInstaller {
-  constructor(version: string) {
+  constructor(version: string = "", jsonfile: string = "") {
     if (semver.valid(semver.clean(version) || '') == null) {
       throw 'Implicit version not permitted';
     }
     this.version = version;
+    this.jsonfile = jsonfile;
   }
 
   public async installDotnet() {
@@ -24,7 +25,13 @@ export class DotnetCoreInstaller {
       let escapedScript = path
         .join(__dirname, '..', 'externals', 'install-dotnet.ps1')
         .replace(/'/g, "''");
-      let command = `& '${escapedScript}' -Version ${this.version}`;
+      let command = `& '${escapedScript}'`;
+      if (this.version) {
+        command += ` -Version ${this.version}`;
+      }
+      if (this.jsonfile) {
+        command += ` -jsonfile ${this.jsonfile}`;
+      }
 
       const powershellPath = await io.which('powershell', true);
       resultCode = await exec.exec(
@@ -54,9 +61,18 @@ export class DotnetCoreInstaller {
       chmodSync(escapedScript, '777');
 
       const scriptPath = await io.which(escapedScript, true);
+
+      let scriptArguments: string[] = [];
+      if (this.version) {
+        scriptArguments.concat(['--version', this.version]);
+      }
+      if (this.jsonfile) {
+        scriptArguments.concat(['--jsonfile', this.jsonfile]);
+      }
+
       resultCode = await exec.exec(
         `"${scriptPath}"`,
-        ['--version', this.version],
+        scriptArguments,
         {
           listeners: {
             stdout: (data: Buffer) => {
@@ -73,4 +89,5 @@ export class DotnetCoreInstaller {
   }
 
   private version: string;
+  private jsonfile: string;
 }

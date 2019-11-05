@@ -1,5 +1,6 @@
 import * as core from '@actions/core';
 import * as installer from './installer';
+import * as fs from 'fs';
 import * as path from 'path';
 
 async function run() {
@@ -12,11 +13,19 @@ async function run() {
       `::warning::Use the v1 tag to get the last version, master may contain breaking changes and will not contain any required packages in the future. i.e. actions/setup-dotnet@v1`
     );
 
-    let version = core.getInput('dotnet-version');
+    let version: string = core.getInput('dotnet-version');
 
     if (version) {
       const dotnetInstaller = new installer.DotnetCoreInstaller(version);
       await dotnetInstaller.installDotnet();
+    } else {
+      // Try to fall back to global.json
+      core.debug('No version found, falling back to global.json');
+      const globalJsonPath = path.join(process.cwd(), 'global.json');
+      if (fs.existsSync(globalJsonPath)) {
+        const dotnetInstaller = new installer.DotnetCoreInstaller(undefined, globalJsonPath);
+        await dotnetInstaller.installDotnet();
+      }
     }
 
     // TODO: setup proxy from runner proxy config
