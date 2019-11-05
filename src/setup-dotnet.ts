@@ -12,10 +12,8 @@ async function run() {
       `::warning::Use the v1 tag to get the last version, master may contain breaking changes and will not contain any required packages in the future. i.e. actions/setup-dotnet@v1`
     );
 
-    let version = core.getInput('version');
-    if (!version) {
-      version = core.getInput('dotnet-version');
-    }
+    let version = core.getInput('dotnet-version');
+
     if (version) {
       const dotnetInstaller = new installer.DotnetCoreInstaller(version);
       await dotnetInstaller.installDotnet();
