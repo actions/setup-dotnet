@@ -1,11 +1,9 @@
 import * as fs from 'fs';
-import * as os from 'os';
 import * as path from 'path';
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import * as xmlbuilder from 'xmlbuilder';
 import * as xmlParser from 'fast-xml-parser';
-import {booleanLiteral} from '@babel/types';
 
 export function configAuthentication(
   feedUrl: string,
