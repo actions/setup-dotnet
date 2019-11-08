@@ -4,7 +4,7 @@
   <a href="https://github.com/actions/setup-dotnet"><img alt="GitHub Actions status" src="https://github.com/actions/setup-dotnet/workflows/Main%20workflow/badge.svg"></a>
 </p>
 
-This action sets up a dotnet environment for use in actions by:
+This action sets up a [dotnet core cli](https://github.com/dotnet/cli) environment for use in actions by:
 
 - optionally downloading and caching a version of dotnet by SDK version and adding to PATH
 - registering problem matchers for error output
@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-16.04
     strategy:
       matrix:
-        dotnet: [ '2.2.103', '3.0.100-preview8-013656', '4.5.1' ]
+        dotnet: [ '2.2.103', '3.0.100', '3.1.100-preview1-014459' ]
     name: Dotnet ${{ matrix.dotnet }} sample
     steps:
       - uses: actions/checkout@master

@@ -92,3 +92,4 @@ typings/
 .dynamodb/
 
 .vscode/*
+node_modules
