@@ -1,9 +1,9 @@
-name: 'Setup Dotnet environment'
-description: 'Setup a Dotnet environment and add it to the PATH, additionally providing proxy support'
+name: 'Setup .NET Core SDK'
+description: 'Set up a specific version of the .NET Core SDK and add the command-line tools to the PATH'
 author: 'GitHub'
 inputs: 
   dotnet-version:
-    description: 'SDK version to use. E.g. 2.2.104'
+    description: 'SDK version to use. Example: 2.2.104'
 # Deprecated option, do not use. Will not be supported after October 1, 2019
   version:
     description: 'Deprecated. Use dotnet-version instead. Will not be supported after October 1, 2019'
