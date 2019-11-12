@@ -1,9 +1,9 @@
-name: 'Setup Dotnet environment'
-description: 'Setup a dotnet environment and add it to the PATH, set up proxy support, and set up authentication to private package sources like GPR.'
+name: 'Setup .NET Core SDK'
+description: 'Set up a specific version of the .NET Core SDK, add the command-line tools to the PATH and set up authentication to private package sources like GitHub Packages.'
 author: 'GitHub'
 inputs: 
   dotnet-version:
-    description: 'SDK version to use. E.g. 2.2.104'
+    description: 'SDK version to use. Example: 2.2.104'
   source-url:
     description: 'Optional package source for which to set up authentication. Will consult any existing NuGet.config in the root of the repo and provide a temporary NuGet.config using the NUGET_AUTH_TOKEN environment variable as a ClearTextPassword'
   owner:
