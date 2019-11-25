@@ -38,9 +38,6 @@ function writeFeedToFile(
   if (!owner) {
     owner = github.context.repo.owner;
   }
-  if (feedUrl.indexOf('nuget.pkg.github.com') > -1) {
-    sourceUrl = 'https://nuget.pkg.github.com/' + owner + '/index.json';
-  }
 
   if (!process.env.NUGET_AUTH_TOKEN || process.env.NUGET_AUTH_TOKEN == '') {
     throw new Error(

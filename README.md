@@ -41,46 +41,31 @@ jobs:
       - run: dotnet build <my project>
 ```
 
-Authentication to GPR:
+Authentication for nuget feeds:
 ```yaml
 steps:
 - uses: actions/checkout@master
+# Authenticates packages to push to GPR
 - uses: actions/setup-dotnet@v1
   with:
     dotnet-version: '2.2.103' # SDK Version to use.
-    source-url: https://nuget.pkg.github.com
+    source-url: https://nuget.pkg.github.com/<owner>/index.json
   env:
     NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
 - run: dotnet build <my project>
 - name: Create the package
   run: dotnet pack --configuration Release <my project>
-  env:
-    DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
- - name: Publish the package
+ - name: Publish the package to GPR
   run: dotnet nuget push <my project>/bin/Release/*.nupkg
-  env:
-    DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
-```
 
-Authentication to Azure Artifacts:
-```yaml
-steps:
-- uses: actions/checkout@master
+# Authticates packages to push to Azure Artifacts
 - uses: actions/setup-dotnet@v1
   with:
-    dotnet-version: '2.2.103' # SDK Version to use.
     source-url: https://pkgs.dev.azure.com/<your-organization>/_packaging/<your-feed-name>/nuget/v3/index.json
   env:
     NUGET_AUTH_TOKEN: ${{secrets.AZURE_DEVOPS_PAT}} # Note, create a secret with this name in Settings
-- run: dotnet build <my project>
-- name: Create the package
-  run: dotnet pack --configuration Release <my project>
-  env:
-    DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
- - name: Publish the package
+- name: Publish the package to Azure Artifacts
   run: dotnet nuget push <my project>/bin/Release/*.nupkg
-  env:
-    DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
 ```
 
 # License
