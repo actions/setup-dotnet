@@ -44,7 +44,7 @@ const gprNuGetConfig: string = `<?xml version="1.0" encoding="utf-8"?>
 const twogprNuGetConfig: string = `<?xml version="1.0" encoding="utf-8"?>
 <configuration>
   <packageSources>
-    <add key="GPR-GitHub" value="https://nuget.pkg.github.com/github/index.json" protocolVersion="3" />
+    <add key="GPR-GitHub" value="https://nuget.pkg.github.com/OwnerName/index.json" protocolVersion="3" />
     <add key="GPR-Actions" value="https://nuget.pkg.github.com/actions/index.json" protocolVersion="3" />
   </packageSources>
 </configuration>`;
@@ -94,7 +94,9 @@ describe('authutil tests', () => {
 
   it('No existing config, sets up a full NuGet.config with URL and user/PAT for GPR', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
-    await auth.configAuthentication('https://nuget.pkg.github.com/OwnerName/index.json');
+    await auth.configAuthentication(
+      'https://nuget.pkg.github.com/OwnerName/index.json'
+    );
     expect(fs.existsSync(nugetConfigFile)).toBe(true);
     expect(
       fs.readFileSync(nugetConfigFile, {encoding: 'utf8'})
@@ -104,7 +106,9 @@ describe('authutil tests', () => {
   it('No existing config, auth token environment variable not provided, throws', async () => {
     let thrown = false;
     try {
-      await auth.configAuthentication('https://nuget.pkg.github.com/OwnerName/index.json');
+      await auth.configAuthentication(
+        'https://nuget.pkg.github.com/OwnerName/index.json'
+      );
     } catch {
       thrown = true;
     }
@@ -114,7 +118,9 @@ describe('authutil tests', () => {
   it('No existing config, sets up a full NuGet.config with URL and other owner/PAT for GPR', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
     process.env['INPUT_OWNER'] = 'otherorg';
-    await auth.configAuthentication('https://nuget.pkg.github.com/otherorg/index.json');
+    await auth.configAuthentication(
+      'https://nuget.pkg.github.com/otherorg/index.json'
+    );
     expect(fs.existsSync(nugetConfigFile)).toBe(true);
     expect(
       fs.readFileSync(nugetConfigFile, {encoding: 'utf8'})
@@ -130,7 +136,9 @@ describe('authutil tests', () => {
     fs.writeFileSync(inputNuGetConfigPath, invalidNuGetConfig);
     let thrown = false;
     try {
-      await auth.configAuthentication('https://nuget.pkg.github.com/OwnerName/index.json');
+      await auth.configAuthentication(
+        'https://nuget.pkg.github.com/OwnerName/index.json'
+      );
     } catch {
       thrown = true;
     }
@@ -144,7 +152,9 @@ describe('authutil tests', () => {
       'nuget.config'
     );
     fs.writeFileSync(inputNuGetConfigPath, emptyNuGetConfig);
-    await auth.configAuthentication('https://nuget.pkg.github.com/OwnerName/index.json');
+    await auth.configAuthentication(
+      'https://nuget.pkg.github.com/OwnerName/index.json'
+    );
     expect(fs.existsSync(nugetConfigFile)).toBe(true);
     expect(
       fs.readFileSync(nugetConfigFile, {encoding: 'utf8'})
@@ -158,7 +168,9 @@ describe('authutil tests', () => {
       'nuget.config'
     );
     fs.writeFileSync(inputNuGetConfigPath, nugetorgNuGetConfig);
-    await auth.configAuthentication('https://nuget.pkg.github.com/OwnerName/index.json');
+    await auth.configAuthentication(
+      'https://nuget.pkg.github.com/OwnerName/index.json'
+    );
     expect(fs.existsSync(nugetConfigFile)).toBe(true);
     expect(
       fs.readFileSync(nugetConfigFile, {encoding: 'utf8'})
@@ -172,7 +184,9 @@ describe('authutil tests', () => {
       'nuget.config'
     );
     fs.writeFileSync(inputNuGetConfigPath, gprNuGetConfig);
-    await auth.configAuthentication('https://nuget.pkg.github.com/OwnerName/index.json');
+    await auth.configAuthentication(
+      'https://nuget.pkg.github.com/OwnerName/index.json'
+    );
     expect(fs.existsSync(nugetConfigFile)).toBe(true);
     expect(
       fs.readFileSync(nugetConfigFile, {encoding: 'utf8'})
@@ -186,7 +200,9 @@ describe('authutil tests', () => {
       'nuget.config'
     );
     fs.writeFileSync(inputNuGetConfigPath, gprnugetorgNuGetConfig);
-    await auth.configAuthentication('https://nuget.pkg.github.com/OwnerName/index.json');
+    await auth.configAuthentication(
+      'https://nuget.pkg.github.com/OwnerName/index.json'
+    );
     expect(fs.existsSync(nugetConfigFile)).toBe(true);
     expect(
       fs.readFileSync(nugetConfigFile, {encoding: 'utf8'})
@@ -216,7 +232,9 @@ describe('authutil tests', () => {
     fs.writeFileSync(inputNuGetConfigPath, spaceNuGetConfig);
     let thrown = false;
     try {
-      await auth.configAuthentication('https://nuget.pkg.github.com/OwnerName/index.json');
+      await auth.configAuthentication(
+        'https://nuget.pkg.github.com/OwnerName/index.json'
+      );
     } catch {
       thrown = true;
     }

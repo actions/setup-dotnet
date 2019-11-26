@@ -115,7 +115,7 @@ exports[`authutil tests Existing config w/ two GPR sources, sets up a partial Nu
 "<?xml version=\\"1.0\\"?>
 <configuration>
   <config>
-    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com/OwnerName/index.json\\"/>
+    <add key=\\"defaultPushSource\\" value=\\"https://nuget.pkg.github.com\\"/>
   </config>
   <packageSourceCredentials>
     <GPR-GitHub>
