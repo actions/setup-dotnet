@@ -29,8 +29,8 @@ describe('installer tests', () => {
   }, 100000);
 
   it('Acquires version of dotnet if no matching version is installed', async () => {
-    await getDotnet('2.2.104');
-    const dotnetDir = path.join(toolDir, 'dncs', '2.2.104', os.arch());
+    await getDotnet('2.2.205');
+    const dotnetDir = path.join(toolDir, 'dncs', '2.2.205', os.arch());
 
     expect(fs.existsSync(`${dotnetDir}.complete`)).toBe(true);
     if (IS_WINDOWS) {

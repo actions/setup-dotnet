@@ -90,4 +90,6 @@ typings/
 
 # DynamoDB Local files
 .dynamodb/
+
+.vscode/*
 node_modules

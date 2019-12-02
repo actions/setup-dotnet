@@ -10,7 +10,6 @@ import {chmodSync} from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as semver from 'semver';
-import * as util from 'util';
 
 const IS_WINDOWS = process.platform === 'win32';
 
@@ -71,7 +70,7 @@ export class DotnetCoreInstaller {
   }
 
   private async detectMachineOS(): Promise<string[]> {
-    let osSuffix = [];
+    let osSuffix: string[] = [];
     let output = '';
 
     let resultCode = 0;
