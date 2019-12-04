@@ -17,7 +17,7 @@ Basic:
 ```yaml
 steps:
 - uses: actions/checkout@master
-- uses: actions/setup-dotnet@v1
+- uses: actions/setup-dotnet@v1.3.0
   with:
     dotnet-version: '2.2.103' # SDK Version to use.
 - run: dotnet build <my project>
@@ -35,7 +35,7 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - name: Setup dotnet
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v1.3.0
         with:
           dotnet-version: ${{ matrix.dotnet }}
       - run: dotnet build <my project>
@@ -46,7 +46,7 @@ Authentication for nuget feeds:
 steps:
 - uses: actions/checkout@master
 # Authenticates packages to push to GPR
-- uses: actions/setup-dotnet@v1
+- uses: actions/setup-dotnet@v1.3.0
   with:
     dotnet-version: '2.2.103' # SDK Version to use.
     source-url: https://nuget.pkg.github.com/<owner>/index.json
@@ -59,7 +59,7 @@ steps:
   run: dotnet nuget push <my project>/bin/Release/*.nupkg
 
 # Authticates packages to push to Azure Artifacts
-- uses: actions/setup-dotnet@v1
+- uses: actions/setup-dotnet@v1.3.0
   with:
     source-url: https://pkgs.dev.azure.com/<your-organization>/_packaging/<your-feed-name>/nuget/v3/index.json
   env:
