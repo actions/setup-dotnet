@@ -8,7 +8,8 @@
     "build": "tsc",
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts",
-    "test": "jest"
+    "test": "jest",
+    "update-installers": "wget https://dot.net/v1/dotnet-install.ps1 -d externals/install-dotnet.ps1 && wget https://dot.net/v1/dotnet-install.sh -d externals/install-dotnet.sh"
   },
   "repository": {
     "type": "git",
@@ -39,6 +40,7 @@
     "husky": "^2.3.0",
     "jest": "^24.8.0",
     "jest-circus": "^24.7.1",
+    "node-wget": "^0.4.3",
     "prettier": "^1.17.1",
     "ts-jest": "^24.0.2",
     "typescript": "^3.5.1"
