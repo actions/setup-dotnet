@@ -1,0 +1,34 @@
+name: Tag
+on:
+  push:
+    tags:
+      - '*'  
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      GIT_REDIRECT_STDERR: 2>&1
+    steps:
+    - name: Get Tag name
+      run: |
+        $TAG_NAME = ($env:GITHUB_REF).Substring("refs/tags/".Length)
+        echo "::set-env name=TAG_NAME::$TAG_NAME"
+        $DOT_COUNT = ($TAG_NAME.ToCharArray() | Where-Object {$_ -eq '.'} | Measure-Object).Count
+        echo "::set-env name=DOT_COUNT::$DOT_COUNT"
+    - name: Checkout commit
+      if: (env.DOT_COUNT == 2)
+      uses: actions/checkout@v2-beta
+      with:
+        token: ${{ secrets.GH_TOKEN }}
+    - name: Move Application Tags
+      if: (env.DOT_COUNT == 2)
+      run: |
+        $MAJOR_INDEX = $env:TAG_NAME.IndexOf(".")
+        $MINOR_INDEX = $env:TAG_NAME.IndexOf(".", $MAJOR_INDEX + 1)
+        
+        $MAJOR = $env:TAG_NAME.Substring(0, $MAJOR_INDEX)
+        $MINOR = $env:TAG_NAME.Substring(0, $MINOR_INDEX)
+        
+        git tag -f $MAJOR
+        git tag -f $MINOR
+        git push -f --tags
