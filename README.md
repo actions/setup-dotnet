@@ -8,6 +8,7 @@ This action sets up a [dotnet core cli](https://github.com/dotnet/cli) environme
 
 - optionally downloading and caching a version of dotnet by SDK version and adding to PATH
 - registering problem matchers for error output
+- setting up authentication to private package sources like GitHub Packages
 
 # Usage
 
