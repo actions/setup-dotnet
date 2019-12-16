@@ -4,7 +4,7 @@
             "owner": "csc",
             "pattern": [
                 {
-                    "regexp": "^([^\\s].*)\\((\\d+|\\d+,\\d+|\\d+,\\d+,\\d+,\\d+)\\):\\s+(error|warning|info)\\s+(CS\\d+)\\s*:\\s*(.*)$",
+                    "regexp": "^([^\\s].*)\\((\\d+|\\d+,\\d+|\\d+,\\d+,\\d+,\\d+)\\):\\s+(error|warning|info)\\s+(\\w+\\d+)\\s*:\\s*(.*)$",
                     "file": 1,
                     "location": 2,
                     "severity": 3,
