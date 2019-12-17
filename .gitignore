@@ -93,6 +93,3 @@ typings/
 
 # Ignore .vscode files
 .vscode/
-
-# Ignore node_modules
-node_modules
