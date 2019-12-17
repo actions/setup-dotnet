@@ -10,10 +10,6 @@ export async function run() {
     // Version is optional.  If supplied, install / use from the tool cache
     // If not supplied then task is still used to setup proxy, auth, etc...
     //
-    console.log(
-      `::warning::Use the v1 tag to get the last version, master may contain breaking changes and will not contain any required packages in the future. i.e. actions/setup-dotnet@v1`
-    );
-
     let version: string = core.getInput('dotnet-version');
 
     if (version) {
