@@ -1,9 +1,18 @@
-name: 'Setup Dotnet environment'
-description: 'Setup a Dotnet environment and add it to the PATH, additionally providing proxy support'
+name: 'Setup .NET Core SDK'
+description: 'Set up a specific version of the .NET Core CLI in the PATH and set up authentication to a private NuGet repository'
 author: 'GitHub'
+branding:
+  icon: play
+  color: green
 inputs: 
   dotnet-version:
-    description: 'SDK version to use. E.g. 2.2.104'
+    description: 'SDK version to use. Example: 2.2.104'
+  source-url:
+    description: 'Optional package source for which to set up authentication. Will consult any existing NuGet.config in the root of the repo and provide a temporary NuGet.config using the NUGET_AUTH_TOKEN environment variable as a ClearTextPassword'
+  owner:
+    description: 'Optional OWNER for using packages from GitHub Package Registry organizations/users other than the current repository''s owner. Only used if a GPR URL is also provided in source-url'
+  config-file:
+    description: 'Optional NuGet.config location, if your NuGet.config isn''t located in the root of the repo.'
 runs:
   using: 'node12'
   main: 'lib/setup-dotnet.js'

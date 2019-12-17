@@ -1,7 +1,6 @@
 // Load tempDirectory before it gets wiped by tool-cache
 import * as exec from '@actions/exec';
 import * as io from '@actions/io';
-import httpClient = require('typed-rest-client/HttpClient');
 import {chmodSync} from 'fs';
 import * as path from 'path';
 import * as semver from 'semver';
