@@ -2,7 +2,6 @@ import io = require('@actions/io');
 import fs = require('fs');
 import os = require('os');
 import path = require('path');
-import httpClient = require('typed-rest-client/HttpClient');
 
 const toolDir = path.join(__dirname, 'runner', 'tools');
 const tempDir = path.join(__dirname, 'runner', 'temp');
@@ -13,9 +12,9 @@ const IS_WINDOWS = process.platform === 'win32';
 
 describe('setup-dotnet tests', () => {
   beforeAll(async () => {
-    process.env['RUNNER_TOOL_CACHE'] = toolDir;
-    process.env['DOTNET_INSTALL_DIR'] = toolDir;
-    process.env['RUNNER_TEMP'] = tempDir;
+    process.env.RUNNER_TOOL_CACHE = toolDir;
+    process.env.DOTNET_INSTALL_DIR = toolDir;
+    process.env.RUNNER_TEMP = tempDir;
     await io.rmRF(toolDir);
     await io.rmRF(tempDir);
   });
@@ -31,10 +30,10 @@ describe('setup-dotnet tests', () => {
   }, 100000);
 
   it('Acquires version of dotnet if no matching version is installed', async () => {
-    const dotnetDir = path.join(toolDir, 'dncs', '2.2.105', os.arch());
+    const dotnetDir = path.join(toolDir, 'dncs', '3.1.100', os.arch());
 
     const globalJsonPath = path.join(process.cwd(), 'global.json');
-    const jsonContents = `{${os.EOL}"sdk": {${os.EOL}"version": "2.2.105"${os.EOL}}${os.EOL}}`;
+    const jsonContents = `{${os.EOL}"sdk": {${os.EOL}"version": "3.1.100"${os.EOL}}${os.EOL}}`;
     if (!fs.existsSync(globalJsonPath)) {
       fs.writeFileSync(globalJsonPath, jsonContents);
     }

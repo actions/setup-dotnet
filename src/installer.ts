@@ -32,6 +32,7 @@ export class DotnetCoreInstaller {
         command += ` -jsonfile ${this.jsonfile}`;
       }
 
+      // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
       const powershellPath = await io.which('powershell', true);
       resultCode = await exec.exec(
         `"${powershellPath}"`,
@@ -50,7 +51,8 @@ export class DotnetCoreInstaller {
             stdout: (data: Buffer) => {
               output += data.toString();
             }
-          }
+          },
+          env: process.env
         }
       );
     } else {
@@ -69,12 +71,14 @@ export class DotnetCoreInstaller {
         scriptArguments.concat(['--jsonfile', this.jsonfile]);
       }
 
+      // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
       resultCode = await exec.exec(`"${scriptPath}"`, scriptArguments, {
         listeners: {
           stdout: (data: Buffer) => {
             output += data.toString();
           }
-        }
+        },
+        env: process.env
       });
     }
 

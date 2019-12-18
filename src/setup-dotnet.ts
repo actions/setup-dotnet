@@ -33,7 +33,7 @@ export async function run() {
     if (sourceUrl) {
       auth.configAuthentication(sourceUrl, configFile);
     }
-    
+
     // TODO: setup proxy from runner proxy config
 
     const matchersPath = path.join(__dirname, '..', '.github');
@@ -44,5 +44,3 @@ export async function run() {
 }
 
 run();
-
-
