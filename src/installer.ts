@@ -3,15 +3,11 @@ import * as exec from '@actions/exec';
 import * as io from '@actions/io';
 import {chmodSync} from 'fs';
 import * as path from 'path';
-import * as semver from 'semver';
 
 const IS_WINDOWS = process.platform === 'win32';
 
 export class DotnetCoreInstaller {
   constructor(version: string = '', jsonfile: string = '') {
-    if (semver.valid(semver.clean(version) || '') == null) {
-      throw 'Implicit version not permitted';
-    }
     this.version = version;
     this.jsonfile = jsonfile;
   }
@@ -65,10 +61,10 @@ export class DotnetCoreInstaller {
 
       let scriptArguments: string[] = [];
       if (this.version) {
-        scriptArguments.concat(['--version', this.version]);
+        scriptArguments.push('--version', this.version);
       }
       if (this.jsonfile) {
-        scriptArguments.concat(['--jsonfile', this.jsonfile]);
+        scriptArguments.push('--jsonfile', this.jsonfile);
       }
 
       // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used

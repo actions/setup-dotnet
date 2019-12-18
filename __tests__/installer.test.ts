@@ -7,15 +7,15 @@ import httpClient = require('typed-rest-client/HttpClient');
 const toolDir = path.join(__dirname, 'runner', 'tools');
 const tempDir = path.join(__dirname, 'runner', 'temp');
 
-process.env.RUNNER_TOOL_CACHE = toolDir;
-process.env.DOTNET_INSTALL_DIR = toolDir;
-process.env.RUNNER_TEMP = tempDir;
 import * as installer from '../src/installer';
 
 const IS_WINDOWS = process.platform === 'win32';
 
 describe('installer tests', () => {
   beforeAll(async () => {
+    process.env.RUNNER_TOOL_CACHE = toolDir;
+    process.env.DOTNET_INSTALL_DIR = toolDir;
+    process.env.RUNNER_TEMP = tempDir;
     await io.rmRF(toolDir);
     await io.rmRF(tempDir);
   });
@@ -27,10 +27,9 @@ describe('installer tests', () => {
     } catch {
       console.log('Failed to remove test directories');
     }
-  }, 100000);
+  }, 30000);
 
   it('Acquires version of dotnet if no matching version is installed', async () => {
-    console.log(process.env.DOTNET_INSTALL_DIR);
     await getDotnet('3.1.100');
     const dotnetDir = path.join(toolDir, 'dncs', '3.1.100', os.arch());
 
@@ -40,7 +39,7 @@ describe('installer tests', () => {
     } else {
       expect(fs.existsSync(path.join(dotnetDir, 'dotnet'))).toBe(true);
     }
-  }, 100000);
+  }, 30000);
 
   it('Throws if no location contains correct dotnet version', async () => {
     let thrown = false;
@@ -50,7 +49,7 @@ describe('installer tests', () => {
       thrown = true;
     }
     expect(thrown).toBe(true);
-  }, 100000);
+  }, 30000);
 
   it('Uses version of dotnet installed in cache', async () => {
     const dotnetDir: string = path.join(toolDir, 'dncs', '250.0.0', os.arch());
@@ -59,7 +58,7 @@ describe('installer tests', () => {
     // This will throw if it doesn't find it in the cache (because no such version exists)
     await getDotnet('250.0.0');
     return;
-  });
+  }, 25000);
 
   it('Uses an up to date bash download script', async () => {
     var httpCallbackClient = new httpClient.HttpClient(
@@ -79,7 +78,7 @@ describe('installer tests', () => {
     expect(normalizeFileContents(currentContents)).toBe(
       normalizeFileContents(upToDateContents)
     );
-  }, 100000);
+  }, 30000);
 
   it('Uses an up to date powershell download script', async () => {
     var httpCallbackClient = new httpClient.HttpClient(
@@ -99,7 +98,7 @@ describe('installer tests', () => {
     expect(normalizeFileContents(currentContents)).toBe(
       normalizeFileContents(upToDateContents)
     );
-  }, 100000);
+  }, 30000);
 });
 
 function normalizeFileContents(contents: string): string {

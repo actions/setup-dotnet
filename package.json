@@ -27,15 +27,12 @@
     "@actions/exec": "^1.0.2",
     "@actions/github": "^1.1.0",
     "@actions/io": "^1.0.1",
-    "@actions/tool-cache": "^1.1.2",
     "fast-xml-parser": "^3.15.1",
-    "semver": "^6.3.0",
     "xmlbuilder": "^13.0.2"
   },
   "devDependencies": {
     "@types/jest": "^24.0.13",
     "@types/node": "^12.0.4",
-    "@types/semver": "^6.0.0",
     "husky": "^2.3.0",
     "jest": "^24.9.0",
     "jest-circus": "^24.7.1",
@@ -51,5 +48,8 @@
       "pre-commit": "npm run build && npm run format",
       "post-commit": "npm prune --production && git add node_modules/* && git commit -m \"Husky commit correct node modules\""
     }
+  },
+  "jest": {
+    "testEnvironment": "node"
   }
 }

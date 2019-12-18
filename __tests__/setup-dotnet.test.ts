@@ -27,7 +27,7 @@ describe('setup-dotnet tests', () => {
     } catch {
       console.log('Failed to remove test directories');
     }
-  }, 100000);
+  }, 30000);
 
   it('Acquires version of dotnet if no matching version is installed', async () => {
     const dotnetDir = path.join(toolDir, 'dncs', '3.1.100', os.arch());
@@ -46,5 +46,5 @@ describe('setup-dotnet tests', () => {
       expect(fs.existsSync(path.join(dotnetDir, 'dotnet'))).toBe(true);
     }
     fs.unlinkSync(globalJsonPath);
-  }, 100000);
+  }, 30000);
 });
