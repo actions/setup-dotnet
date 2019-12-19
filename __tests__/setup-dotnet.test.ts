@@ -3,8 +3,8 @@ import fs = require('fs');
 import os = require('os');
 import path = require('path');
 
-const toolDir = path.join(__dirname, 'runner', 'tools');
-const tempDir = path.join(__dirname, 'runner', 'temp');
+const toolDir = path.join(__dirname, 'runner', 'tools2');
+const tempDir = path.join(__dirname, 'runner', 'temp2');
 
 import * as setup from '../src/setup-dotnet';
 

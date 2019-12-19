@@ -51,15 +51,6 @@ describe('installer tests', () => {
     expect(thrown).toBe(true);
   }, 30000);
 
-  it('Uses version of dotnet installed in cache', async () => {
-    const dotnetDir: string = path.join(toolDir, 'dncs', '250.0.0', os.arch());
-    await io.mkdirP(dotnetDir);
-    fs.writeFileSync(`${dotnetDir}.complete`, 'hello');
-    // This will throw if it doesn't find it in the cache (because no such version exists)
-    await getDotnet('250.0.0');
-    return;
-  }, 25000);
-
   it('Uses an up to date bash download script', async () => {
     var httpCallbackClient = new httpClient.HttpClient(
       'setup-dotnet-test',
