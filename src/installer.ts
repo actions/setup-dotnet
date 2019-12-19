@@ -3,6 +3,7 @@ import * as exec from '@actions/exec';
 import * as io from '@actions/io';
 import {chmodSync} from 'fs';
 import * as path from 'path';
+import {ExecOptions} from '@actions/exec/lib/interfaces';
 
 const IS_WINDOWS = process.platform === 'win32';
 
@@ -15,6 +16,14 @@ export class DotnetCoreInstaller {
   public async installDotnet() {
     let output = '';
     let resultCode = 0;
+
+    var envVariables: {[key: string]: string} = {};
+    for (let key in process.env) {
+      if (process.env[key]) {
+        let value: any = process.env[key];
+        envVariables[key] = value;
+      }
+    }
 
     if (IS_WINDOWS) {
       let escapedScript = path
@@ -30,6 +39,16 @@ export class DotnetCoreInstaller {
 
       // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
       const powershellPath = await io.which('powershell', true);
+
+      var options: ExecOptions = {
+        listeners: {
+          stdout: (data: Buffer) => {
+            output += data.toString();
+          }
+        },
+        env: envVariables
+      };
+
       resultCode = await exec.exec(
         `"${powershellPath}"`,
         [
@@ -42,14 +61,7 @@ export class DotnetCoreInstaller {
           '-Command',
           command
         ],
-        {
-          listeners: {
-            stdout: (data: Buffer) => {
-              output += data.toString();
-            }
-          },
-          env: process.env
-        }
+        options
       );
     } else {
       let escapedScript = path
@@ -74,7 +86,7 @@ export class DotnetCoreInstaller {
             output += data.toString();
           }
         },
-        env: process.env
+        env: envVariables
       });
     }
 
