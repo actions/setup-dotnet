@@ -1,6 +1,5 @@
 import io = require('@actions/io');
 import fs = require('fs');
-import os = require('os');
 import path = require('path');
 import httpClient = require('typed-rest-client/HttpClient');
 
@@ -31,15 +30,13 @@ describe('installer tests', () => {
 
   it('Acquires version of dotnet if no matching version is installed', async () => {
     await getDotnet('3.1.100');
-    const dotnetDir = path.join(toolDir, 'dncs', '3.1.100', os.arch());
-
-    expect(fs.existsSync(`${dotnetDir}.complete`)).toBe(true);
+    expect(fs.existsSync(path.join(toolDir, 'sdk', '3.1.100'))).toBe(true);
     if (IS_WINDOWS) {
-      expect(fs.existsSync(path.join(dotnetDir, 'dotnet.exe'))).toBe(true);
+      expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
     } else {
-      expect(fs.existsSync(path.join(dotnetDir, 'dotnet'))).toBe(true);
+      expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
     }
-  }, 30000);
+  }, 100000);
 
   it('Throws if no location contains correct dotnet version', async () => {
     let thrown = false;

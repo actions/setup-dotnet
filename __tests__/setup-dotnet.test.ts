@@ -30,8 +30,6 @@ describe('setup-dotnet tests', () => {
   }, 30000);
 
   it('Acquires version of dotnet if no matching version is installed', async () => {
-    const dotnetDir = path.join(toolDir, 'dncs', '3.1.100', os.arch());
-
     const globalJsonPath = path.join(process.cwd(), 'global.json');
     const jsonContents = `{${os.EOL}"sdk": {${os.EOL}"version": "3.1.100"${os.EOL}}${os.EOL}}`;
     if (!fs.existsSync(globalJsonPath)) {
@@ -39,12 +37,12 @@ describe('setup-dotnet tests', () => {
     }
     await setup.run();
 
-    expect(fs.existsSync(`${dotnetDir}.complete`)).toBe(true);
+    expect(fs.existsSync(path.join(toolDir, 'sdk', '3.1.100'))).toBe(true);
     if (IS_WINDOWS) {
-      expect(fs.existsSync(path.join(dotnetDir, 'dotnet.exe'))).toBe(true);
+      expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
     } else {
-      expect(fs.existsSync(path.join(dotnetDir, 'dotnet'))).toBe(true);
+      expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
     }
     fs.unlinkSync(globalJsonPath);
-  }, 30000);
+  }, 100000);
 });

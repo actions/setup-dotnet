@@ -84,6 +84,10 @@ describe('authutil tests', () => {
     await io.mkdirP(fakeSourcesDirForTesting);
   }, 30000);
 
+  afterAll(async () => {
+    await io.rmRF(fakeSourcesDirForTesting);
+  }, 30000);
+
   beforeEach(() => {
     if (fs.existsSync(nugetConfigFile)) {
       fs.unlinkSync(nugetConfigFile);
