@@ -1,6 +1,9 @@
 name: 'Setup .NET Core SDK'
-description: 'Set up a specific version of the .NET Core SDK, add the command-line tools to the PATH and set up authentication to private package sources like GitHub Packages.'
+description: 'Set up a specific version of the .NET Core CLI in the PATH and set up authentication to a private NuGet repository'
 author: 'GitHub'
+branding:
+  icon: play
+  color: green
 inputs: 
   dotnet-version:
     description: 'SDK version to use. Example: 2.2.104'
