@@ -1,6 +1,7 @@
 import * as core from '@actions/core';
 import * as installer from './installer';
 import * as path from 'path';
+import * as auth from './authutil';
 
 async function run() {
   try {
@@ -8,6 +9,10 @@ async function run() {
     // Version is optional.  If supplied, install / use from the tool cache
     // If not supplied then task is still used to setup proxy, auth, etc...
     //
+    console.log(
+      `::warning::Use the v1 tag to get the last version, master may contain breaking changes and will not contain any required packages in the future. i.e. actions/setup-dotnet@v1`
+    );
+
     let version = core.getInput('version');
     if (!version) {
       version = core.getInput('dotnet-version');
@@ -17,6 +22,11 @@ async function run() {
       await dotnetInstaller.installDotnet();
     }
 
+    const sourceUrl: string = core.getInput('source-url');
+    const configFile: string = core.getInput('config-file');
+    if (sourceUrl) {
+      auth.configAuthentication(sourceUrl, configFile);
+    }
     // TODO: setup proxy from runner proxy config
 
     const matchersPath = path.join(__dirname, '..', '.github');
