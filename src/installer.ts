@@ -62,6 +62,11 @@ export class DotnetCoreInstaller {
 
     // Prepend the tools path. instructs the agent to prepend for future tasks
     core.addPath(toolPath);
+
+    // Prepend the dotnet global tools path
+    const homedir = os.homedir();
+    const dotnetToolsPath = path.join(homedir, '.dotnet/tools');
+    core.addPath(dotnetToolsPath);
   }
 
   private getLocalTool(): string {
