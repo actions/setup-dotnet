@@ -74,13 +74,11 @@ function writeFeedToFile(
             i < json.configuration.packageSources.add.length;
             i++
           ) {
-            core.debug(json.configuration.packageSources.add[i]);
-            if (
-              json.configuration.packageSources.add[i]['@_value']
-                .toLowerCase()
-                .includes(feedUrl.toLowerCase())
-            ) {
-              let key = json.configuration.packageSources.add[i]['@_key'];
+            const source = json.configuration.packageSources.add[i];
+            const value = source['@_value'];
+            core.debug(`source '${value}'`);
+            if (value.toLowerCase().includes(feedUrl.toLowerCase())) {
+              let key = source['@_key'];
               sourceKeys.push(key);
               core.debug(`Found a URL with key ${key}`);
             }

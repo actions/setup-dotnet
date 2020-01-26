@@ -19,4 +19,4 @@ inputs:
     deprecationMessage: 'The version property will not be supported after October 1, 2019. Use dotnet-version instead'
 runs:
   using: 'node12'
-  main: 'lib/setup-dotnet.js'
+  main: 'dist/index.js'
