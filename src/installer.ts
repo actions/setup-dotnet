@@ -4,8 +4,7 @@ import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as io from '@actions/io';
 import * as tc from '@actions/tool-cache';
-import httpClient = require('typed-rest-client/HttpClient');
-import {HttpClientResponse} from 'typed-rest-client/HttpClient';
+import hc = require('@actions/http-client');
 import {chmodSync} from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -187,21 +186,18 @@ export class DotnetCoreInstaller {
   ): Promise<string[]> {
     let downloadUrls: string[] = [];
 
-    const httpCallbackClient = new httpClient.HttpClient(
-      'actions/setup-dotnet',
-      [],
-      {}
-    );
+    const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
+      allowRetries: true,
+      maxRetries: 3
+    });
     const releasesJsonUrl: string = await this.getReleasesJsonUrl(
-      httpCallbackClient,
+      httpClient,
       version.split('.')
     );
 
-    let releasesJSON = await httpCallbackClient.get(releasesJsonUrl);
-
-    let releasesInfo: any[] = JSON.parse(await releasesJSON.readBody())[
-      'releases'
-    ];
+    const releasesResponse = await httpClient.getJson<any>(releasesJsonUrl);
+    const releasesResult = releasesResponse.result || {};
+    let releasesInfo: any[] = releasesResult['releases'];
     releasesInfo = releasesInfo.filter((releaseInfo: any) => {
       return (
         releaseInfo['sdk']['version'] === version ||
@@ -244,15 +240,12 @@ export class DotnetCoreInstaller {
   }
 
   private async getReleasesJsonUrl(
-    httpCallbackClient: httpClient.HttpClient,
+    httpClient: hc.HttpClient,
     versionParts: string[]
   ): Promise<string> {
-    const releasesIndex: HttpClientResponse = await httpCallbackClient.get(
-      DotNetCoreIndexUrl
-    );
-    let releasesInfo: any[] = JSON.parse(await releasesIndex.readBody())[
-      'releases-index'
-    ];
+    const response = await httpClient.getJson<any>(DotNetCoreIndexUrl);
+    const result = response.result || {};
+    let releasesInfo: any[] = result['releases-index'];
     releasesInfo = releasesInfo.filter((info: any) => {
       // channel-version is the first 2 elements of the version (e.g. 2.1), filter out versions that don't match 2.1.x.
       const sdkParts: string[] = info['channel-version'].split('.');
