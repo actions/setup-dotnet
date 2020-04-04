@@ -20,7 +20,7 @@ steps:
 - uses: actions/checkout@master
 - uses: actions/setup-dotnet@v1
   with:
-    dotnet-version: '3.1.100' # SDK Version to use.
+    dotnet-version: '3.1.x' # SDK Version to use. x will use the latest version of the 3.1 channel
 - run: dotnet build <my project>
 ```
 
