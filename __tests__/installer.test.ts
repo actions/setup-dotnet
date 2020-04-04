@@ -114,6 +114,14 @@ describe('installer tests', () => {
     }
   }, 100000);
 
+  it('Resolving a normal generic version works', async() => {
+    const dotnetInstaller = new installer.DotnetCoreInstaller('3.1.x');
+    let versInfo = await dotnetInstaller.resolveInfos(["win-x64"],new installer.DotNetVersionInfo("3.1.x"));
+
+    expect(versInfo.resolvedVersion.startsWith('3.1.'));
+  }, 100000);
+
+
   it('Acquires version of dotnet if no matching version is installed', async () => {
     await getDotnet('2.2.205');
     const dotnetDir = path.join(toolDir, 'dncs', '2.2.205', os.arch());

@@ -285,8 +285,7 @@ export class DotnetCoreInstaller {
 
     // Exclude versions that are newer than the latest if using not exact
     if(!versionInfo.isExactVersion()) {
-
-      let latestSdk : string = releasesResponse['latest-sdk'];
+      let latestSdk : string = releasesResult['latest-sdk'];
 
       releasesInfo = releasesInfo.filter((releaseInfo: any) => semver.lte(releaseInfo['sdk']['version'], latestSdk));
     }
