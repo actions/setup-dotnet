@@ -13,6 +13,92 @@ import * as installer from '../src/installer';
 
 const IS_WINDOWS = process.platform === 'win32';
 
+describe('version tests', () => {
+
+  it('Exact normal version', async() => {
+    let versInfo = new installer.DotNetVersionInfo('3.1.201');
+
+    expect(versInfo.isExactVersion()).toBe(true);
+    expect(versInfo.version()).toBe('3.1.201');
+  });
+
+  it('Exact preview version', async() => {
+    let versInfo = new installer.DotNetVersionInfo('3.1.201-preview1');
+
+    expect(versInfo.isExactVersion()).toBe(true);
+    expect(versInfo.version()).toBe('3.1.201-preview1');
+  });
+
+  it('Generic x version', async() => {
+    let versInfo = new installer.DotNetVersionInfo('3.1.x');
+
+    expect(versInfo.isExactVersion()).toBe(false);
+    expect(versInfo.version()).toBe('3.1');
+  });
+
+  it('Generic * version', async() => {
+    let versInfo = new installer.DotNetVersionInfo('1.1.*');
+
+    expect(versInfo.isExactVersion()).toBe(false);
+    expect(versInfo.version()).toBe('1.1');
+  });
+
+  it('Generic -no patch- version', async() => {
+    let versInfo = new installer.DotNetVersionInfo('2.0');
+
+    expect(versInfo.isExactVersion()).toBe(false);
+    expect(versInfo.version()).toBe('2.0');
+  });
+
+  it('Generic -no minor- version', async() => {
+    expect(() => {
+       new installer.DotNetVersionInfo('2');
+    }).toThrow();
+  });
+
+  it('empty version', async() => {
+    expect(() => {
+       new installer.DotNetVersionInfo('');
+    }).toThrow();
+  });
+
+  it('malformed no patch but dot version', async() => {
+    expect(() => {
+       new installer.DotNetVersionInfo('1.2.');
+    }).toThrow();
+  });
+
+  it('malformed generic minor version', async() => {
+    expect(() => {
+       new installer.DotNetVersionInfo('1.*.2');
+    }).toThrow();
+  });
+
+  it('malformed generic major version', async() => {
+    expect(() => {
+       new installer.DotNetVersionInfo('*.2.2');
+    }).toThrow();
+  });
+
+  it('malformed letter version', async() => {
+    expect(() => {
+       new installer.DotNetVersionInfo('a.b.c');
+    }).toThrow();
+  });
+
+  it('malformed letter preview version', async() => {
+    expect(() => {
+       new installer.DotNetVersionInfo('a.b.c-preview');
+    }).toThrow();
+  });
+
+  it('malformed letter -no minor- version', async() => {
+    expect(() => {
+       new installer.DotNetVersionInfo('a.b');
+    }).toThrow();
+  });
+})
+
 describe('installer tests', () => {
   beforeAll(async () => {
     await io.rmRF(toolDir);
@@ -28,7 +114,6 @@ describe('installer tests', () => {
     }
   }, 100000);
 
-  /*
   it('Check if get version works', async () => {
 
 
@@ -48,7 +133,7 @@ describe('installer tests', () => {
 
     expect(true).toBe(true);
 
-  }, 400000);*/
+  }, 400000);
 
   it('Acquires version of dotnet if no matching version is installed', async () => {
     await getDotnet('2.2.205');
