@@ -28,6 +28,28 @@ describe('installer tests', () => {
     }
   }, 100000);
 
+  /*
+  it('Check if get version works', async () => {
+
+
+    const dotnetInstaller = new installer.DotnetCoreInstaller('3.1.201');
+    let arr = await dotnetInstaller.resolveInfos(["win-x64"],new installer.DotNetVersionInfo("3.1.201"));
+    console.log(arr);
+
+    expect(true).toBe(true);
+
+  }, 400000);
+
+  it('Check if get latest version works', async () => {
+
+    const dotnetInstaller = new installer.DotnetCoreInstaller('3.1.x');
+    let arr = await dotnetInstaller.resolveInfos(["win-x64"],new installer.DotNetVersionInfo("3.1.x"));
+    console.log(arr);
+
+    expect(true).toBe(true);
+
+  }, 400000);*/
+
   it('Acquires version of dotnet if no matching version is installed', async () => {
     await getDotnet('2.2.205');
     const dotnetDir = path.join(toolDir, 'dncs', '2.2.205', os.arch());
@@ -38,7 +60,7 @@ describe('installer tests', () => {
     } else {
       expect(fs.existsSync(path.join(dotnetDir, 'dotnet'))).toBe(true);
     }
-  }, 100000);
+  }, 400000);
 
   it('Throws if no location contains correct dotnet version', async () => {
     let thrown = false;
