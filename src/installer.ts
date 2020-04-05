@@ -54,6 +54,19 @@ export class DotNetVersionInfo {
     }
 
     //Note: No support for previews when using generic
+    let parts: string[] = version.split('.');
+
+    if(parts.length < 2 || parts.length > 3)
+      this.throwInvalidVersionFormat();
+
+    if(parts.length == 3 && parts[2] !== "x" && parts[2] !== "*") {
+        this.throwInvalidVersionFormat();
+    }
+
+    this.major = this.getVersionNumberOrThrow(parts[0]);
+    this.minor = this.getVersionNumberOrThrow(parts[1]);
+
+    /*
     let regexResult = version.match(/^(\d+\.)(\d+)?(\.\*|\.x|)$/);
     if(regexResult == null) {
       throw 'Invalid version format! Supported: 1.2.3, 1.2, 1.2.x, 1.2.*';
@@ -62,9 +75,31 @@ export class DotNetVersionInfo {
     let parts : string[] = (regexResult as RegExpMatchArray).slice(1);
 
     this.major = +(parts[0].replace('.',''));
-    this.minor = +(parts[1].replace('.',''));
+    this.minor = +(parts[1].replace('.',''));*/
 
     this.fullversion = this.major + '.' + this.minor;
+  }
+
+  private getVersionNumberOrThrow(input: string) : number {
+    try
+    {
+      if(!input || input.trim() === "")
+        this.throwInvalidVersionFormat();
+
+      let number = Number(input);
+
+      if(Number.isNaN(number) || number < 0)
+        this.throwInvalidVersionFormat();
+    
+      return number;
+    } catch {
+      this.throwInvalidVersionFormat();
+      return -1;
+    }
+  }
+
+  private throwInvalidVersionFormat() {
+    throw 'Invalid version format! Supported: 1.2.3, 1.2, 1.2.x, 1.2.*'
   }
 
   /**

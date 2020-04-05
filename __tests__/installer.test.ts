@@ -3,6 +3,7 @@ import fs = require('fs');
 import os = require('os');
 import path = require('path');
 import hc = require('@actions/http-client');
+import each from 'jest-each';
 
 const toolDir = path.join(__dirname, 'runner', 'tools');
 const tempDir = path.join(__dirname, 'runner', 'temp');
@@ -14,89 +15,59 @@ import * as installer from '../src/installer';
 const IS_WINDOWS = process.platform === 'win32';
 
 describe('version tests', () => {
-
-  it('Exact normal version', async() => {
-    let versInfo = new installer.DotNetVersionInfo('3.1.201');
-
-    expect(versInfo.isExactVersion()).toBe(true);
-    expect(versInfo.version()).toBe('3.1.201');
-  });
-
-  it('Exact preview version', async() => {
-    let versInfo = new installer.DotNetVersionInfo('3.1.201-preview1');
+  each([
+    '3.1.999',
+    '3.1.101-preview'
+  ]).test("Exact version '%s' should be the same", vers => {
+    let versInfo = new installer.DotNetVersionInfo(vers);
 
     expect(versInfo.isExactVersion()).toBe(true);
-    expect(versInfo.version()).toBe('3.1.201-preview1');
-  });
+    expect(versInfo.version()).toBe(vers);
+  })
 
-  it('Generic x version', async() => {
-    let versInfo = new installer.DotNetVersionInfo('3.1.x');
-
-    expect(versInfo.isExactVersion()).toBe(false);
-    expect(versInfo.version()).toBe('3.1');
-  });
-
-  it('Generic * version', async() => {
-    let versInfo = new installer.DotNetVersionInfo('1.1.*');
+  each([
+    ['3.1.x', '3.1'],
+    ['1.1.*', '1.1'],
+    ['2.0', '2.0']
+  ]).test("Generic version '%s' should be '%s'", (vers, resVers) => {
+    let versInfo = new installer.DotNetVersionInfo(vers);
 
     expect(versInfo.isExactVersion()).toBe(false);
-    expect(versInfo.version()).toBe('1.1');
-  });
+    expect(versInfo.version()).toBe(resVers);
+  })
 
-  it('Generic -no patch- version', async() => {
-    let versInfo = new installer.DotNetVersionInfo('2.0');
-
-    expect(versInfo.isExactVersion()).toBe(false);
-    expect(versInfo.version()).toBe('2.0');
-  });
-
-  it('Generic -no minor- version', async() => {
-    expect(() => {
-       new installer.DotNetVersionInfo('2');
-    }).toThrow();
-  });
-
-  it('empty version', async() => {
-    expect(() => {
-       new installer.DotNetVersionInfo('');
-    }).toThrow();
-  });
-
-  it('malformed no patch but dot version', async() => {
-    expect(() => {
-       new installer.DotNetVersionInfo('1.2.');
-    }).toThrow();
-  });
-
-  it('malformed generic minor version', async() => {
-    expect(() => {
-       new installer.DotNetVersionInfo('1.*.2');
-    }).toThrow();
-  });
-
-  it('malformed generic major version', async() => {
-    expect(() => {
-       new installer.DotNetVersionInfo('*.2.2');
-    }).toThrow();
-  });
-
-  it('malformed letter version', async() => {
-    expect(() => {
-       new installer.DotNetVersionInfo('a.b.c');
-    }).toThrow();
-  });
-
-  it('malformed letter preview version', async() => {
-    expect(() => {
-       new installer.DotNetVersionInfo('a.b.c-preview');
-    }).toThrow();
-  });
-
-  it('malformed letter -no minor- version', async() => {
-    expect(() => {
-       new installer.DotNetVersionInfo('a.b');
-    }).toThrow();
-  });
+  each([
+    "",
+    ".",
+    "..",
+    " . ",
+    ". ",
+    " .",
+    " . . ",
+    " .. ",
+    " .  ",
+    "-1.-1",
+    "-1",
+    "-1.-1.-1",
+    "..3",
+    "1..3",
+    "1..",
+    ".2.3",
+    ".2.x",
+    "1",
+    "2.x",
+    "*.*.1",
+    "*.1",
+    "*.",
+    "1.2.",
+    "1.2.-abc",
+    "a.b",
+    "a.b.c",
+    "a.b.c-preview",
+    " 0 . 1 . 2 ",
+  ]).test("Malformed version '%s' should throw", vers => {
+    expect(() => new installer.DotNetVersionInfo(vers)).toThrow();
+  })
 })
 
 describe('installer tests', () => {
