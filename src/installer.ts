@@ -31,14 +31,12 @@ if (!tempDirectory) {
  * Represents the inputted version information
  */
 export class DotNetVersionInfo {
-  
-  private fullversion : string;
+  private fullversion: string;
   private isExactVersionSet: boolean = false;
 
   constructor(version: string) {
-
     // Check for exact match
-    if(semver.valid(semver.clean(version) || '') != null) {
+    if (semver.valid(semver.clean(version) || '') != null) {
       this.fullversion = semver.clean(version) as string;
       this.isExactVersionSet = true;
 
@@ -48,11 +46,10 @@ export class DotNetVersionInfo {
     //Note: No support for previews when using generic
     let parts: string[] = version.split('.');
 
-    if(parts.length < 2 || parts.length > 3)
-      this.throwInvalidVersionFormat();
+    if (parts.length < 2 || parts.length > 3) this.throwInvalidVersionFormat();
 
-    if(parts.length == 3 && parts[2] !== "x" && parts[2] !== "*") {
-        this.throwInvalidVersionFormat();
+    if (parts.length == 3 && parts[2] !== 'x' && parts[2] !== '*') {
+      this.throwInvalidVersionFormat();
     }
 
     let major = this.getVersionNumberOrThrow(parts[0]);
@@ -61,17 +58,14 @@ export class DotNetVersionInfo {
     this.fullversion = major + '.' + minor;
   }
 
-  private getVersionNumberOrThrow(input: string) : number {
-    try
-    {
-      if(!input || input.trim() === "")
-        this.throwInvalidVersionFormat();
+  private getVersionNumberOrThrow(input: string): number {
+    try {
+      if (!input || input.trim() === '') this.throwInvalidVersionFormat();
 
       let number = Number(input);
 
-      if(Number.isNaN(number) || number < 0)
-        this.throwInvalidVersionFormat();
-    
+      if (Number.isNaN(number) || number < 0) this.throwInvalidVersionFormat();
+
       return number;
     } catch {
       this.throwInvalidVersionFormat();
@@ -80,17 +74,17 @@ export class DotNetVersionInfo {
   }
 
   private throwInvalidVersionFormat() {
-    throw 'Invalid version format! Supported: 1.2.3, 1.2, 1.2.x, 1.2.*'
+    throw 'Invalid version format! Supported: 1.2.3, 1.2, 1.2.x, 1.2.*';
   }
 
   /**
    * If true exacatly one version should be resolved
    */
-  public isExactVersion() : boolean {
+  public isExactVersion(): boolean {
     return this.isExactVersionSet;
   }
 
-  public version() : string {
+  public version(): string {
     return this.fullversion;
   }
 }
@@ -103,11 +97,11 @@ class ResolvedVersionInfo {
   resolvedVersion: string;
 
   constructor(downloadUrls: string[], resolvedVersion: string) {
-    if(downloadUrls.length === 0) {
+    if (downloadUrls.length === 0) {
       throw 'DownloadUrls can not be empty';
     }
 
-    if(!resolvedVersion) {
+    if (!resolvedVersion) {
       throw 'Resolved version is invalid';
     }
 
@@ -125,7 +119,7 @@ export class DotnetCoreInstaller {
 
   public async installDotnet() {
     // Check cache
-    let toolPath: string = "";
+    let toolPath: string = '';
     let osSuffixes = await this.detectMachineOS();
     let parts = osSuffixes[0].split('-');
     if (parts.length > 1) {
@@ -133,17 +127,20 @@ export class DotnetCoreInstaller {
     }
 
     // If version is not generic -> look up cache
-    if(this.versionInfo.isExactVersion())
+    if (this.versionInfo.isExactVersion())
       toolPath = this.getLocalTool(this.versionInfo.version());
 
     if (!toolPath) {
       // download, extract, cache
       console.log('Getting a download url', this.versionInfo.version());
-      let resolvedVersionInfo = await this.resolveInfos(osSuffixes, this.versionInfo);
+      let resolvedVersionInfo = await this.resolveInfos(
+        osSuffixes,
+        this.versionInfo
+      );
 
       //Check if cache exists for resolved version
       toolPath = this.getLocalTool(resolvedVersionInfo.resolvedVersion);
-      if(!toolPath) {
+      if (!toolPath) {
         //If not exists install it
         toolPath = await this.downloadAndInstall(resolvedVersionInfo);
       } else {
@@ -281,7 +278,6 @@ export class DotnetCoreInstaller {
     osSuffixes: string[],
     versionInfo: DotNetVersionInfo
   ): Promise<ResolvedVersionInfo> {
-
     const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
       allowRetries: true,
       maxRetries: 3
@@ -297,22 +293,32 @@ export class DotnetCoreInstaller {
     let releasesInfo: any[] = releasesResult['releases'];
     releasesInfo = releasesInfo.filter((releaseInfo: any) => {
       return (
-        semver.satisfies(releaseInfo['sdk']['version'], versionInfo.version()) ||
-        semver.satisfies(releaseInfo['sdk']['version-display'], versionInfo.version())
+        semver.satisfies(
+          releaseInfo['sdk']['version'],
+          versionInfo.version()
+        ) ||
+        semver.satisfies(
+          releaseInfo['sdk']['version-display'],
+          versionInfo.version()
+        )
       );
     });
 
     // Exclude versions that are newer than the latest if using not exact
-    if(!versionInfo.isExactVersion()) {
-      let latestSdk : string = releasesResult['latest-sdk'];
+    if (!versionInfo.isExactVersion()) {
+      let latestSdk: string = releasesResult['latest-sdk'];
 
-      releasesInfo = releasesInfo.filter((releaseInfo: any) => semver.lte(releaseInfo['sdk']['version'], latestSdk));
+      releasesInfo = releasesInfo.filter((releaseInfo: any) =>
+        semver.lte(releaseInfo['sdk']['version'], latestSdk)
+      );
     }
 
     // Sort for latest version
-    releasesInfo = releasesInfo.sort((a,b) => semver.rcompare(a['sdk']['version'],b['sdk']['version']));
+    releasesInfo = releasesInfo.sort((a, b) =>
+      semver.rcompare(a['sdk']['version'], b['sdk']['version'])
+    );
 
-    let downloadedVersion : string = '';
+    let downloadedVersion: string = '';
     let downloadUrls: string[] = [];
 
     if (releasesInfo.length != 0) {
@@ -341,10 +347,12 @@ export class DotnetCoreInstaller {
         `Could not fetch download information for version ${versionInfo.version()}`
       );
 
-      if(versionInfo.isExactVersion()) {
+      if (versionInfo.isExactVersion()) {
         console.log('Using fallback');
 
-        downloadUrls = await this.getFallbackDownloadUrls(versionInfo.version());
+        downloadUrls = await this.getFallbackDownloadUrls(
+          versionInfo.version()
+        );
         downloadedVersion = versionInfo.version();
       } else {
         console.log('Unable to use fallback, version is generic!');
