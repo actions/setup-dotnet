@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-16.04
     strategy:
       matrix:
-        dotnet: [ '2.2.103', '3.0.100', '3.1.x' ]
+        dotnet: [ '2.2.103', '3.0', '3.1.x' ]
     name: Dotnet ${{ matrix.dotnet }} sample
     steps:
       - uses: actions/checkout@master
