@@ -9,8 +9,6 @@ import {chmodSync} from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as semver from 'semver';
-import { stringWriter } from 'xmlbuilder';
-import { timingSafeEqual } from 'crypto';
 
 const IS_WINDOWS = process.platform === 'win32';
 
