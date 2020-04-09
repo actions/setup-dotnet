@@ -29,26 +29,20 @@ if (!tempDirectory) {
   tempDirectory = path.join(baseLocation, 'actions', 'temp');
 }
 
+/**
+ * Represents the inputted version information
+ */
 export class DotNetVersionInfo {
   
   private fullversion : string;
   private isExactVersionSet: boolean = false;
 
-  private major: number;
-  private minor: number;
-  private patch?: number;
-
   constructor(version: string) {
 
     // Check for exact match
     if(semver.valid(semver.clean(version) || '') != null) {
-
       this.fullversion = semver.clean(version) as string;
       this.isExactVersionSet = true;
-
-      this.major = semver.major(this.fullversion);
-      this.minor = semver.minor(this.fullversion);
-      this.patch = semver.patch(this.fullversion);
 
       return;
     }
@@ -63,21 +57,10 @@ export class DotNetVersionInfo {
         this.throwInvalidVersionFormat();
     }
 
-    this.major = this.getVersionNumberOrThrow(parts[0]);
-    this.minor = this.getVersionNumberOrThrow(parts[1]);
+    let major = this.getVersionNumberOrThrow(parts[0]);
+    let minor = this.getVersionNumberOrThrow(parts[1]);
 
-    /*
-    let regexResult = version.match(/^(\d+\.)(\d+)?(\.\*|\.x|)$/);
-    if(regexResult == null) {
-      throw 'Invalid version format! Supported: 1.2.3, 1.2, 1.2.x, 1.2.*';
-    }
-
-    let parts : string[] = (regexResult as RegExpMatchArray).slice(1);
-
-    this.major = +(parts[0].replace('.',''));
-    this.minor = +(parts[1].replace('.',''));*/
-
-    this.fullversion = this.major + '.' + this.minor;
+    this.fullversion = major + '.' + minor;
   }
 
   private getVersionNumberOrThrow(input: string) : number {
@@ -114,6 +97,9 @@ export class DotNetVersionInfo {
   }
 }
 
+/**
+ * Represents a resolved version from the Web-Api
+ */
 class ResolvedVersionInfo {
   downloadUrls: string[];
   resolvedVersion: string;
@@ -292,7 +278,7 @@ export class DotnetCoreInstaller {
 
   // OsSuffixes - The suffix which is a part of the file name ex- linux-x64, windows-x86
   // Type - SDK / Runtime
-  // Version - Version of the SDK/Runtime
+  // versionInfo - versionInfo of the SDK/Runtime
   async resolveInfos(
     osSuffixes: string[],
     versionInfo: DotNetVersionInfo

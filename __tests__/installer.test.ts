@@ -3,6 +3,7 @@ import fs = require('fs');
 import os = require('os');
 import path = require('path');
 import hc = require('@actions/http-client');
+
 import each from 'jest-each';
 
 const toolDir = path.join(__dirname, 'runner', 'tools');
@@ -119,7 +120,7 @@ describe('installer tests', () => {
     } else {
       expect(fs.existsSync(path.join(dotnetDir, 'dotnet'))).toBe(true);
     }
-  }, 400000);
+  }, 400000); //This needs some time to download on "slower" internet connections
 
   it('Throws if no location contains correct dotnet version', async () => {
     let thrown = false;
