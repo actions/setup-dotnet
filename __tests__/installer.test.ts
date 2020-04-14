@@ -29,8 +29,8 @@ describe('installer tests', () => {
   }, 30000);
 
   it('Acquires version of dotnet if no matching version is installed', async () => {
-    await getDotnet('3.1.100');
-    expect(fs.existsSync(path.join(toolDir, 'sdk', '3.1.100'))).toBe(true);
+    await getDotnet('3.1.201');
+    expect(fs.existsSync(path.join(toolDir, 'sdk', '3.1.201'))).toBe(true);
     if (IS_WINDOWS) {
       expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
     } else {
