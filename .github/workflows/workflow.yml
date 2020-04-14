@@ -38,7 +38,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Clear tool cache
-        run: mv "${{ runner.tool_cache }}" "${{ runner.tool_cache }}.old"
+        run: rm -rf $RUNNER_TOOL_CACHE/*
       - name: Setup dotnet 3.1.201
         uses: ./
         with:
@@ -83,7 +83,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Clear tool cache
-        run: mv "${{ runner.tool_cache }}" "${{ runner.tool_cache }}.old"
+        run: rm -rf $RUNNER_TOOL_CACHE/*
       - name: Setup dotnet 3.1.201
         uses: ./
         with:
