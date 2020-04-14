@@ -15,4 +15,4 @@ inputs:
     description: 'Optional NuGet.config location, if your NuGet.config isn''t located in the root of the repo.'
 runs:
   using: 'node12'
-  main: 'lib/setup-dotnet.js'
+  main: 'dist/index.js'
