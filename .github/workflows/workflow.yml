@@ -32,13 +32,18 @@ jobs:
   test:
     runs-on: ${{ matrix.operating-system }}
     strategy:
+      fail-fast: false
       matrix:
         operating-system: [ubuntu-latest, windows-latest, macOS-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Clear tool cache
+        if: runner.os != 'windows'
         run: rm -rf $RUNNER_TOOL_CACHE/*
+      - name: Clear tool cache (Windows)
+        if: runner.os == 'windows'
+        run: Remove-Item $RUNNER_TOOL_CACHE/* -Recurse -Force -ErrorAction SilentlyContinue
       - name: Setup dotnet 3.1.201
         uses: ./
         with:
@@ -78,7 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       https_proxy: http://no-such-proxy:3128
-      no_proxy: github.com,dotnetcli.blob.core.windows.net,download.visualstudio.microsoft.com,api.nuget.org
+      no_proxy: github.com,dotnetcli.blob.core.windows.net,download.visualstudio.microsoft.com,api.nuget.org,dotnetcli.azureedge.net
     steps:
       - name: Checkout
         uses: actions/checkout@v2

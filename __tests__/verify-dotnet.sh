@@ -14,7 +14,7 @@ echo "Building sample csproj"
 dotnet build __tests__/sample-csproj/ --no-cache || exit 1
 
 echo "Testing compiled app"
-sample_output="$(__tests__/sample-csproj/bin/Debug/netcoreapp3.0/sample)"
+sample_output="$(__tests__/sample-csproj/bin/Debug/netcoreapp3.0/sample.dll)"
 echo "Sample output: $sample_output"
 if [ -z "$(echo $sample_output | grep Hello)" ]; then
   echo "Unexpected output"
