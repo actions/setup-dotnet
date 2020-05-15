@@ -32,7 +32,7 @@ export async function run() {
       const dotnetInstaller = new installer.DotnetCoreInstaller(version);
       await dotnetInstaller.installDotnet();
     }
-    
+
     const sourceUrl: string = core.getInput('source-url');
     const configFile: string = core.getInput('config-file');
     if (sourceUrl) {
