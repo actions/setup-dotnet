@@ -2,7 +2,7 @@ import io = require('@actions/io');
 import fs = require('fs');
 import os = require('os');
 import path = require('path');
-import httpClient = require('typed-rest-client/HttpClient');
+import hc = require('@actions/http-client');
 
 const toolDir = path.join(__dirname, 'runner', 'tools');
 const tempDir = path.join(__dirname, 'runner', 'temp');
@@ -30,8 +30,8 @@ describe('installer tests', () => {
   }, 100000);
 
   it('Acquires version of dotnet if no matching version is installed', async () => {
-    await getDotnet('2.2.104');
-    const dotnetDir = path.join(toolDir, 'dncs', '2.2.104', os.arch());
+    await getDotnet('2.2.205');
+    const dotnetDir = path.join(toolDir, 'dncs', '2.2.205', os.arch());
 
     expect(fs.existsSync(`${dotnetDir}.complete`)).toBe(true);
     if (IS_WINDOWS) {
@@ -94,14 +94,14 @@ describe('installer tests', () => {
   });
 
   it('Uses an up to date bash download script', async () => {
-    var httpCallbackClient = new httpClient.HttpClient(
-      'setup-dotnet-test',
-      [],
-      {}
-    );
-    const response: httpClient.HttpClientResponse = await httpCallbackClient.get(
+    const httpCallbackClient = new hc.HttpClient('setup-dotnet-test', [], {
+      allowRetries: true,
+      maxRetries: 3
+    });
+    const response: hc.HttpClientResponse = await httpCallbackClient.get(
       'https://dot.net/v1/dotnet-install.sh'
     );
+    expect(response.message.statusCode).toBe(200);
     const upToDateContents: string = await response.readBody();
     const currentContents: string = fs
       .readFileSync(
@@ -111,17 +111,17 @@ describe('installer tests', () => {
     expect(normalizeFileContents(currentContents)).toBe(
       normalizeFileContents(upToDateContents)
     );
-  });
+  }, 100000);
 
   it('Uses an up to date powershell download script', async () => {
-    var httpCallbackClient = new httpClient.HttpClient(
-      'setup-dotnet-test',
-      [],
-      {}
-    );
-    const response: httpClient.HttpClientResponse = await httpCallbackClient.get(
+    var httpCallbackClient = new hc.HttpClient('setup-dotnet-test', [], {
+      allowRetries: true,
+      maxRetries: 3
+    });
+    const response: hc.HttpClientResponse = await httpCallbackClient.get(
       'https://dot.net/v1/dotnet-install.ps1'
     );
+    expect(response.message.statusCode).toBe(200);
     const upToDateContents: string = await response.readBody();
     const currentContents: string = fs
       .readFileSync(
@@ -131,7 +131,7 @@ describe('installer tests', () => {
     expect(normalizeFileContents(currentContents)).toBe(
       normalizeFileContents(upToDateContents)
     );
-  });
+  }, 100000);
 });
 
 function normalizeFileContents(contents: string): string {

@@ -4,13 +4,11 @@ import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as io from '@actions/io';
 import * as tc from '@actions/tool-cache';
-import httpClient = require('typed-rest-client/HttpClient');
-import {HttpClientResponse} from 'typed-rest-client/HttpClient';
+import hc = require('@actions/http-client');
 import {chmodSync} from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as semver from 'semver';
-import * as util from 'util';
 
 const IS_WINDOWS = process.platform === 'win32';
 
@@ -58,6 +56,9 @@ export class DotnetCoreInstaller {
       console.log('Using cached tool');
     }
 
+    // Need to set this so that .NET Core global tools find the right locations.
+    core.exportVariable('DOTNET_ROOT', toolPath);
+
     // Prepend the tools path. instructs the agent to prepend for future tasks
     core.addPath(toolPath);
   }
@@ -68,7 +69,7 @@ export class DotnetCoreInstaller {
   }
 
   private async detectMachineOS(): Promise<string[]> {
-    let osSuffix = [];
+    let osSuffix: string[] = [];
     let output = '';
 
     let resultCode = 0;
@@ -171,6 +172,7 @@ export class DotnetCoreInstaller {
       this.version,
       this.arch
     );
+
     console.log('Successfully installed', this.version);
     return cachedDir;
   }
@@ -182,44 +184,44 @@ export class DotnetCoreInstaller {
     osSuffixes: string[],
     version: string
   ): Promise<string[]> {
-    let downloadUrls = [];
-    let releasesJSON = await this.getReleasesJson();
-    core.debug('Releases: ' + releasesJSON);
+    let downloadUrls: string[] = [];
 
-    let releasesInfo = JSON.parse(await releasesJSON.readBody());
+    const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
+      allowRetries: true,
+      maxRetries: 3
+    });
+    const releasesJsonUrl: string = await this.getReleasesJsonUrl(
+      httpClient,
+      version.split('.')
+    );
+
+    const releasesResponse = await httpClient.getJson<any>(releasesJsonUrl);
+    const releasesResult = releasesResponse.result || {};
+    let releasesInfo: any[] = releasesResult['releases'];
     releasesInfo = releasesInfo.filter((releaseInfo: any) => {
       return (
-        releaseInfo['version-sdk'] === version ||
-        releaseInfo['version-sdk-display'] === version
+        releaseInfo['sdk']['version'] === version ||
+        releaseInfo['sdk']['version-display'] === version
       );
     });
 
     if (releasesInfo.length != 0) {
       let release = releasesInfo[0];
-      let blobUrl: string = release['blob-sdk'];
-      let dlcUrl: string = release['dlc--sdk'];
-      let fileName: string = release['sdk-' + osSuffixes[0]]
-        ? release['sdk-' + osSuffixes[0]]
-        : release['sdk-' + osSuffixes[1]];
-
-      if (!!fileName) {
-        fileName = fileName.trim();
-        // For some latest version, the filename itself can be full download url.
-        // Do a very basic check for url(instead of regex) as the url is only for downloading and
-        // is coming from .net core releases json and not some ransom user input
-        if (fileName.toLowerCase().startsWith('https://')) {
-          downloadUrls.push(fileName);
-        } else {
-          if (!!blobUrl) {
-            downloadUrls.push(util.format('%s%s', blobUrl.trim(), fileName));
-          }
-
-          if (!!dlcUrl) {
-            downloadUrls.push(util.format('%s%s', dlcUrl.trim(), fileName));
-          }
+      let files: any[] = release['sdk']['files'];
+      files = files.filter((file: any) => {
+        if (file['rid'] == osSuffixes[0] || file['rid'] == osSuffixes[1]) {
+          return (
+            file['url'].endsWith('.zip') || file['url'].endsWith('.tar.gz')
+          );
         }
+      });
+
+      if (files.length > 0) {
+        files.forEach((file: any) => {
+          downloadUrls.push(file['url']);
+        });
       } else {
-        throw `The specified version's download links are not correctly formed in the supported versions document => ${DotNetCoreReleasesUrl}`;
+        throw `The specified version's download links are not correctly formed in the supported versions document => ${releasesJsonUrl}`;
       }
     } else {
       console.log(
@@ -237,9 +239,27 @@ export class DotnetCoreInstaller {
     return downloadUrls;
   }
 
-  private getReleasesJson(): Promise<HttpClientResponse> {
-    var httpCallbackClient = new httpClient.HttpClient('setup-dotnet', [], {});
-    return httpCallbackClient.get(DotNetCoreReleasesUrl);
+  private async getReleasesJsonUrl(
+    httpClient: hc.HttpClient,
+    versionParts: string[]
+  ): Promise<string> {
+    const response = await httpClient.getJson<any>(DotNetCoreIndexUrl);
+    const result = response.result || {};
+    let releasesInfo: any[] = result['releases-index'];
+    releasesInfo = releasesInfo.filter((info: any) => {
+      // channel-version is the first 2 elements of the version (e.g. 2.1), filter out versions that don't match 2.1.x.
+      const sdkParts: string[] = info['channel-version'].split('.');
+      if (versionParts.length >= 2 && versionParts[1] != 'x') {
+        return versionParts[0] == sdkParts[0] && versionParts[1] == sdkParts[1];
+      }
+      return versionParts[0] == sdkParts[0];
+    });
+    if (releasesInfo.length === 0) {
+      throw `Could not find info for version ${versionParts.join(
+        '.'
+      )} at ${DotNetCoreIndexUrl}`;
+    }
+    return releasesInfo[0]['releases.json'];
   }
 
   private async getFallbackDownloadUrls(version: string): Promise<string[]> {
@@ -346,5 +366,5 @@ export class DotnetCoreInstaller {
   private arch: string;
 }
 
-const DotNetCoreReleasesUrl: string =
-  'https://raw.githubusercontent.com/dotnet/core/master/release-notes/releases.json';
+const DotNetCoreIndexUrl: string =
+  'https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/releases-index.json';
