@@ -9,6 +9,7 @@ const tempDir = path.join(__dirname, 'runner', 'temp');
 
 process.env['RUNNER_TOOL_CACHE'] = toolDir;
 process.env['RUNNER_TEMP'] = tempDir;
+import * as setup from '../src/setup-dotnet';
 import * as installer from '../src/installer';
 
 const IS_WINDOWS = process.platform === 'win32';
@@ -38,6 +39,25 @@ describe('installer tests', () => {
     } else {
       expect(fs.existsSync(path.join(dotnetDir, 'dotnet'))).toBe(true);
     }
+  }, 100000);
+
+  it('Acquires version of dotnet if no matching version is installed', async () => {
+    const dotnetDir = path.join(toolDir, 'dncs', '2.2.105', os.arch());
+
+    const globalJsonPath = path.join(process.cwd(), 'global.json');
+    const jsonContents = `{${os.EOL}"sdk": {${os.EOL}"version": "2.2.105"${os.EOL}}${os.EOL}}`;
+    if (!fs.existsSync(globalJsonPath)) {
+      fs.writeFileSync(globalJsonPath, jsonContents);
+    }
+    await setup.run();
+
+    expect(fs.existsSync(`${dotnetDir}.complete`)).toBe(true);
+    if (IS_WINDOWS) {
+      expect(fs.existsSync(path.join(dotnetDir, 'dotnet.exe'))).toBe(true);
+    } else {
+      expect(fs.existsSync(path.join(dotnetDir, 'dotnet'))).toBe(true);
+    }
+    fs.unlinkSync(globalJsonPath);
   }, 100000);
 
   it('Throws if no location contains correct dotnet version', async () => {
