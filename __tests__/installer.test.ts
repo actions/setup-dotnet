@@ -119,7 +119,9 @@ describe('installer tests', () => {
   }, 100000);
 
   it('Resolving a exact preview version works', async () => {
-    const dotnetInstaller = new installer.DotnetCoreInstaller('5.0.0-preview.4');
+    const dotnetInstaller = new installer.DotnetCoreInstaller(
+      '5.0.0-preview.4'
+    );
     let versInfo = await dotnetInstaller.resolveInfos(
       ['win-x64'],
       new installer.DotNetVersionInfo('5.0.0-preview.4')
