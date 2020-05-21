@@ -16,7 +16,7 @@ import * as installer from '../src/installer';
 const IS_WINDOWS = process.platform === 'win32';
 
 describe('version tests', () => {
-  each(['3.1.999', '3.1.101-preview']).test(
+  each(['3.1.999', '3.1.101-preview.3']).test(
     "Exact version '%s' should be the same",
     vers => {
       let versInfo = new installer.DotNetVersionInfo(vers);
@@ -108,7 +108,7 @@ describe('installer tests', () => {
     }
   }, 100000);
 
-  it('Resolving a exact version works', async () => {
+  it('Resolving a exact stable version works', async () => {
     const dotnetInstaller = new installer.DotnetCoreInstaller('3.1.201');
     let versInfo = await dotnetInstaller.resolveInfos(
       ['win-x64'],
@@ -116,6 +116,16 @@ describe('installer tests', () => {
     );
 
     expect(versInfo.resolvedVersion).toBe('3.1.201');
+  }, 100000);
+
+  it('Resolving a exact preview version works', async () => {
+    const dotnetInstaller = new installer.DotnetCoreInstaller('5.0.0-preview.4');
+    let versInfo = await dotnetInstaller.resolveInfos(
+      ['win-x64'],
+      new installer.DotNetVersionInfo('5.0.0-preview.4')
+    );
+
+    expect(versInfo.resolvedVersion).toBe('5.0.0-preview.4');
   }, 100000);
 
   it('Acquires version of dotnet if no matching version is installed', async () => {
