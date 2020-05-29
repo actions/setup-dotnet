@@ -17392,7 +17392,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DotnetCoreInstaller = void 0;
+exports.DotnetCoreInstaller = exports.DotNetVersionInfo = void 0;
 // Load tempDirectory before it gets wiped by tool-cache
 let tempDirectory = process.env['RUNNER_TEMPDIRECTORY'] || '';
 const core = __importStar(__webpack_require__(470));
@@ -17421,30 +17421,103 @@ if (!tempDirectory) {
     }
     tempDirectory = path.join(baseLocation, 'actions', 'temp');
 }
+/**
+ * Represents the inputted version information
+ */
+class DotNetVersionInfo {
+    constructor(version) {
+        this.isExactVersionSet = false;
+        // Check for exact match
+        if (semver.valid(semver.clean(version) || '') != null) {
+            this.fullversion = semver.clean(version);
+            this.isExactVersionSet = true;
+            return;
+        }
+        //Note: No support for previews when using generic
+        let parts = version.split('.');
+        if (parts.length < 2 || parts.length > 3)
+            this.throwInvalidVersionFormat();
+        if (parts.length == 3 && parts[2] !== 'x' && parts[2] !== '*') {
+            this.throwInvalidVersionFormat();
+        }
+        let major = this.getVersionNumberOrThrow(parts[0]);
+        let minor = this.getVersionNumberOrThrow(parts[1]);
+        this.fullversion = major + '.' + minor;
+    }
+    getVersionNumberOrThrow(input) {
+        try {
+            if (!input || input.trim() === '')
+                this.throwInvalidVersionFormat();
+            let number = Number(input);
+            if (Number.isNaN(number) || number < 0)
+                this.throwInvalidVersionFormat();
+            return number;
+        }
+        catch (_a) {
+            this.throwInvalidVersionFormat();
+            return -1;
+        }
+    }
+    throwInvalidVersionFormat() {
+        throw 'Invalid version format! Supported: 1.2.3, 1.2, 1.2.x, 1.2.*';
+    }
+    /**
+     * If true exacatly one version should be resolved
+     */
+    isExactVersion() {
+        return this.isExactVersionSet;
+    }
+    version() {
+        return this.fullversion;
+    }
+}
+exports.DotNetVersionInfo = DotNetVersionInfo;
+/**
+ * Represents a resolved version from the Web-Api
+ */
+class ResolvedVersionInfo {
+    constructor(downloadUrls, resolvedVersion) {
+        if (downloadUrls.length === 0) {
+            throw 'DownloadUrls can not be empty';
+        }
+        if (!resolvedVersion) {
+            throw 'Resolved version is invalid';
+        }
+        this.downloadUrls = downloadUrls;
+        this.resolvedVersion = resolvedVersion;
+    }
+}
 class DotnetCoreInstaller {
     constructor(version) {
-        if (semver.valid(semver.clean(version) || '') == null) {
-            throw 'Implicit version not permitted';
-        }
-        this.version = version;
+        this.versionInfo = new DotNetVersionInfo(version);
         this.cachedToolName = 'dncs';
         this.arch = 'x64';
     }
     installDotnet() {
         return __awaiter(this, void 0, void 0, function* () {
             // Check cache
-            let toolPath;
+            let toolPath = '';
             let osSuffixes = yield this.detectMachineOS();
             let parts = osSuffixes[0].split('-');
             if (parts.length > 1) {
                 this.arch = parts[1];
             }
-            toolPath = this.getLocalTool();
+            // If version is not generic -> look up cache
+            if (this.versionInfo.isExactVersion())
+                toolPath = this.getLocalTool(this.versionInfo.version());
             if (!toolPath) {
                 // download, extract, cache
-                console.log('Getting a download url', this.version);
-                let downloadUrls = yield this.getDownloadUrls(osSuffixes, this.version);
-                toolPath = yield this.downloadAndInstall(downloadUrls);
+                console.log('Getting a download url', this.versionInfo.version());
+                let resolvedVersionInfo = yield this.resolveInfos(osSuffixes, this.versionInfo);
+                //Check if cache exists for resolved version
+                toolPath = this.getLocalTool(resolvedVersionInfo.resolvedVersion);
+                if (!toolPath) {
+                    //If not exists install it
+                    toolPath = yield this.downloadAndInstall(resolvedVersionInfo);
+                }
+                else {
+                    console.log('Using cached tool');
+                }
             }
             else {
                 console.log('Using cached tool');
@@ -17455,9 +17528,9 @@ class DotnetCoreInstaller {
             core.addPath(toolPath);
         });
     }
-    getLocalTool() {
-        console.log('Checking tool cache');
-        return tc.find(this.cachedToolName, this.version, this.arch);
+    getLocalTool(version) {
+        console.log('Checking tool cache', version);
+        return tc.find(this.cachedToolName, version, this.arch);
     }
     detectMachineOS() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -17517,18 +17590,18 @@ class DotnetCoreInstaller {
             return osSuffix;
         });
     }
-    downloadAndInstall(downloadUrls) {
+    downloadAndInstall(resolvedVersionInfo) {
         return __awaiter(this, void 0, void 0, function* () {
             let downloaded = false;
             let downloadPath = '';
-            for (const url of downloadUrls) {
+            for (const url of resolvedVersionInfo.downloadUrls) {
                 try {
                     downloadPath = yield tc.downloadTool(url);
                     downloaded = true;
                     break;
                 }
                 catch (error) {
-                    console.log('Could Not Download', url, JSON.stringify(error));
+                    console.log('Could not Download', url, JSON.stringify(error));
                 }
             }
             if (!downloaded) {
@@ -17541,31 +17614,40 @@ class DotnetCoreInstaller {
                 : yield tc.extractTar(downloadPath);
             // cache tool
             console.log('Caching tool');
-            let cachedDir = yield tc.cacheDir(extPath, this.cachedToolName, this.version, this.arch);
-            console.log('Successfully installed', this.version);
+            let cachedDir = yield tc.cacheDir(extPath, this.cachedToolName, resolvedVersionInfo.resolvedVersion, this.arch);
+            console.log('Successfully installed', resolvedVersionInfo.resolvedVersion);
             return cachedDir;
         });
     }
     // OsSuffixes - The suffix which is a part of the file name ex- linux-x64, windows-x86
     // Type - SDK / Runtime
-    // Version - Version of the SDK/Runtime
-    getDownloadUrls(osSuffixes, version) {
+    // versionInfo - versionInfo of the SDK/Runtime
+    resolveInfos(osSuffixes, versionInfo) {
         return __awaiter(this, void 0, void 0, function* () {
-            let downloadUrls = [];
             const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
                 allowRetries: true,
                 maxRetries: 3
             });
-            const releasesJsonUrl = yield this.getReleasesJsonUrl(httpClient, version.split('.'));
+            const releasesJsonUrl = yield this.getReleasesJsonUrl(httpClient, versionInfo.version().split('.'));
             const releasesResponse = yield httpClient.getJson(releasesJsonUrl);
             const releasesResult = releasesResponse.result || {};
             let releasesInfo = releasesResult['releases'];
             releasesInfo = releasesInfo.filter((releaseInfo) => {
-                return (releaseInfo['sdk']['version'] === version ||
-                    releaseInfo['sdk']['version-display'] === version);
+                return (semver.satisfies(releaseInfo['sdk']['version'], versionInfo.version()) ||
+                    semver.satisfies(releaseInfo['sdk']['version-display'], versionInfo.version()));
             });
+            // Exclude versions that are newer than the latest if using not exact
+            if (!versionInfo.isExactVersion()) {
+                let latestSdk = releasesResult['latest-sdk'];
+                releasesInfo = releasesInfo.filter((releaseInfo) => semver.lte(releaseInfo['sdk']['version'], latestSdk));
+            }
+            // Sort for latest version
+            releasesInfo = releasesInfo.sort((a, b) => semver.rcompare(a['sdk']['version'], b['sdk']['version']));
+            let downloadedVersion = '';
+            let downloadUrls = [];
             if (releasesInfo.length != 0) {
                 let release = releasesInfo[0];
+                downloadedVersion = release['sdk']['version'];
                 let files = release['sdk']['files'];
                 files = files.filter((file) => {
                     if (file['rid'] == osSuffixes[0] || file['rid'] == osSuffixes[1]) {
@@ -17582,14 +17664,21 @@ class DotnetCoreInstaller {
                 }
             }
             else {
-                console.log(`Could not fetch download information for version ${version}`);
-                downloadUrls = yield this.getFallbackDownloadUrls(version);
+                console.log(`Could not fetch download information for version ${versionInfo.version()}`);
+                if (versionInfo.isExactVersion()) {
+                    console.log('Using fallback');
+                    downloadUrls = yield this.getFallbackDownloadUrls(versionInfo.version());
+                    downloadedVersion = versionInfo.version();
+                }
+                else {
+                    console.log('Unable to use fallback, version is generic!');
+                }
             }
             if (downloadUrls.length == 0) {
-                throw `Could not construct download URL. Please ensure that specified version ${version} is valid.`;
+                throw `Could not construct download URL. Please ensure that specified version ${versionInfo.version()}/${downloadedVersion} is valid.`;
             }
             core.debug(`Got download urls ${downloadUrls}`);
-            return downloadUrls;
+            return new ResolvedVersionInfo(downloadUrls, downloadedVersion);
         });
     }
     getReleasesJsonUrl(httpClient, versionParts) {
