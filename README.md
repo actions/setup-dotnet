@@ -20,7 +20,7 @@ steps:
 - uses: actions/checkout@master
 - uses: actions/setup-dotnet@v1
   with:
-    dotnet-version: '3.1.100' # SDK Version to use.
+    dotnet-version: '3.1.x' # SDK Version to use; x will use the latest version of the 3.1 channel
 - run: dotnet build <my project>
 ```
 
@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-16.04
     strategy:
       matrix:
-        dotnet: [ '2.2.103', '3.0.100', '3.1.100' ]
+        dotnet: [ '2.2.103', '3.0', '3.1.x' ]
     name: Dotnet ${{ matrix.dotnet }} sample
     steps:
       - uses: actions/checkout@master
@@ -49,7 +49,7 @@ steps:
 # Authenticates packages to push to GPR
 - uses: actions/setup-dotnet@v1
   with:
-    dotnet-version: '3.1.100' # SDK Version to use.
+    dotnet-version: '3.1.x' # SDK Version to use.
     source-url: https://nuget.pkg.github.com/<owner>/index.json
   env:
     NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
