@@ -9214,7 +9214,7 @@ function escapeProperty(s) {
 
     };
 
-    
+
     // DOM level 1
     Object.defineProperty(XMLNamedNodeMap.prototype, 'length', {
       get: function() {
@@ -11012,7 +11012,7 @@ exports.FetchError = FetchError;
     document(doc, options) {
       var child, i, j, k, len1, len2, ref, ref1, results;
       ref = doc.children;
-      // set a flag so that we don't insert a newline after the last root level node 
+      // set a flag so that we don't insert a newline after the last root level node
       for (i = j = 0, len1 = ref.length; j < len1; i = ++j) {
         child = ref[i];
         child.isLastRootNode = i === doc.children.length - 1;
@@ -12087,14 +12087,14 @@ function authenticationBeforeRequest (state, options) {
         } else {
           this.writerOptions.state = WriterState.OpenTag;
           chunk = this.writer.indent(node, this.writerOptions, this.currentLevel) + '<!DOCTYPE ' + node.rootNodeName;
-          
+
           // external identifier
           if (node.pubID && node.sysID) {
             chunk += ' PUBLIC "' + node.pubID + '" "' + node.sysID + '"';
           } else if (node.sysID) {
             chunk += ' SYSTEM "' + node.sysID + '"';
           }
-          
+
           // internal subset
           if (node.children) {
             chunk += ' [';
@@ -12499,9 +12499,9 @@ function addHook (state, kind, name, hook) {
 
     // `feature` package name of the feature to test. In Level 1, the
     //           legal values are "HTML" and "XML" (case-insensitive).
-    // `version` version number of the package name to test. 
-    //           In Level 1, this is the string "1.0". If the version is 
-    //           not specified, supporting any version of the feature will 
+    // `version` version number of the package name to test.
+    //           In Level 1, this is the string "1.0". If the version is
+    //           not specified, supporting any version of the feature will
     //           cause the method to return true.
     hasFeature(feature, version) {
       return true;
@@ -12532,7 +12532,7 @@ function addHook (state, kind, name, hook) {
       throw new Error("This DOM method is not implemented.");
     }
 
-    // Returns a specialized object which implements the specialized APIs 
+    // Returns a specialized object which implements the specialized APIs
     // of the specified feature and version.
 
     // `feature` name of the feature requested.
@@ -15051,7 +15051,7 @@ module.exports = require("net");
         this.value = '';
       }
 
-      
+
       // Creates and returns a deep clone of `this`
       clone() {
         return Object.create(this);
@@ -15878,7 +15878,7 @@ function bytesToUuid(buf, offset) {
   var i = offset || 0;
   var bth = byteToHex;
   // join used to fix memory issue caused by concatenation: https://bugs.chromium.org/p/v8/issues/detail?id=3175#c4
-  return ([bth[buf[i++]], bth[buf[i++]], 
+  return ([bth[buf[i++]], bth[buf[i++]],
 	bth[buf[i++]], bth[buf[i++]], '-',
 	bth[buf[i++]], bth[buf[i++]], '-',
 	bth[buf[i++]], bth[buf[i++]], '-',
@@ -16052,7 +16052,7 @@ exports.convertToJson = convertToJson;
         }
       }
 
-      
+
       // Sets the parent node of this node and its children recursively
 
       // `parent` the parent node
@@ -16124,7 +16124,7 @@ exports.convertToJson = convertToJson;
             // skip null and undefined nodes
             } else if (!this.options.keepNullNodes && (val == null)) {
               lastChild = this.dummy();
-            
+
             // expand list by creating child nodes
             } else if (!this.options.separateArrayItems && Array.isArray(val)) {
               for (k = 0, len1 = val.length; k < len1; k++) {
@@ -16133,7 +16133,7 @@ exports.convertToJson = convertToJson;
                 childNode[key] = item;
                 lastChild = this.element(childNode);
               }
-            
+
             // expand child nodes under parent
             } else if (isObject(val)) {
               // if the key is #text expand child nodes under this node to support mixed content
@@ -16144,7 +16144,7 @@ exports.convertToJson = convertToJson;
                 lastChild.element(val);
               }
             } else {
-              
+
               // text node
               lastChild = this.element(key, val);
             }
@@ -16196,10 +16196,10 @@ exports.convertToJson = convertToJson;
             // temporarily remove children starting *with* refChild
             i = children.indexOf(refChild);
             removed = children.splice(i);
-            
+
             // add the new child
             children.push(newChild);
-            
+
             // add back removed children after new child
             Array.prototype.push.apply(children, removed);
           } else {
@@ -16210,14 +16210,14 @@ exports.convertToJson = convertToJson;
           if (this.isRoot) {
             throw new Error("Cannot insert elements at root level. " + this.debugInfo(name));
           }
-          
+
           // temporarily remove children starting *with* this
           i = this.parent.children.indexOf(this);
           removed = this.parent.children.splice(i);
-          
+
           // add the new child
           child = this.parent.element(name, attributes, text);
-          
+
           // add back removed children after new child
           Array.prototype.push.apply(this.parent.children, removed);
           return child;
@@ -16234,14 +16234,14 @@ exports.convertToJson = convertToJson;
         if (this.isRoot) {
           throw new Error("Cannot insert elements at root level. " + this.debugInfo(name));
         }
-        
+
         // temporarily remove children starting *after* this
         i = this.parent.children.indexOf(this);
         removed = this.parent.children.splice(i + 1);
-        
+
         // add the new child
         child = this.parent.element(name, attributes, text);
-        
+
         // add back removed children after new child
         Array.prototype.push.apply(this.parent.children, removed);
         return child;
@@ -16576,7 +16576,7 @@ exports.convertToJson = convertToJson;
         return this;
       }
 
-      
+
       // Returns debug string for this node
       debugInfo(name) {
         var ref1, ref2;
@@ -16797,7 +16797,7 @@ exports.convertToJson = convertToJson;
         return other === this || this.isDescendant(other);
       }
 
-      // An object A is called a descendant of an object B, if either A is 
+      // An object A is called a descendant of an object B, if either A is
       // a child of B or A is a child of an object C that is a descendant of B.
       isDescendant(node) {
         var child, isDescendantChild, j, len, ref1;
@@ -16821,7 +16821,7 @@ exports.convertToJson = convertToJson;
         return node.isDescendant(this);
       }
 
-      // An object A is preceding an object B if A and B are in the 
+      // An object A is preceding an object B if A and B are in the
       // same tree and A comes before B in tree order.
       isPreceding(node) {
         var nodePos, thisPos;
@@ -16834,7 +16834,7 @@ exports.convertToJson = convertToJson;
         }
       }
 
-      // An object A is folllowing an object B if A and B are in the 
+      // An object A is folllowing an object B if A and B are in the
       // same tree and A comes after B in tree order.
       isFollowing(node) {
         var nodePos, thisPos;
@@ -16866,7 +16866,7 @@ exports.convertToJson = convertToJson;
         }
       }
 
-      
+
       // Depth-first preorder traversal through the XML tree
       foreachTreeNode(node, func) {
         var child, j, len, ref1, res;
@@ -20963,7 +20963,7 @@ module.exports = set;
         return this.options.writer.attribute(this, this.options.writer.filterOptions(options));
       }
 
-      
+
       // Returns debug string for this node
       debugInfo(name) {
         name = name || this.name;
@@ -21777,7 +21777,7 @@ module.exports.shellSync = (cmd, opts) => handleShell(module.exports.sync, cmd, 
   module.exports = XMLDummy = class XMLDummy extends XMLNode {
     // Initializes a new instance of `XMLDummy`
 
-    // `XMLDummy` is a special node representing a node with 
+    // `XMLDummy` is a special node representing a node with
     // a null value. Dummy nodes are created while recursively
     // building the XML tree. Simply skipping null values doesn't
     // work because that would break the recursive chain.
@@ -22503,7 +22503,7 @@ const validator = __webpack_require__(971);
 exports.parse = function(xmlData, options, validationOption) {
   if( validationOption){
     if(validationOption === true) validationOption = {}
-    
+
     const result = validator.validate(xmlData, validationOption);
     if (result !== true) {
       throw Error( result.err.msg)
