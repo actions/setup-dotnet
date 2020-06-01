@@ -79,11 +79,15 @@ Some environment variables may be necessary for your particular case or to impro
 
 Example usage:
 ```
-- uses: actions/setup-dotnet@v1
-  with:
-    dotnet-version: '3.1.100' # SDK Version to use.
+build:
+  runs-on: ubuntu-latest
   env:
     DOTNET_NOLOGO: true
+  steps:
+    - uses: actions/checkout@master
+    - uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '3.1.100' # SDK Version to use.
 ```
 
 # License
