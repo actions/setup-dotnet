@@ -2,4 +2,4 @@ blank_issues_enabled: true
 contact_links:
   - name: DotNet Core org issues
     url: https://github.com/dotnet/runtime#filing-issues
-    about: Issues with the runtime, class libraries and frameworks shoul be addressed directly with the dotnet core team. Documentation on filing issues can be found here.
+    about: Issues with the runtime, class libraries, frameworks, and SDK should be addressed directly with the .NET team. Documentation on filing issues can be found here.
