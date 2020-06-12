@@ -69,6 +69,27 @@ steps:
   run: dotnet nuget push <my project>/bin/Release/*.nupkg
 ```
 
+## Environment Variables to use with dotnet
+
+Some environment variables may be necessary for your particular case or to improve logging. Some examples are listed below, but the full list with complete details can be found here: https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet#environment-variables
+
+- DOTNET_NOLOGO - removes logo and telemetry message from first run of dotnet cli (default: false)
+- DOTNET_CLI_TELEMETRY_OPTOUT - opt-out of telemetry being sent to Microsoft (default: false)
+- DOTNET_MULTILEVEL_LOOKUP - configures whether the global install location is used as a fall-back (default: true)
+
+Example usage:
+```
+build:
+  runs-on: ubuntu-latest
+  env:
+    DOTNET_NOLOGO: true
+  steps:
+    - uses: actions/checkout@master
+    - uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '3.1.100' # SDK Version to use.
+```
+
 # License
 
 The scripts and documentation in this project are released under the [MIT License](LICENSE)
