@@ -27,15 +27,16 @@ describe('version tests', () => {
     }
   );
 
-  each([['3.1.x', '3.1'], ['1.1.*', '1.1'], ['2.0', '2.0']]).test(
-    "Generic version '%s' should be '%s'",
-    (vers, resVers) => {
-      let versInfo = new installer.DotNetVersionInfo(vers);
+  each([
+    ['3.1.x', '3.1'],
+    ['1.1.*', '1.1'],
+    ['2.0', '2.0']
+  ]).test("Generic version '%s' should be '%s'", (vers, resVers) => {
+    let versInfo = new installer.DotNetVersionInfo(vers);
 
-      expect(versInfo.isExactVersion()).toBe(false);
-      expect(versInfo.version()).toBe(resVers);
-    }
-  );
+    expect(versInfo.isExactVersion()).toBe(false);
+    expect(versInfo.version()).toBe(resVers);
+  });
 
   each([
     '',

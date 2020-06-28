@@ -17816,9 +17816,11 @@ class SxSDotnetCoreInstaller {
                 console.log(`Setting up .NET SDK from ${toolPath}...`);
                 let entries = fs_2.readdirSync(toolPath);
                 for (var entry of entries) {
-                    yield io.cp(path.join(toolPath, entry), dest, { recursive: true, force: true });
+                    yield io.cp(path.join(toolPath, entry), dest, {
+                        recursive: true,
+                        force: true
+                    });
                 }
-                ;
             }
             // cache SxS directory as a tool
             let cachedDir = yield tc.cacheDir(dest, this.cachedToolName, 'sxs', this.arch);

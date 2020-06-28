@@ -40,7 +40,7 @@
     "@zeit/ncc": "^0.21.0",
     "jest": "^26.0.1",
     "jest-circus": "^26.0.1",
-    "prettier": "^1.17.1",
+    "prettier": "^1.19.1",
     "ts-jest": "^26.0.0",
     "typescript": "^3.9.2",
     "wget-improved": "^3.0.2"

@@ -10,7 +10,7 @@ import {readdirSync} from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as semver from 'semver';
-import uuidV4 from 'uuid/v4'
+import uuidV4 from 'uuid/v4';
 
 const IS_WINDOWS = process.platform === 'win32';
 
@@ -510,17 +510,20 @@ export class SxSDotnetCoreInstaller {
     // create a temp dir
     const tempDirectory = process.env['RUNNER_TEMP'] || '';
     const dest = path.join(tempDirectory, uuidV4());
-    await io.mkdirP(dest)
-    
+    await io.mkdirP(dest);
+
     console.log(`Setting up SxS .NET SDK installation in ${dest}...`);
 
     // copy all the SDK versions into a temporary SxS directory
-    for(var toolPath of this.toolPaths) {
+    for (var toolPath of this.toolPaths) {
       console.log(`Setting up .NET SDK from ${toolPath}...`);
       let entries = readdirSync(toolPath);
       for (var entry of entries) {
-        await io.cp(path.join(toolPath, entry), dest, { recursive: true, force: true });
-      };
+        await io.cp(path.join(toolPath, entry), dest, {
+          recursive: true,
+          force: true
+        });
+      }
     }
 
     // cache SxS directory as a tool
@@ -531,7 +534,7 @@ export class SxSDotnetCoreInstaller {
       this.arch
     );
 
-    console.log(`SxS .NET SDK installation in ${cachedDir}`)
+    console.log(`SxS .NET SDK installation in ${cachedDir}`);
 
     // Need to set this so that .NET Core global tools find the right locations.
     core.exportVariable('DOTNET_ROOT', cachedDir);

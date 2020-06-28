@@ -34,12 +34,14 @@ export async function run() {
       let versions = version.split(',');
       console.log(`Specified .NET verions: ${versions}`);
       for (var currentVersion of versions) {
-        console.log(`Installing .NET SDK ${currentVersion}...`)
-        const dotnetInstaller = new installer.DotnetCoreInstaller(currentVersion);
+        console.log(`Installing .NET SDK ${currentVersion}...`);
+        const dotnetInstaller = new installer.DotnetCoreInstaller(
+          currentVersion
+        );
         toolPaths.push(await dotnetInstaller.installDotnet());
       }
       if (toolPaths.length > 0) {
-        console.log(`Setting up SxS .NET SDK versions...`)
+        console.log(`Setting up SxS .NET SDK versions...`);
         const sxsInstall = new installer.SxSDotnetCoreInstaller(toolPaths);
         await sxsInstall.setupSxs();
       }
