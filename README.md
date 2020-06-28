@@ -90,6 +90,19 @@ build:
         dotnet-version: '3.1.100' # SDK Version to use.
 ```
 
+Or for multiple versions installed side by side:
+```
+build:
+  runs-on: ubuntu-latest
+  env:
+    DOTNET_NOLOGO: true
+  steps:
+    - uses: actions/checkout@master
+    - uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '2.1.807,3.1.100'
+```
+
 # License
 
 The scripts and documentation in this project are released under the [MIT License](LICENSE)

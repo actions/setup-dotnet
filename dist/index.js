@@ -7891,8 +7891,19 @@ function run() {
                 }
             }
             if (version) {
-                const dotnetInstaller = new installer.DotnetCoreInstaller(version);
-                yield dotnetInstaller.installDotnet();
+                let toolPaths = new Array();
+                let versions = version.split(',');
+                console.log(`Specified .NET verions: ${versions}`);
+                for (var currentVersion of versions) {
+                    console.log(`Installing .NET SDK ${currentVersion}...`);
+                    const dotnetInstaller = new installer.DotnetCoreInstaller(currentVersion);
+                    toolPaths.push(yield dotnetInstaller.installDotnet());
+                }
+                if (toolPaths.length > 0) {
+                    console.log(`Setting up SxS .NET SDK versions...`);
+                    const sxsInstall = new installer.SxSDotnetCoreInstaller(toolPaths);
+                    yield sxsInstall.setupSxs();
+                }
             }
             const sourceUrl = core.getInput('source-url');
             const configFile = core.getInput('config-file');
@@ -17391,8 +17402,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DotnetCoreInstaller = exports.DotNetVersionInfo = void 0;
+exports.SxSDotnetCoreInstaller = exports.DotnetCoreInstaller = exports.DotNetVersionInfo = void 0;
 // Load tempDirectory before it gets wiped by tool-cache
 let tempDirectory = process.env['RUNNER_TEMPDIRECTORY'] || '';
 const core = __importStar(__webpack_require__(470));
@@ -17401,9 +17415,11 @@ const io = __importStar(__webpack_require__(1));
 const tc = __importStar(__webpack_require__(533));
 const hc = __webpack_require__(539);
 const fs_1 = __webpack_require__(747);
+const fs_2 = __webpack_require__(747);
 const os = __importStar(__webpack_require__(87));
 const path = __importStar(__webpack_require__(622));
 const semver = __importStar(__webpack_require__(280));
+const v4_1 = __importDefault(__webpack_require__(826));
 const IS_WINDOWS = process.platform === 'win32';
 if (!tempDirectory) {
     let baseLocation;
@@ -17526,6 +17542,7 @@ class DotnetCoreInstaller {
             core.exportVariable('DOTNET_ROOT', toolPath);
             // Prepend the tools path. instructs the agent to prepend for future tasks
             core.addPath(toolPath);
+            return toolPath;
         });
     }
     getLocalTool(version) {
@@ -17781,6 +17798,39 @@ class DotnetCoreInstaller {
     }
 }
 exports.DotnetCoreInstaller = DotnetCoreInstaller;
+class SxSDotnetCoreInstaller {
+    constructor(toolPaths) {
+        this.toolPaths = toolPaths;
+        this.cachedToolName = 'dncs';
+        this.arch = 'x64';
+    }
+    setupSxs() {
+        return __awaiter(this, void 0, void 0, function* () {
+            // create a temp dir
+            const tempDirectory = process.env['RUNNER_TEMP'] || '';
+            const dest = path.join(tempDirectory, v4_1.default());
+            yield io.mkdirP(dest);
+            console.log(`Setting up SxS .NET SDK installation in ${dest}...`);
+            // copy all the SDK versions into a temporary SxS directory
+            for (var toolPath of this.toolPaths) {
+                console.log(`Setting up .NET SDK from ${toolPath}...`);
+                let entries = fs_2.readdirSync(toolPath);
+                for (var entry of entries) {
+                    yield io.cp(path.join(toolPath, entry), dest, { recursive: true, force: true });
+                }
+                ;
+            }
+            // cache SxS directory as a tool
+            let cachedDir = yield tc.cacheDir(dest, this.cachedToolName, 'sxs', this.arch);
+            console.log(`SxS .NET SDK installation in ${cachedDir}`);
+            // Need to set this so that .NET Core global tools find the right locations.
+            core.exportVariable('DOTNET_ROOT', cachedDir);
+            // Prepend the tools path. instructs the agent to prepend for future tasks
+            core.addPath(cachedDir);
+        });
+    }
+}
+exports.SxSDotnetCoreInstaller = SxSDotnetCoreInstaller;
 const DotNetCoreIndexUrl = 'https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/releases-index.json';
 
 

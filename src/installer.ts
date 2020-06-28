@@ -6,9 +6,11 @@ import * as io from '@actions/io';
 import * as tc from '@actions/tool-cache';
 import hc = require('@actions/http-client');
 import {chmodSync} from 'fs';
+import {readdirSync} from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as semver from 'semver';
+import uuidV4 from 'uuid/v4'
 
 const IS_WINDOWS = process.platform === 'win32';
 
@@ -117,7 +119,7 @@ export class DotnetCoreInstaller {
     this.arch = 'x64';
   }
 
-  public async installDotnet() {
+  public async installDotnet(): Promise<string> {
     // Check cache
     let toolPath: string = '';
     let osSuffixes = await this.detectMachineOS();
@@ -155,6 +157,8 @@ export class DotnetCoreInstaller {
 
     // Prepend the tools path. instructs the agent to prepend for future tasks
     core.addPath(toolPath);
+
+    return toolPath;
   }
 
   private getLocalTool(version: string): string {
@@ -491,6 +495,52 @@ export class DotnetCoreInstaller {
   }
 
   private versionInfo: DotNetVersionInfo;
+  private cachedToolName: string;
+  private arch: string;
+}
+
+export class SxSDotnetCoreInstaller {
+  constructor(toolPaths: Array<string>) {
+    this.toolPaths = toolPaths;
+    this.cachedToolName = 'dncs';
+    this.arch = 'x64';
+  }
+
+  public async setupSxs() {
+    // create a temp dir
+    const tempDirectory = process.env['RUNNER_TEMP'] || '';
+    const dest = path.join(tempDirectory, uuidV4());
+    await io.mkdirP(dest)
+    
+    console.log(`Setting up SxS .NET SDK installation in ${dest}...`);
+
+    // copy all the SDK versions into a temporary SxS directory
+    for(var toolPath of this.toolPaths) {
+      console.log(`Setting up .NET SDK from ${toolPath}...`);
+      let entries = readdirSync(toolPath);
+      for (var entry of entries) {
+        await io.cp(path.join(toolPath, entry), dest, { recursive: true, force: true });
+      };
+    }
+
+    // cache SxS directory as a tool
+    let cachedDir = await tc.cacheDir(
+      dest,
+      this.cachedToolName,
+      'sxs',
+      this.arch
+    );
+
+    console.log(`SxS .NET SDK installation in ${cachedDir}`)
+
+    // Need to set this so that .NET Core global tools find the right locations.
+    core.exportVariable('DOTNET_ROOT', cachedDir);
+
+    // Prepend the tools path. instructs the agent to prepend for future tasks
+    core.addPath(cachedDir);
+  }
+
+  private toolPaths: Array<string>;
   private cachedToolName: string;
   private arch: string;
 }
