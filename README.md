@@ -10,6 +10,11 @@ This action sets up a [dotnet core cli](https://github.com/dotnet/cli) environme
 - registering problem matchers for error output
 - setting up authentication to private package sources like GitHub Packages
 
+Please note: This action is only necessary if you are using a .NET SDK version
+which isn't already installed on the runner. Please refer to the documentation on
+[software installed on github hosted runners](https://help.github.com/en/actions/reference/software-installed-on-github-hosted-runners)
+to determine if you need this action.
+
 # Usage
 
 See [action.yml](action.yml)
