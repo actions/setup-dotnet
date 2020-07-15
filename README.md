@@ -17,7 +17,7 @@ See [action.yml](action.yml)
 Basic:
 ```yaml
 steps:
-- uses: actions/checkout@master
+- uses: actions/checkout@main
 - uses: actions/setup-dotnet@v1
   with:
     dotnet-version: '3.1.x' # SDK Version to use; x will use the latest version of the 3.1 channel
@@ -34,7 +34,7 @@ jobs:
         dotnet: [ '2.2.103', '3.0', '3.1.x' ]
     name: Dotnet ${{ matrix.dotnet }} sample
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@main
       - name: Setup dotnet
         uses: actions/setup-dotnet@v1
         with:
@@ -45,7 +45,7 @@ jobs:
 Authentication for nuget feeds:
 ```yaml
 steps:
-- uses: actions/checkout@master
+- uses: actions/checkout@main
 # Authenticates packages to push to GPR
 - uses: actions/setup-dotnet@v1
   with:
@@ -67,6 +67,27 @@ steps:
     NUGET_AUTH_TOKEN: ${{secrets.AZURE_DEVOPS_PAT}} # Note, create a secret with this name in Settings
 - name: Publish the package to Azure Artifacts
   run: dotnet nuget push <my project>/bin/Release/*.nupkg
+```
+
+## Environment Variables to use with dotnet
+
+Some environment variables may be necessary for your particular case or to improve logging. Some examples are listed below, but the full list with complete details can be found here: https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet#environment-variables
+
+- DOTNET_NOLOGO - removes logo and telemetry message from first run of dotnet cli (default: false)
+- DOTNET_CLI_TELEMETRY_OPTOUT - opt-out of telemetry being sent to Microsoft (default: false)
+- DOTNET_MULTILEVEL_LOOKUP - configures whether the global install location is used as a fall-back (default: true)
+
+Example usage:
+```
+build:
+  runs-on: ubuntu-latest
+  env:
+    DOTNET_NOLOGO: true
+  steps:
+    - uses: actions/checkout@main
+    - uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '3.1.100' # SDK Version to use.
 ```
 
 # License
