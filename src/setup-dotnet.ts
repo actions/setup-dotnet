@@ -7,13 +7,13 @@ import * as auth from './authutil';
 export async function run() {
   try {
     //
-    // Version is optional.  If supplied, install / use from the tool cache
-    // If not supplied then task is still used to setup proxy, auth, etc...
+    // dotnet-version is optional, but needs to be provided for most use cases.
+    // If supplied, install / use from the tool cache.
+    // If not supplied, look for version in ./global.json.
+    // If a valid version still can't be identified, nothing will be installed.
+    // Proxy, auth, (etc) are still set up, even if no version is identified
     //
-    let version: string = core.getInput('version');
-    if (!version) {
-      version = core.getInput('dotnet-version');
-    }
+    let version = core.getInput('dotnet-version');
     if (!version) {
       // Try to fall back to global.json
       core.debug('No version found, trying to find version from global.json');
