@@ -17,7 +17,7 @@ See [action.yml](action.yml)
 Basic:
 ```yaml
 steps:
-- uses: actions/checkout@master
+- uses: actions/checkout@main
 - uses: actions/setup-dotnet@v1
   with:
     dotnet-version: '3.1.x' # SDK Version to use; x will use the latest version of the 3.1 channel
@@ -34,7 +34,7 @@ jobs:
         dotnet: [ '2.2.103', '3.0', '3.1.x' ]
     name: Dotnet ${{ matrix.dotnet }} sample
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@main
       - name: Setup dotnet
         uses: actions/setup-dotnet@v1
         with:
@@ -45,7 +45,7 @@ jobs:
 Authentication for nuget feeds:
 ```yaml
 steps:
-- uses: actions/checkout@master
+- uses: actions/checkout@main
 # Authenticates packages to push to GPR
 - uses: actions/setup-dotnet@v1
   with:
@@ -84,7 +84,7 @@ build:
   env:
     DOTNET_NOLOGO: true
   steps:
-    - uses: actions/checkout@master
+    - uses: actions/checkout@main
     - uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '3.1.100' # SDK Version to use.
