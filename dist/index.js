@@ -4964,9 +4964,9 @@ const core = __importStar(__webpack_require__(470));
 const github = __importStar(__webpack_require__(469));
 const xmlbuilder = __importStar(__webpack_require__(312));
 const xmlParser = __importStar(__webpack_require__(989));
-function configAuthentication(feedUrl, existingFileLocation = '') {
-    const existingNuGetConfig = path.resolve(process.env['RUNNER_TEMP'] || process.cwd(), existingFileLocation == '' ? 'nuget.config' : existingFileLocation);
-    const tempNuGetConfig = path.resolve(process.env['RUNNER_TEMP'] || process.cwd(), '../', 'nuget.config');
+function configAuthentication(feedUrl, existingFileLocation = '', processRoot = process.cwd()) {
+    const existingNuGetConfig = path.resolve(processRoot, existingFileLocation == '' ? 'nuget.config' : existingFileLocation);
+    const tempNuGetConfig = path.resolve(processRoot, '../', 'nuget.config');
     writeFeedToFile(feedUrl, existingNuGetConfig, tempNuGetConfig);
 }
 exports.configAuthentication = configAuthentication;
