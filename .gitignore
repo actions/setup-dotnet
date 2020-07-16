@@ -1,3 +1,5 @@
+# dev dependencies are *not* checked in
+global.json
 lib/
 node_modules/
 __tests__/runner/*
