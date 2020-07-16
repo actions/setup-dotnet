@@ -16739,6 +16739,13 @@ class DotnetCoreInstaller {
                 if (calculatedVersion) {
                     command += ` -Version ${calculatedVersion}`;
                 }
+                if (process.env['https_proxy'] != null) {
+                    command += ` -ProxyAddress ${process.env['https_proxy']}`;
+                }
+                // This is not currently an option
+                if (process.env['no_proxy'] != null) {
+                    command += ` -ProxyBypassList ${process.env['no_proxy']}`;
+                }
                 // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
                 const powershellPath = yield io.which('powershell', true);
                 var options = {
