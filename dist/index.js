@@ -7821,7 +7821,9 @@ function run() {
                 }
             }
             if (version) {
-                const dotnetInstaller = new installer.DotnetCoreInstaller(version);
+                const includePrerelease = (core.getInput('include-prerelease') || 'false').toLowerCase() ===
+                    'true';
+                const dotnetInstaller = new installer.DotnetCoreInstaller(version, includePrerelease);
                 yield dotnetInstaller.installDotnet();
             }
             const sourceUrl = core.getInput('source-url');
@@ -16868,7 +16870,6 @@ class DotNetVersionInfo {
             this.isExactVersionSet = true;
             return;
         }
-        //Note: No support for previews when using generic
         let parts = version.split('.');
         if (parts.length < 2 || parts.length > 3)
             this.throwInvalidVersionFormat();
@@ -16908,8 +16909,9 @@ class DotNetVersionInfo {
 }
 exports.DotNetVersionInfo = DotNetVersionInfo;
 class DotnetCoreInstaller {
-    constructor(version) {
+    constructor(version, includePrerelease = false) {
         this.version = version;
+        this.includePrerelease = includePrerelease;
     }
     installDotnet() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -17016,14 +17018,22 @@ class DotnetCoreInstaller {
             const releasesResult = releasesResponse.result || {};
             let releasesInfo = releasesResult['releases'];
             releasesInfo = releasesInfo.filter((releaseInfo) => {
-                return (semver.satisfies(releaseInfo['sdk']['version'], versionInfo.version()) ||
-                    semver.satisfies(releaseInfo['sdk']['version-display'], versionInfo.version()));
+                return (semver.satisfies(releaseInfo['sdk']['version'], versionInfo.version(), {
+                    includePrerelease: this.includePrerelease
+                }) ||
+                    semver.satisfies(releaseInfo['sdk']['version-display'], versionInfo.version(), {
+                        includePrerelease: this.includePrerelease
+                    }));
             });
             // Exclude versions that are newer than the latest if using not exact
             let latestSdk = releasesResult['latest-sdk'];
-            releasesInfo = releasesInfo.filter((releaseInfo) => semver.lte(releaseInfo['sdk']['version'], latestSdk));
+            releasesInfo = releasesInfo.filter((releaseInfo) => semver.lte(releaseInfo['sdk']['version'], latestSdk, {
+                includePrerelease: this.includePrerelease
+            }));
             // Sort for latest version
-            releasesInfo = releasesInfo.sort((a, b) => semver.rcompare(a['sdk']['version'], b['sdk']['version']));
+            releasesInfo = releasesInfo.sort((a, b) => semver.rcompare(a['sdk']['version'], b['sdk']['version'], {
+                includePrerelease: this.includePrerelease
+            }));
             if (releasesInfo.length == 0) {
                 throw `Could not find dotnet core version. Please ensure that specified version ${versionInfo.inputVersion} is valid.`;
             }
