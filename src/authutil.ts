@@ -4,7 +4,7 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import * as xmlbuilder from 'xmlbuilder';
 import * as xmlParser from 'fast-xml-parser';
-import { ProcessEnvOptions } from 'child_process';
+import {ProcessEnvOptions} from 'child_process';
 
 export function configAuthentication(
   feedUrl: string,
