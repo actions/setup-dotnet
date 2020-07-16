@@ -1,5 +1,6 @@
 import io = require('@actions/io');
 import fs = require('fs');
+import os = require('os');
 import path = require('path');
 import hc = require('@actions/http-client');
 
@@ -91,18 +92,16 @@ describe('installer tests', () => {
   it('Resolving a normal generic version works', async () => {
     const dotnetInstaller = new installer.DotnetCoreInstaller('3.1.x');
     let versInfo = await dotnetInstaller.resolveInfos(
-      ['win-x64'],
       new installer.DotNetVersionInfo('3.1.x')
     );
 
-    expect(versInfo.resolvedVersion.startsWith('3.1.'));
+    expect(versInfo.startsWith('3.1.'));
   }, 100000);
 
   it('Resolving a nonexistent generic version fails', async () => {
     const dotnetInstaller = new installer.DotnetCoreInstaller('999.1.x');
     try {
       await dotnetInstaller.resolveInfos(
-        ['win-x64'],
         new installer.DotNetVersionInfo('999.1.x')
       );
       fail();
@@ -114,11 +113,10 @@ describe('installer tests', () => {
   it('Resolving a exact stable version works', async () => {
     const dotnetInstaller = new installer.DotnetCoreInstaller('3.1.201');
     let versInfo = await dotnetInstaller.resolveInfos(
-      ['win-x64'],
       new installer.DotNetVersionInfo('3.1.201')
     );
 
-    expect(versInfo.resolvedVersion).toBe('3.1.201');
+    expect(versInfo).toBe('3.1.201');
   }, 100000);
 
   it('Resolving a exact preview version works', async () => {
@@ -126,11 +124,10 @@ describe('installer tests', () => {
       '5.0.0-preview.4'
     );
     let versInfo = await dotnetInstaller.resolveInfos(
-      ['win-x64'],
       new installer.DotNetVersionInfo('5.0.0-preview.4')
     );
 
-    expect(versInfo.resolvedVersion).toBe('5.0.0-preview.4');
+    expect(versInfo).toBe('5.0.0-preview.4');
   }, 100000);
 
   it('Acquires version of dotnet if no matching version is installed', async () => {

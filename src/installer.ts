@@ -2,6 +2,7 @@
 let tempDirectory = process.env['RUNNER_TEMPDIRECTORY'] || '';
 import * as exec from '@actions/exec';
 import * as io from '@actions/io';
+import hc = require('@actions/http-client');
 import {chmodSync} from 'fs';
 import * as path from 'path';
 import {ExecOptions} from '@actions/exec/lib/interfaces';
@@ -86,27 +87,6 @@ export class DotNetVersionInfo {
   }
 }
 
-/**
- * Represents a resolved version from the Web-Api
- */
-class ResolvedVersionInfo {
-  downloadUrls: string[];
-  resolvedVersion: string;
-
-  constructor(downloadUrls: string[], resolvedVersion: string) {
-    if (downloadUrls.length === 0) {
-      throw 'DownloadUrls can not be empty';
-    }
-
-    if (!resolvedVersion) {
-      throw 'Resolved version is invalid';
-    }
-
-    this.downloadUrls = downloadUrls;
-    this.resolvedVersion = resolvedVersion;
-  }
-}
-
 export class DotnetCoreInstaller {
   constructor(version: string) {
     this.version = version;
@@ -115,6 +95,10 @@ export class DotnetCoreInstaller {
   public async installDotnet() {
     let output = '';
     let resultCode = 0;
+
+    let calculatedVersion = await this.resolveInfos(
+      new DotNetVersionInfo(this.version)
+    );
 
     var envVariables: {[key: string]: string} = {};
     for (let key in process.env) {
@@ -128,8 +112,8 @@ export class DotnetCoreInstaller {
         .join(__dirname, '..', 'externals', 'install-dotnet.ps1')
         .replace(/'/g, "''");
       let command = `& '${escapedScript}'`;
-      if (this.version) {
-        command += ` -Version ${this.version}`;
+      if (calculatedVersion) {
+        command += ` -Version ${calculatedVersion}`;
       }
 
       // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
@@ -187,5 +171,80 @@ export class DotnetCoreInstaller {
     }
   }
 
+  // OsSuffixes - The suffix which is a part of the file name ex- linux-x64, windows-x86
+  // Type - SDK / Runtime
+  // versionInfo - versionInfo of the SDK/Runtime
+  async resolveInfos(versionInfo: DotNetVersionInfo): Promise<string> {
+    const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
+      allowRetries: true,
+      maxRetries: 3
+    });
+
+    const releasesJsonUrl: string = await this.getReleasesJsonUrl(
+      httpClient,
+      versionInfo.version().split('.')
+    );
+
+    const releasesResponse = await httpClient.getJson<any>(releasesJsonUrl);
+    const releasesResult = releasesResponse.result || {};
+    let releasesInfo: any[] = releasesResult['releases'];
+    releasesInfo = releasesInfo.filter((releaseInfo: any) => {
+      return (
+        semver.satisfies(
+          releaseInfo['sdk']['version'],
+          versionInfo.version()
+        ) ||
+        semver.satisfies(
+          releaseInfo['sdk']['version-display'],
+          versionInfo.version()
+        )
+      );
+    });
+
+    // Exclude versions that are newer than the latest if using not exact
+    if (!versionInfo.isExactVersion()) {
+      let latestSdk: string = releasesResult['latest-sdk'];
+
+      releasesInfo = releasesInfo.filter((releaseInfo: any) =>
+        semver.lte(releaseInfo['sdk']['version'], latestSdk)
+      );
+    }
+
+    // Sort for latest version
+    releasesInfo = releasesInfo.sort((a, b) =>
+      semver.rcompare(a['sdk']['version'], b['sdk']['version'])
+    );
+
+    let selectedVersion = releasesInfo[0]['sdk']['version'];
+
+    return selectedVersion;
+  }
+
+  private async getReleasesJsonUrl(
+    httpClient: hc.HttpClient,
+    versionParts: string[]
+  ): Promise<string> {
+    const response = await httpClient.getJson<any>(DotNetCoreIndexUrl);
+    const result = response.result || {};
+    let releasesInfo: any[] = result['releases-index'];
+    releasesInfo = releasesInfo.filter((info: any) => {
+      // channel-version is the first 2 elements of the version (e.g. 2.1), filter out versions that don't match 2.1.x.
+      const sdkParts: string[] = info['channel-version'].split('.');
+      if (versionParts.length >= 2 && versionParts[1] != 'x') {
+        return versionParts[0] == sdkParts[0] && versionParts[1] == sdkParts[1];
+      }
+      return versionParts[0] == sdkParts[0];
+    });
+    if (releasesInfo.length === 0) {
+      throw `Could not find info for version ${versionParts.join(
+        '.'
+      )} at ${DotNetCoreIndexUrl}`;
+    }
+    return releasesInfo[0]['releases.json'];
+  }
+
   private version: string;
 }
+
+const DotNetCoreIndexUrl: string =
+  'https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/releases-index.json';
