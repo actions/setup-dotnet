@@ -91,7 +91,7 @@ describe('installer tests', () => {
 
   it('Resolving a normal generic version works', async () => {
     const dotnetInstaller = new installer.DotnetCoreInstaller('3.1.x');
-    let versInfo = await dotnetInstaller.resolveInfos(
+    let versInfo = await dotnetInstaller.resolveVersion(
       new installer.DotNetVersionInfo('3.1.x')
     );
 
@@ -101,7 +101,7 @@ describe('installer tests', () => {
   it('Resolving a nonexistent generic version fails', async () => {
     const dotnetInstaller = new installer.DotnetCoreInstaller('999.1.x');
     try {
-      await dotnetInstaller.resolveInfos(
+      await dotnetInstaller.resolveVersion(
         new installer.DotNetVersionInfo('999.1.x')
       );
       fail();
@@ -112,7 +112,7 @@ describe('installer tests', () => {
 
   it('Resolving a exact stable version works', async () => {
     const dotnetInstaller = new installer.DotnetCoreInstaller('3.1.201');
-    let versInfo = await dotnetInstaller.resolveInfos(
+    let versInfo = await dotnetInstaller.resolveVersion(
       new installer.DotNetVersionInfo('3.1.201')
     );
 
@@ -123,7 +123,7 @@ describe('installer tests', () => {
     const dotnetInstaller = new installer.DotnetCoreInstaller(
       '5.0.0-preview.6'
     );
-    let versInfo = await dotnetInstaller.resolveInfos(
+    let versInfo = await dotnetInstaller.resolveVersion(
       new installer.DotNetVersionInfo('5.0.0-preview.6')
     );
 
