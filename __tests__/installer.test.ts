@@ -121,13 +121,13 @@ describe('installer tests', () => {
 
   it('Resolving a exact preview version works', async () => {
     const dotnetInstaller = new installer.DotnetCoreInstaller(
-      '5.0.0-preview.4'
+      '5.0.0-preview.6'
     );
     let versInfo = await dotnetInstaller.resolveInfos(
-      new installer.DotNetVersionInfo('5.0.0-preview.4')
+      new installer.DotNetVersionInfo('5.0.0-preview.6')
     );
 
-    expect(versInfo).toBe('5.0.0-preview.4');
+    expect(versInfo).toBe('5.0.0-preview.6');
   }, 100000);
 
   it('Acquires version of dotnet if no matching version is installed', async () => {

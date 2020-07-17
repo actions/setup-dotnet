@@ -16723,7 +16723,7 @@ class DotnetCoreInstaller {
         return __awaiter(this, void 0, void 0, function* () {
             let output = '';
             let resultCode = 0;
-            let calculatedVersion = yield this.resolveInfos(new DotNetVersionInfo(this.version));
+            let calculatedVersion = yield this.resolveVersion(new DotNetVersionInfo(this.version));
             var envVariables = {};
             for (let key in process.env) {
                 if (process.env[key]) {
@@ -16792,11 +16792,12 @@ class DotnetCoreInstaller {
             }
         });
     }
-    // OsSuffixes - The suffix which is a part of the file name ex- linux-x64, windows-x86
-    // Type - SDK / Runtime
     // versionInfo - versionInfo of the SDK/Runtime
-    resolveInfos(versionInfo) {
+    resolveVersion(versionInfo) {
         return __awaiter(this, void 0, void 0, function* () {
+            if (versionInfo.isExactVersion()) {
+                return versionInfo.version();
+            }
             const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
                 allowRetries: true,
                 maxRetries: 3
@@ -16810,14 +16811,15 @@ class DotnetCoreInstaller {
                     semver.satisfies(releaseInfo['sdk']['version-display'], versionInfo.version()));
             });
             // Exclude versions that are newer than the latest if using not exact
-            if (!versionInfo.isExactVersion()) {
-                let latestSdk = releasesResult['latest-sdk'];
-                releasesInfo = releasesInfo.filter((releaseInfo) => semver.lte(releaseInfo['sdk']['version'], latestSdk));
-            }
+            let latestSdk = releasesResult['latest-sdk'];
+            releasesInfo = releasesInfo.filter((releaseInfo) => semver.lte(releaseInfo['sdk']['version'], latestSdk));
             // Sort for latest version
             releasesInfo = releasesInfo.sort((a, b) => semver.rcompare(a['sdk']['version'], b['sdk']['version']));
-            let selectedVersion = releasesInfo[0]['sdk']['version'];
-            return selectedVersion;
+            if (releasesInfo.length == 0) {
+                throw `Could not construct download URL. Please ensure that specified version ${versionInfo.version()} is valid.`;
+            }
+            let release = releasesInfo[0];
+            return release['sdk']['version'];
         });
     }
     getReleasesJsonUrl(httpClient, versionParts) {

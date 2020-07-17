@@ -96,7 +96,7 @@ export class DotnetCoreInstaller {
     let output = '';
     let resultCode = 0;
 
-    let calculatedVersion = await this.resolveInfos(
+    let calculatedVersion = await this.resolveVersion(
       new DotNetVersionInfo(this.version)
     );
 
@@ -178,10 +178,12 @@ export class DotnetCoreInstaller {
     }
   }
 
-  // OsSuffixes - The suffix which is a part of the file name ex- linux-x64, windows-x86
-  // Type - SDK / Runtime
   // versionInfo - versionInfo of the SDK/Runtime
-  async resolveInfos(versionInfo: DotNetVersionInfo): Promise<string> {
+  async resolveVersion(versionInfo: DotNetVersionInfo): Promise<string> {
+    if (versionInfo.isExactVersion()) {
+      return versionInfo.version();
+    }
+
     const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
       allowRetries: true,
       maxRetries: 3
@@ -209,22 +211,23 @@ export class DotnetCoreInstaller {
     });
 
     // Exclude versions that are newer than the latest if using not exact
-    if (!versionInfo.isExactVersion()) {
-      let latestSdk: string = releasesResult['latest-sdk'];
+    let latestSdk: string = releasesResult['latest-sdk'];
 
-      releasesInfo = releasesInfo.filter((releaseInfo: any) =>
-        semver.lte(releaseInfo['sdk']['version'], latestSdk)
-      );
-    }
+    releasesInfo = releasesInfo.filter((releaseInfo: any) =>
+      semver.lte(releaseInfo['sdk']['version'], latestSdk)
+    );
 
     // Sort for latest version
     releasesInfo = releasesInfo.sort((a, b) =>
       semver.rcompare(a['sdk']['version'], b['sdk']['version'])
     );
 
-    let selectedVersion = releasesInfo[0]['sdk']['version'];
+    if (releasesInfo.length == 0) {
+      throw `Could not construct download URL. Please ensure that specified version ${versionInfo.version()} is valid.`;
+    }
 
-    return selectedVersion;
+    let release = releasesInfo[0];
+    return release['sdk']['version'];
   }
 
   private async getReleasesJsonUrl(
