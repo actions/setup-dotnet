@@ -140,9 +140,7 @@ describe('installer tests', () => {
     }
   }, 400000); //This needs some time to download on "slower" internet connections
 
-  it('Acquires version of dotnet if no matching version is installed', async () => {
-    const dotnetDir = path.join(toolDir, 'dncs', '2.2.105', os.arch());
-
+  it('Acquires version of dotnet from global.json if no matching version is installed', async () => {
     const globalJsonPath = path.join(process.cwd(), 'global.json');
     const jsonContents = `{${os.EOL}"sdk": {${os.EOL}"version": "2.2.105"${os.EOL}}${os.EOL}}`;
     if (!fs.existsSync(globalJsonPath)) {
@@ -150,11 +148,11 @@ describe('installer tests', () => {
     }
     await setup.run();
 
-    expect(fs.existsSync(`${dotnetDir}.complete`)).toBe(true);
+    expect(fs.existsSync(path.join(toolDir, 'sdk', '2.2.105'))).toBe(true);
     if (IS_WINDOWS) {
-      expect(fs.existsSync(path.join(dotnetDir, 'dotnet.exe'))).toBe(true);
+      expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
     } else {
-      expect(fs.existsSync(path.join(dotnetDir, 'dotnet'))).toBe(true);
+      expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
     }
     fs.unlinkSync(globalJsonPath);
   }, 100000);
