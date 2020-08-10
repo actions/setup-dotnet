@@ -35,6 +35,8 @@ jobs:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+    env:
+      DOTNET_INSTALL_DIR: $${{ runner.temp }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
