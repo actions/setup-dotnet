@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - releases/*
+      - sxs-with-fallback
 
 jobs:
   build:
