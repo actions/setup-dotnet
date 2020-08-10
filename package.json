@@ -37,6 +37,7 @@
     "@actions/io": "^1.0.2",
     "fast-xml-parser": "^3.15.1",
     "semver": "^6.3.0",
+    "wget-improved": "^3.0.2",
     "xmlbuilder": "^13.0.2"
   },
   "devDependencies": {
@@ -49,8 +50,7 @@
     "jest-circus": "^26.0.1",
     "prettier": "^1.17.1",
     "ts-jest": "^26.0.0",
-    "typescript": "^3.9.3",
-    "wget-improved": "^3.0.2"
+    "typescript": "^3.9.3"
   },
   "jest": {
     "testEnvironment": "node"
