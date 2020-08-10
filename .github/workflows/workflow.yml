@@ -40,10 +40,16 @@ jobs:
         uses: actions/checkout@v2
       - name: Clear tool cache
         if: runner.os != 'windows'
-        run: rm -rf "$HOME/.dotnet"
+        run: |
+          echo $PATH
+          dotnet --info
+          rm -rf "$HOME/.dotnet"
       - name: Clear tool cache (Windows)
         if: runner.os == 'windows'
-        run: Remove-Item $env:LocalAppData\Microsoft\dotnet/*  -Recurse -Force -ErrorAction SilentlyContinue
+        run: |
+          echo $env:PATH
+          dotnet --info
+          Remove-Item $env:LocalAppData\Microsoft\dotnet/*  -Recurse -Force -ErrorAction SilentlyContinue
       - name: Setup dotnet 3.1.201
         uses: ./
         with:
@@ -57,9 +63,9 @@ jobs:
 
   test-proxy:
     runs-on: ubuntu-latest
-    container:
-      image: mcr.microsoft.com/dotnet/core/runtime-deps:3.0-bionic
-      options: --dns 127.0.0.1
+    # container:
+    #   image: mcr.microsoft.com/dotnet/core/runtime-deps:3.0-bionic
+    #   options: --dns 127.0.0.1
     services:
       squid-proxy:
         image: datadog/squid:latest
