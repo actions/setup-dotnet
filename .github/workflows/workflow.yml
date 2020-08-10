@@ -36,7 +36,7 @@ jobs:
       matrix:
         operating-system: [ubuntu-latest, windows-latest, macOS-latest]
     env:
-      DOTNET_INSTALL_DIR: $${{ runner.temp }}
+      DOTNET_INSTALL_DIR: ${{ runner.temp }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -69,7 +69,7 @@ jobs:
           - 3128:3128
     env:
       https_proxy: http://squid-proxy:3128
-      DOTNET_INSTALL_DIR: $${{ runner.temp }}
+      DOTNET_INSTALL_DIR: ${{ runner.temp }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -87,7 +87,7 @@ jobs:
     env:
       https_proxy: http://no-such-proxy:3128
       no_proxy: github.com,dotnetcli.blob.core.windows.net,download.visualstudio.microsoft.com,api.nuget.org,dotnetcli.azureedge.net
-      DOTNET_INSTALL_DIR: $${{ runner.temp }}
+      DOTNET_INSTALL_DIR: ${{ runner.temp }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
