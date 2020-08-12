@@ -4,7 +4,7 @@ version: 3.15.1
 type: npm
 summary: Validate XML or Parse XML to JS/JSON very fast without C/C++ based libraries
 homepage: https://github.com/NaturalIntelligence/fast-xml-parser#readme
-license: other
+license: mit
 licenses:
 - sources: LICENSE
   text: "MIT License\n\nCopyright (c) 2017 Amit Kumar Gupta\n\nPermission is hereby
