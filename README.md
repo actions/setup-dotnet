@@ -78,7 +78,7 @@ Some environment variables may be necessary for your particular case or to impro
 - DOTNET_MULTILEVEL_LOOKUP - configures whether the global install location is used as a fall-back (default: true)
 
 Example usage:
-```
+```yaml
 build:
   runs-on: ubuntu-latest
   env:
