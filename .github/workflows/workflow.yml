@@ -11,6 +11,7 @@ jobs:
   build:
     runs-on: ${{ matrix.operating-system }}
     strategy:
+      fail-fast: false
       matrix:
         operating-system: [ubuntu-latest, windows-latest, macOS-latest]
     steps:
@@ -19,7 +20,7 @@ jobs:
     - name: Set Node.js 12
       uses: actions/setup-node@v1
       with:
-        version: 12.x
+        node-version: 12.x
     - run: npm ci
     - run: npm run build
     - run: npm run format-check
@@ -31,23 +32,40 @@ jobs:
   test:
     runs-on: ${{ matrix.operating-system }}
     strategy:
+      fail-fast: false
       matrix:
         operating-system: [ubuntu-latest, windows-latest, macOS-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Clear tool cache
-        run: mv "${{ runner.tool_cache }}" "${{ runner.tool_cache }}.old"
-      - name: Setup dotnet 3.0.100
+      - name: Clear tool cache (macOS)
+        if: runner.os == 'macos'
+        run: |
+          echo $PATH
+          dotnet --info
+          rm -rf "/Users/runner/.dotnet"
+      - name: Clear tool cache (Ubuntu)
+        if: runner.os == 'linux'
+        run: |
+          echo $PATH
+          dotnet --info
+          rm -rf "/usr/share/dotnet"
+      - name: Clear tool cache (Windows)
+        if: runner.os == 'windows'
+        run: |
+          echo $env:PATH
+          dotnet --info
+          Remove-Item $env:LocalAppData\Microsoft\dotnet/*  -Recurse -Force -ErrorAction SilentlyContinue
+      - name: Setup dotnet 3.1.201
         uses: ./
         with:
-          dotnet-version: 3.0.100
+          dotnet-version: 3.1.201
       - name: Verify dotnet
         if: runner.os != 'windows'
-        run: __tests__/verify-dotnet.sh 3.0.100
+        run: __tests__/verify-dotnet.sh 3.1.201
       - name: Verify dotnet (Windows)
         if: runner.os == 'windows'
-        run: __tests__/verify-dotnet.ps1 3.0.100
+        run: __tests__/verify-dotnet.ps1 3.1.201
 
   test-proxy:
     runs-on: ubuntu-latest
@@ -61,31 +79,36 @@ jobs:
           - 3128:3128
     env:
       https_proxy: http://squid-proxy:3128
+      http_proxy: http://squid-proxy:3128
     steps:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Clear tool cache
-        run: rm -rf $RUNNER_TOOL_CACHE/*
-      - name: Setup dotnet 3.0.100
+        run: rm -rf "/usr/share/dotnet"
+      - name: Install curl
+        run: |
+          apt update
+          apt -y install curl
+      - name: Setup dotnet 3.1.201
         uses: ./
         with:
-          dotnet-version: 3.0.100
+          dotnet-version: 3.1.201
       - name: Verify dotnet
-        run: __tests__/verify-dotnet.sh 3.0.100
+        run: __tests__/verify-dotnet.sh 3.1.201
 
   test-bypass-proxy:
     runs-on: ubuntu-latest
     env:
       https_proxy: http://no-such-proxy:3128
-      no_proxy: github.com,dotnetcli.blob.core.windows.net,download.visualstudio.microsoft.com,api.nuget.org
+      no_proxy: github.com,dotnetcli.blob.core.windows.net,download.visualstudio.microsoft.com,api.nuget.org,dotnetcli.azureedge.net
     steps:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Clear tool cache
-        run: mv "${{ runner.tool_cache }}" "${{ runner.tool_cache }}.old"
-      - name: Setup dotnet 3.0.100
+        run: rm -rf "/usr/share/dotnet"
+      - name: Setup dotnet 3.1.201
         uses: ./
         with:
-          dotnet-version: 3.0.100
+          dotnet-version: 3.1.201
       - name: Verify dotnet
-        run: __tests__/verify-dotnet.sh 3.0.100
+        run: __tests__/verify-dotnet.sh 3.1.201

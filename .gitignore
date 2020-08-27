@@ -95,4 +95,5 @@ typings/
 # DynamoDB Local files
 .dynamodb/
 
-.vscode/*
+# Ignore .vscode files
+.vscode/
