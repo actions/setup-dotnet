@@ -51,6 +51,6 @@
     "prettier": "^1.17.1",
     "ts-jest": "^26.0.0",
     "typescript": "^3.9.3",
-    "wget-improved": "^3.0.2"
+    "wget-improved": "^3.2.1"
   }
 }
