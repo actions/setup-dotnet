@@ -18,7 +18,7 @@ Basic:
 ```yaml
 steps:
 - uses: actions/checkout@main
-- uses: actions/setup-dotnet@v1.5.0
+- uses: actions/setup-dotnet@v1
   with:
     dotnet-version: '3.1.x' # SDK Version to use; x will use the latest version of the 3.1 channel
 - run: dotnet build <my project>
@@ -47,7 +47,7 @@ Authentication for nuget feeds:
 steps:
 - uses: actions/checkout@v2
 # Authenticates packages to push to GPR
-- uses: actions/setup-dotnet@v1.5.0
+- uses: actions/setup-dotnet@v1
   with:
     dotnet-version: '3.1.x' # SDK Version to use.
     source-url: https://nuget.pkg.github.com/<owner>/index.json
