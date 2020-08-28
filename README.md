@@ -40,7 +40,7 @@ jobs:
         dotnet: [ '2.2.103', '3.0', '3.1.x' ]
     name: Dotnet ${{ matrix.dotnet }} sample
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@v2
       - name: Setup dotnet
         uses: actions/setup-dotnet@v1
         with:
@@ -51,7 +51,7 @@ jobs:
 Authentication for nuget feeds:
 ```yaml
 steps:
-- uses: actions/checkout@main
+- uses: actions/checkout@v2
 # Authenticates packages to push to GPR
 - uses: actions/setup-dotnet@v1
   with:
