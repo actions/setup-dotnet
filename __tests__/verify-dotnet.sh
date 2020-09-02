@@ -3,7 +3,7 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
-if [ ! -f "../nuget.config" ] then
+if [ ! -f "../nuget.config" ]; then
   echo "nuget file not generated correctly"
   exit 1
 fi
