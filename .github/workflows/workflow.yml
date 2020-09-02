@@ -42,6 +42,10 @@ jobs:
         uses: ./
         with:
           dotnet-version: 3.0.100
+          # We are including this veriable to force the generation of the nuget config file to verify that it is created in the correct place
+          source-url: https://api.nuget.org/v3/index.json
+        env:
+          NUGET_AUTH_TOKEN: NOTATOKEN
       - name: Verify dotnet
         if: runner.os != 'windows'
         run: __tests__/verify-dotnet.sh 3.0.100
@@ -70,6 +74,9 @@ jobs:
         uses: ./
         with:
           dotnet-version: 3.0.100
+          source-url: https://api.nuget.org/v3/index.json
+        env:
+          NUGET_AUTH_TOKEN: NOTATOKEN
       - name: Verify dotnet
         run: __tests__/verify-dotnet.sh 3.0.100
 
@@ -87,5 +94,8 @@ jobs:
         uses: ./
         with:
           dotnet-version: 3.0.100
+          source-url: https://api.nuget.org/v3/index.json
+        env:
+          NUGET_AUTH_TOKEN: NOTATOKEN
       - name: Verify dotnet
         run: __tests__/verify-dotnet.sh 3.0.100
