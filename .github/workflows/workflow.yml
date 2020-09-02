@@ -42,6 +42,7 @@ jobs:
         uses: ./
         with:
           dotnet-version: 3.0.100
+          source-url: https://api.nuget.org/v3/index.json
       - name: Verify dotnet
         if: runner.os != 'windows'
         run: __tests__/verify-dotnet.sh 3.0.100
@@ -70,6 +71,7 @@ jobs:
         uses: ./
         with:
           dotnet-version: 3.0.100
+          source-url: https://api.nuget.org/v3/index.json
       - name: Verify dotnet
         run: __tests__/verify-dotnet.sh 3.0.100
 
@@ -87,5 +89,6 @@ jobs:
         uses: ./
         with:
           dotnet-version: 3.0.100
+          source-url: https://api.nuget.org/v3/index.json
       - name: Verify dotnet
         run: __tests__/verify-dotnet.sh 3.0.100

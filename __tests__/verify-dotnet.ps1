@@ -3,6 +3,11 @@ if (!$args[0])
   throw "Must supply dotnet version argument"
 }
 
+if (!Test-Path "../nuget.config")
+{
+  throw "nuget file not generated correctly"
+}
+
 $dotnet = Get-Command dotnet | Select-Object -First 1 | ForEach-Object { $_.Path }
 Write-Host "Found '$dotnet'"
 
