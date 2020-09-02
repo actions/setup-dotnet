@@ -3,7 +3,7 @@ if (!$args[0])
   throw "Must supply dotnet version argument"
 }
 
-if (!Test-Path "../nuget.config")
+if (-Not (Test-Path "../nuget.config"))
 {
   throw "nuget file not generated correctly"
 }
