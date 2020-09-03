@@ -10,6 +10,12 @@ This action sets up a [dotnet core cli](https://github.com/dotnet/cli) environme
 - registering problem matchers for error output
 - setting up authentication to private package sources like GitHub Packages
 
+Please Note: GitHub hosted runners have some versions of the .NET SDK
+preinstalled. Installed versions are subject to change. Please refer to the
+documentation
+[software installed on github hosted runners](https://help.github.com/en/actions/reference/software-installed-on-github-hosted-runners)
+for .NET SDK versions that are currently available.
+
 # Usage
 
 See [action.yml](action.yml)
@@ -34,7 +40,7 @@ jobs:
         dotnet: [ '2.2.103', '3.0', '3.1.x' ]
     name: Dotnet ${{ matrix.dotnet }} sample
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@v2
       - name: Setup dotnet
         uses: actions/setup-dotnet@v1
         with:
@@ -45,7 +51,7 @@ jobs:
 Authentication for nuget feeds:
 ```yaml
 steps:
-- uses: actions/checkout@main
+- uses: actions/checkout@v2
 # Authenticates packages to push to GPR
 - uses: actions/setup-dotnet@v1
   with:
@@ -78,7 +84,7 @@ Some environment variables may be necessary for your particular case or to impro
 - DOTNET_MULTILEVEL_LOOKUP - configures whether the global install location is used as a fall-back (default: true)
 
 Example usage:
-```
+```yaml
 build:
   runs-on: ubuntu-latest
   env:

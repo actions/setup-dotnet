@@ -4,18 +4,20 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import * as xmlbuilder from 'xmlbuilder';
 import * as xmlParser from 'fast-xml-parser';
+import {ProcessEnvOptions} from 'child_process';
 
 export function configAuthentication(
   feedUrl: string,
-  existingFileLocation: string = ''
+  existingFileLocation: string = '',
+  processRoot: string = process.cwd()
 ) {
   const existingNuGetConfig: string = path.resolve(
-    process.env['RUNNER_TEMP'] || process.cwd(),
+    processRoot,
     existingFileLocation == '' ? 'nuget.config' : existingFileLocation
   );
 
   const tempNuGetConfig: string = path.resolve(
-    process.env['RUNNER_TEMP'] || process.cwd(),
+    processRoot,
     '../',
     'nuget.config'
   );
