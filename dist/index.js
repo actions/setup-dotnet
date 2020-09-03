@@ -16778,7 +16778,7 @@ class DotnetCoreInstaller {
             else {
                 if (IS_WINDOWS) {
                     // This is the default set in install-dotnet.ps1
-                    core.addPath(path.join(process.env['%LocalAppData'] + '', 'Microsoft', 'dotnet'));
+                    core.addPath(path.join(process.env['LocalAppData'] + '', 'Microsoft', 'dotnet'));
                 }
                 else {
                     // This is the default set in install-dotnet.sh
