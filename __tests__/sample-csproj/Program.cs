@@ -1,13 +1,16 @@
-﻿using System;
-using Newtonsoft.Json;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Text.Json;
+using System;
 
 namespace sample_csproj
 {
-    class Program
+    [TestClass]
+    public class Program
     {
-        static void Main(string[] args)
+        [TestMethod]
+        public void TestMethod1()
         {
-            var json = JsonConvert.SerializeObject(new[] {"Hello", "World!" });
+            var json = JsonSerializer.Serialize(new[] {"Hello", "World!" });
             Console.WriteLine(json);
         }
     }

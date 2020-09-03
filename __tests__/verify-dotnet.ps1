@@ -8,13 +8,23 @@ Write-Host "Found '$dotnet'"
 
 $version = & $dotnet --version | Out-String | ForEach-Object { $_.Trim() }
 Write-Host "Version $version"
-# if ($version -ne $args[0])
-# {
-#   Write-Host "PATH='$env:path'"
-#   Write-Host "gcm dotnet:"
-#   gcm dotnet | fl
-#   throw "Unexpected version"
-# }
+if ($version -ne $args[0])
+{
+  Write-Host "PATH='$env:path'"
+  throw "Unexpected version"
+}
+
+if ($args[1])
+{
+  # SDKs are listed on multiple lines with the path afterwards in square brackets
+  $version = & $dotnet --list-sdks | ForEach-Object { $_.SubString(0, $_.IndexOf('[')).Trim() }
+  Write-Host "Version $version"
+  if (-not ($version -contains $args[1]))
+  {
+    Write-Host "PATH='$env:path'"
+    throw "Unexpected version"
+  }
+}
 
 Write-Host "Building sample csproj"
 & $dotnet build __tests__/sample-csproj/ --no-cache
@@ -24,9 +34,20 @@ if ($LASTEXITCODE -ne 0)
 }
 
 Write-Host "Testing compiled app"
-$sample_output = "$(__tests__/sample-csproj/bin/Debug/netcoreapp3.0/sample.exe)".Trim()
+$sample_output = "$(dotnet test __tests__/sample-csproj/ --no-build)"
 Write-Host "Sample output: $sample_output"
-if ($sample_output -notlike "*Hello*World*")
+# For Side-by-Side installs we want to run the tests twice, for a single install the tests will run once
+if ($args[1])
 {
-  throw "Unexpected output"
+  if ($sample_output -notlike "*Test Run Successful.*Test Run Successful.*")
+  {
+    throw "Unexpected output"
+  }
+}
+else
+{
+  if ($sample_output -notlike "*Test Run Successful.*")
+  {
+    throw "Unexpected output"
+  }
 }

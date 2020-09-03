@@ -56,13 +56,17 @@ jobs:
           echo $env:PATH
           dotnet --info
           Remove-Item $env:LocalAppData\Microsoft\dotnet/*  -Recurse -Force -ErrorAction SilentlyContinue
+      - name: Setup dotnet 2.2.402
+        uses: ./
+        with:
+          dotnet-version: 2.2.402
       - name: Setup dotnet 3.1.201
         uses: ./
         with:
           dotnet-version: 3.1.201
       - name: Verify dotnet
         if: runner.os != 'windows'
-        run: __tests__/verify-dotnet.sh 3.1.201
+        run: __tests__/verify-dotnet.sh 3.1.201 2.2.402
       - name: Verify dotnet (Windows)
         if: runner.os == 'windows'
         run: __tests__/verify-dotnet.ps1 3.1.201
@@ -89,12 +93,13 @@ jobs:
         run: |
           apt update
           apt -y install curl
-      - name: Setup dotnet 3.1.201
+      # 2.2 uses nuget to download the JSON nuget package, the package is built into 3.1
+      - name: Setup dotnet 2.2.402
         uses: ./
         with:
-          dotnet-version: 3.1.201
+          dotnet-version: 2.2.402
       - name: Verify dotnet
-        run: __tests__/verify-dotnet.sh 3.1.201
+        run: __tests__/verify-dotnet.sh 2.2.402
 
   test-bypass-proxy:
     runs-on: ubuntu-latest
@@ -106,9 +111,10 @@ jobs:
         uses: actions/checkout@v2
       - name: Clear tool cache
         run: rm -rf "/usr/share/dotnet"
-      - name: Setup dotnet 3.1.201
+      # 2.2 uses nuget to download the JSON nuget package, the package is built into 3.1
+      - name: Setup dotnet 2.2.402
         uses: ./
         with:
-          dotnet-version: 3.1.201
+          dotnet-version: 2.2.402
       - name: Verify dotnet
-        run: __tests__/verify-dotnet.sh 3.1.201
+        run: __tests__/verify-dotnet.sh 2.2.402
