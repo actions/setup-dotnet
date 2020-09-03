@@ -14,10 +14,13 @@ const IS_WINDOWS = process.platform === 'win32';
  * Represents the inputted version information
  */
 export class DotNetVersionInfo {
+  public inputVersion: string;
   private fullversion: string;
   private isExactVersionSet: boolean = false;
 
   constructor(version: string) {
+    this.inputVersion = version;
+
     // Check for exact match
     if (semver.valid(semver.clean(version) || '') != null) {
       this.fullversion = semver.clean(version) as string;
@@ -224,7 +227,7 @@ export class DotnetCoreInstaller {
     );
 
     if (releasesInfo.length == 0) {
-      throw `Could not construct download URL. Please ensure that specified version ${versionInfo.version()} is valid.`;
+      throw `Could not find dotnet core version. Please ensure that specified version ${versionInfo.inputVersion} is valid.`;
     }
 
     let release = releasesInfo[0];

@@ -3878,6 +3878,278 @@ module.exports = require("child_process");
 
 /***/ }),
 
+/***/ 141:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+
+var net = __webpack_require__(631);
+var tls = __webpack_require__(16);
+var http = __webpack_require__(605);
+var https = __webpack_require__(211);
+var events = __webpack_require__(614);
+var assert = __webpack_require__(357);
+var util = __webpack_require__(669);
+
+
+exports.httpOverHttp = httpOverHttp;
+exports.httpsOverHttp = httpsOverHttp;
+exports.httpOverHttps = httpOverHttps;
+exports.httpsOverHttps = httpsOverHttps;
+
+
+function httpOverHttp(options) {
+  var agent = new TunnelingAgent(options);
+  agent.request = http.request;
+  return agent;
+}
+
+function httpsOverHttp(options) {
+  var agent = new TunnelingAgent(options);
+  agent.request = http.request;
+  agent.createSocket = createSecureSocket;
+  agent.defaultPort = 443;
+  return agent;
+}
+
+function httpOverHttps(options) {
+  var agent = new TunnelingAgent(options);
+  agent.request = https.request;
+  return agent;
+}
+
+function httpsOverHttps(options) {
+  var agent = new TunnelingAgent(options);
+  agent.request = https.request;
+  agent.createSocket = createSecureSocket;
+  agent.defaultPort = 443;
+  return agent;
+}
+
+
+function TunnelingAgent(options) {
+  var self = this;
+  self.options = options || {};
+  self.proxyOptions = self.options.proxy || {};
+  self.maxSockets = self.options.maxSockets || http.Agent.defaultMaxSockets;
+  self.requests = [];
+  self.sockets = [];
+
+  self.on('free', function onFree(socket, host, port, localAddress) {
+    var options = toOptions(host, port, localAddress);
+    for (var i = 0, len = self.requests.length; i < len; ++i) {
+      var pending = self.requests[i];
+      if (pending.host === options.host && pending.port === options.port) {
+        // Detect the request to connect same origin server,
+        // reuse the connection.
+        self.requests.splice(i, 1);
+        pending.request.onSocket(socket);
+        return;
+      }
+    }
+    socket.destroy();
+    self.removeSocket(socket);
+  });
+}
+util.inherits(TunnelingAgent, events.EventEmitter);
+
+TunnelingAgent.prototype.addRequest = function addRequest(req, host, port, localAddress) {
+  var self = this;
+  var options = mergeOptions({request: req}, self.options, toOptions(host, port, localAddress));
+
+  if (self.sockets.length >= this.maxSockets) {
+    // We are over limit so we'll add it to the queue.
+    self.requests.push(options);
+    return;
+  }
+
+  // If we are under maxSockets create a new one.
+  self.createSocket(options, function(socket) {
+    socket.on('free', onFree);
+    socket.on('close', onCloseOrRemove);
+    socket.on('agentRemove', onCloseOrRemove);
+    req.onSocket(socket);
+
+    function onFree() {
+      self.emit('free', socket, options);
+    }
+
+    function onCloseOrRemove(err) {
+      self.removeSocket(socket);
+      socket.removeListener('free', onFree);
+      socket.removeListener('close', onCloseOrRemove);
+      socket.removeListener('agentRemove', onCloseOrRemove);
+    }
+  });
+};
+
+TunnelingAgent.prototype.createSocket = function createSocket(options, cb) {
+  var self = this;
+  var placeholder = {};
+  self.sockets.push(placeholder);
+
+  var connectOptions = mergeOptions({}, self.proxyOptions, {
+    method: 'CONNECT',
+    path: options.host + ':' + options.port,
+    agent: false,
+    headers: {
+      host: options.host + ':' + options.port
+    }
+  });
+  if (options.localAddress) {
+    connectOptions.localAddress = options.localAddress;
+  }
+  if (connectOptions.proxyAuth) {
+    connectOptions.headers = connectOptions.headers || {};
+    connectOptions.headers['Proxy-Authorization'] = 'Basic ' +
+        new Buffer(connectOptions.proxyAuth).toString('base64');
+  }
+
+  debug('making CONNECT request');
+  var connectReq = self.request(connectOptions);
+  connectReq.useChunkedEncodingByDefault = false; // for v0.6
+  connectReq.once('response', onResponse); // for v0.6
+  connectReq.once('upgrade', onUpgrade);   // for v0.6
+  connectReq.once('connect', onConnect);   // for v0.7 or later
+  connectReq.once('error', onError);
+  connectReq.end();
+
+  function onResponse(res) {
+    // Very hacky. This is necessary to avoid http-parser leaks.
+    res.upgrade = true;
+  }
+
+  function onUpgrade(res, socket, head) {
+    // Hacky.
+    process.nextTick(function() {
+      onConnect(res, socket, head);
+    });
+  }
+
+  function onConnect(res, socket, head) {
+    connectReq.removeAllListeners();
+    socket.removeAllListeners();
+
+    if (res.statusCode !== 200) {
+      debug('tunneling socket could not be established, statusCode=%d',
+        res.statusCode);
+      socket.destroy();
+      var error = new Error('tunneling socket could not be established, ' +
+        'statusCode=' + res.statusCode);
+      error.code = 'ECONNRESET';
+      options.request.emit('error', error);
+      self.removeSocket(placeholder);
+      return;
+    }
+    if (head.length > 0) {
+      debug('got illegal response body from proxy');
+      socket.destroy();
+      var error = new Error('got illegal response body from proxy');
+      error.code = 'ECONNRESET';
+      options.request.emit('error', error);
+      self.removeSocket(placeholder);
+      return;
+    }
+    debug('tunneling connection has established');
+    self.sockets[self.sockets.indexOf(placeholder)] = socket;
+    return cb(socket);
+  }
+
+  function onError(cause) {
+    connectReq.removeAllListeners();
+
+    debug('tunneling socket could not be established, cause=%s\n',
+          cause.message, cause.stack);
+    var error = new Error('tunneling socket could not be established, ' +
+                          'cause=' + cause.message);
+    error.code = 'ECONNRESET';
+    options.request.emit('error', error);
+    self.removeSocket(placeholder);
+  }
+};
+
+TunnelingAgent.prototype.removeSocket = function removeSocket(socket) {
+  var pos = this.sockets.indexOf(socket)
+  if (pos === -1) {
+    return;
+  }
+  this.sockets.splice(pos, 1);
+
+  var pending = this.requests.shift();
+  if (pending) {
+    // If we have pending requests and a socket gets closed a new one
+    // needs to be created to take over in the pool for the one that closed.
+    this.createSocket(pending, function(socket) {
+      pending.request.onSocket(socket);
+    });
+  }
+};
+
+function createSecureSocket(options, cb) {
+  var self = this;
+  TunnelingAgent.prototype.createSocket.call(self, options, function(socket) {
+    var hostHeader = options.request.getHeader('host');
+    var tlsOptions = mergeOptions({}, self.options, {
+      socket: socket,
+      servername: hostHeader ? hostHeader.replace(/:.*$/, '') : options.host
+    });
+
+    // 0 is dummy port for v0.6
+    var secureSocket = tls.connect(0, tlsOptions);
+    self.sockets[self.sockets.indexOf(socket)] = secureSocket;
+    cb(secureSocket);
+  });
+}
+
+
+function toOptions(host, port, localAddress) {
+  if (typeof host === 'string') { // since v0.10
+    return {
+      host: host,
+      port: port,
+      localAddress: localAddress
+    };
+  }
+  return host; // for v0.11 or later
+}
+
+function mergeOptions(target) {
+  for (var i = 1, len = arguments.length; i < len; ++i) {
+    var overrides = arguments[i];
+    if (typeof overrides === 'object') {
+      var keys = Object.keys(overrides);
+      for (var j = 0, keyLen = keys.length; j < keyLen; ++j) {
+        var k = keys[j];
+        if (overrides[k] !== undefined) {
+          target[k] = overrides[k];
+        }
+      }
+    }
+  }
+  return target;
+}
+
+
+var debug;
+if (process.env.NODE_DEBUG && /\btunnel\b/.test(process.env.NODE_DEBUG)) {
+  debug = function() {
+    var args = Array.prototype.slice.call(arguments);
+    if (typeof args[0] === 'string') {
+      args[0] = 'TUNNEL: ' + args[0];
+    } else {
+      args.unshift('TUNNEL:');
+    }
+    console.error.apply(console, args);
+  }
+} else {
+  debug = function() {};
+}
+exports.debug = debug; // for test
+
+
+/***/ }),
+
 /***/ 143:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -4856,52 +5128,6 @@ module.exports = require("https");
 /***/ (function(module) {
 
 module.exports = {"name":"@octokit/rest","version":"16.28.9","publishConfig":{"access":"public"},"description":"GitHub REST API client for Node.js","keywords":["octokit","github","rest","api-client"],"author":"Gregor Martynus (https://github.com/gr2m)","contributors":[{"name":"Mike de Boer","email":"info@mikedeboer.nl"},{"name":"Fabian Jakobs","email":"fabian@c9.io"},{"name":"Joe Gallo","email":"joe@brassafrax.com"},{"name":"Gregor Martynus","url":"https://github.com/gr2m"}],"repository":"https://github.com/octokit/rest.js","dependencies":{"@octokit/request":"^5.0.0","@octokit/request-error":"^1.0.2","atob-lite":"^2.0.0","before-after-hook":"^2.0.0","btoa-lite":"^1.0.0","deprecation":"^2.0.0","lodash.get":"^4.4.2","lodash.set":"^4.3.2","lodash.uniq":"^4.5.0","octokit-pagination-methods":"^1.1.0","once":"^1.4.0","universal-user-agent":"^4.0.0"},"devDependencies":{"@gimenete/type-writer":"^0.1.3","@octokit/fixtures-server":"^5.0.1","@octokit/routes":"20.9.2","@types/node":"^12.0.0","bundlesize":"^0.18.0","chai":"^4.1.2","compression-webpack-plugin":"^3.0.0","coveralls":"^3.0.0","glob":"^7.1.2","http-proxy-agent":"^2.1.0","lodash.camelcase":"^4.3.0","lodash.merge":"^4.6.1","lodash.upperfirst":"^4.3.1","mkdirp":"^0.5.1","mocha":"^6.0.0","mustache":"^3.0.0","nock":"^10.0.0","npm-run-all":"^4.1.2","nyc":"^14.0.0","prettier":"^1.14.2","proxy":"^0.2.4","semantic-release":"^15.0.0","sinon":"^7.2.4","sinon-chai":"^3.0.0","sort-keys":"^4.0.0","standard":"^14.0.2","string-to-arraybuffer":"^1.0.0","string-to-jsdoc-comment":"^1.0.0","typescript":"^3.3.1","webpack":"^4.0.0","webpack-bundle-analyzer":"^3.0.0","webpack-cli":"^3.0.0"},"types":"index.d.ts","scripts":{"coverage":"nyc report --reporter=html && open coverage/index.html","pretest":"standard","test":"nyc mocha test/mocha-node-setup.js \"test/*/**/*-test.js\"","test:browser":"cypress run --browser chrome","test:memory":"mocha test/memory-test","build":"npm-run-all build:*","build:ts":"node scripts/generate-types","prebuild:browser":"mkdirp dist/","build:browser":"npm-run-all build:browser:*","build:browser:development":"webpack --mode development --entry . --output-library=Octokit --output=./dist/octokit-rest.js --profile --json > dist/bundle-stats.json","build:browser:production":"webpack --mode production --entry . --plugin=compression-webpack-plugin --output-library=Octokit --output-path=./dist --output-filename=octokit-rest.min.js --devtool source-map","generate-bundle-report":"webpack-bundle-analyzer dist/bundle-stats.json --mode=static --no-open --report dist/bundle-report.html","generate-routes":"node scripts/generate-routes","prevalidate:ts":"npm run -s build:ts","validate:ts":"tsc --target es6 --noImplicitAny index.d.ts","postvalidate:ts":"tsc --noEmit --target es6 test/typescript-validate.ts","start-fixtures-server":"octokit-fixtures-server"},"license":"MIT","files":["index.js","index.d.ts","lib","plugins"],"nyc":{"ignore":["test"]},"release":{"publish":["@semantic-release/npm",{"path":"@semantic-release/github","assets":["dist/*","!dist/*.map.gz"]}]},"standard":{"globals":["describe","before","beforeEach","afterEach","after","it","expect","cy"],"ignore":["/docs"]},"bundlesize":[{"path":"./dist/octokit-rest.min.js.gz","maxSize":"33 kB"}],"_resolved":"https://registry.npmjs.org/@octokit/rest/-/rest-16.28.9.tgz","_integrity":"sha512-IKGnX+Tvzt7XHhs8f4ajqxyJvYAMNX5nWfoJm4CQj8LZToMiaJgutf5KxxpxoC3y5w7JTJpW5rnWnF4TsIvCLA==","_from":"@octokit/rest@16.28.9"};
-
-/***/ }),
-
-/***/ 216:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  var NodeType, XMLDummy, XMLNode;
-
-  XMLNode = __webpack_require__(733);
-
-  NodeType = __webpack_require__(683);
-
-  // Represents a  raw node
-  module.exports = XMLDummy = class XMLDummy extends XMLNode {
-    // Initializes a new instance of `XMLDummy`
-
-    // `XMLDummy` is a special node representing a node with 
-    // a null value. Dummy nodes are created while recursively
-    // building the XML tree. Simply skipping null values doesn't
-    // work because that would break the recursive chain.
-    constructor(parent) {
-      super(parent);
-      this.type = NodeType.Dummy;
-    }
-
-    // Creates and returns a deep clone of `this`
-    clone() {
-      return Object.create(this);
-    }
-
-    // Converts the XML fragment to string
-
-    // `options.pretty` pretty prints the result
-    // `options.indent` indentation for pretty print
-    // `options.offset` how many indentations to add to every line for pretty print
-    // `options.newline` newline sequence for pretty print
-    toString(options) {
-      return '';
-    }
-
-  };
-
-}).call(this);
-
 
 /***/ }),
 
@@ -7303,14 +7529,6 @@ isStream.transform = function (stream) {
 
 /***/ }),
 
-/***/ 335:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-module.exports = __webpack_require__(850);
-
-
-/***/ }),
-
 /***/ 336:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -8262,9 +8480,10 @@ function Octokit (plugins, options) {
 /***/ }),
 
 /***/ 413:
-/***/ (function(module) {
+/***/ (function(module, __unusedexports, __webpack_require__) {
 
-module.exports = require("stream");
+module.exports = __webpack_require__(141);
+
 
 /***/ }),
 
@@ -8296,7 +8515,7 @@ module.exports = require("stream");
 
   XMLProcessingInstruction = __webpack_require__(491);
 
-  XMLDummy = __webpack_require__(216);
+  XMLDummy = __webpack_require__(956);
 
   XMLDTDAttList = __webpack_require__(801);
 
@@ -9089,7 +9308,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var Stream = _interopDefault(__webpack_require__(413));
+var Stream = _interopDefault(__webpack_require__(794));
 var http = _interopDefault(__webpack_require__(605));
 var Url = _interopDefault(__webpack_require__(835));
 var https = _interopDefault(__webpack_require__(211));
@@ -12903,7 +13122,7 @@ class HttpClient {
         if (useProxy) {
             // If using proxy, need tunnel
             if (!tunnel) {
-                tunnel = __webpack_require__(335);
+                tunnel = __webpack_require__(413);
             }
             const agentOptions = {
                 maxSockets: maxSockets,
@@ -14147,7 +14366,7 @@ const CORE_PLUGINS = [
   __webpack_require__(586),
   __webpack_require__(430),
 
-  __webpack_require__(956) // deprecated: remove in v17
+  __webpack_require__(850) // deprecated: remove in v17
 ]
 
 module.exports = Octokit.plugin(CORE_PLUGINS)
@@ -15290,7 +15509,7 @@ exports.convertToJson = convertToJson;
           XMLRaw = __webpack_require__(660);
           XMLText = __webpack_require__(708);
           XMLProcessingInstruction = __webpack_require__(491);
-          XMLDummy = __webpack_require__(216);
+          XMLDummy = __webpack_require__(956);
           NodeType = __webpack_require__(683);
           XMLNodeList = __webpack_require__(300);
           XMLNamedNodeMap = __webpack_require__(451);
@@ -16654,6 +16873,7 @@ const IS_WINDOWS = process.platform === 'win32';
 class DotNetVersionInfo {
     constructor(version) {
         this.isExactVersionSet = false;
+        this.inputVersion = version;
         // Check for exact match
         if (semver.valid(semver.clean(version) || '') != null) {
             this.fullversion = semver.clean(version);
@@ -16814,7 +17034,7 @@ class DotnetCoreInstaller {
             // Sort for latest version
             releasesInfo = releasesInfo.sort((a, b) => semver.rcompare(a['sdk']['version'], b['sdk']['version']));
             if (releasesInfo.length == 0) {
-                throw `Could not construct download URL. Please ensure that specified version ${versionInfo.version()} is valid.`;
+                throw `Could not find dotnet core version. Please ensure that specified version ${versionInfo.inputVersion} is valid.`;
             }
             let release = releasesInfo[0];
             return release['sdk']['version'];
@@ -17110,6 +17330,13 @@ function getFirstPage (octokit, link, headers) {
   return getPage(octokit, link, 'first', headers)
 }
 
+
+/***/ }),
+
+/***/ 794:
+/***/ (function(module) {
+
+module.exports = require("stream");
 
 /***/ }),
 
@@ -17777,273 +18004,20 @@ module.exports = require("url");
 /***/ }),
 
 /***/ 850:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
+/***/ (function(module, __unusedexports, __webpack_require__) {
 
-"use strict";
+module.exports = paginationMethodsPlugin
 
-
-var net = __webpack_require__(631);
-var tls = __webpack_require__(16);
-var http = __webpack_require__(605);
-var https = __webpack_require__(211);
-var events = __webpack_require__(614);
-var assert = __webpack_require__(357);
-var util = __webpack_require__(669);
-
-
-exports.httpOverHttp = httpOverHttp;
-exports.httpsOverHttp = httpsOverHttp;
-exports.httpOverHttps = httpOverHttps;
-exports.httpsOverHttps = httpsOverHttps;
-
-
-function httpOverHttp(options) {
-  var agent = new TunnelingAgent(options);
-  agent.request = http.request;
-  return agent;
+function paginationMethodsPlugin (octokit) {
+  octokit.getFirstPage = __webpack_require__(777).bind(null, octokit)
+  octokit.getLastPage = __webpack_require__(649).bind(null, octokit)
+  octokit.getNextPage = __webpack_require__(550).bind(null, octokit)
+  octokit.getPreviousPage = __webpack_require__(563).bind(null, octokit)
+  octokit.hasFirstPage = __webpack_require__(536)
+  octokit.hasLastPage = __webpack_require__(336)
+  octokit.hasNextPage = __webpack_require__(929)
+  octokit.hasPreviousPage = __webpack_require__(558)
 }
-
-function httpsOverHttp(options) {
-  var agent = new TunnelingAgent(options);
-  agent.request = http.request;
-  agent.createSocket = createSecureSocket;
-  agent.defaultPort = 443;
-  return agent;
-}
-
-function httpOverHttps(options) {
-  var agent = new TunnelingAgent(options);
-  agent.request = https.request;
-  return agent;
-}
-
-function httpsOverHttps(options) {
-  var agent = new TunnelingAgent(options);
-  agent.request = https.request;
-  agent.createSocket = createSecureSocket;
-  agent.defaultPort = 443;
-  return agent;
-}
-
-
-function TunnelingAgent(options) {
-  var self = this;
-  self.options = options || {};
-  self.proxyOptions = self.options.proxy || {};
-  self.maxSockets = self.options.maxSockets || http.Agent.defaultMaxSockets;
-  self.requests = [];
-  self.sockets = [];
-
-  self.on('free', function onFree(socket, host, port, localAddress) {
-    var options = toOptions(host, port, localAddress);
-    for (var i = 0, len = self.requests.length; i < len; ++i) {
-      var pending = self.requests[i];
-      if (pending.host === options.host && pending.port === options.port) {
-        // Detect the request to connect same origin server,
-        // reuse the connection.
-        self.requests.splice(i, 1);
-        pending.request.onSocket(socket);
-        return;
-      }
-    }
-    socket.destroy();
-    self.removeSocket(socket);
-  });
-}
-util.inherits(TunnelingAgent, events.EventEmitter);
-
-TunnelingAgent.prototype.addRequest = function addRequest(req, host, port, localAddress) {
-  var self = this;
-  var options = mergeOptions({request: req}, self.options, toOptions(host, port, localAddress));
-
-  if (self.sockets.length >= this.maxSockets) {
-    // We are over limit so we'll add it to the queue.
-    self.requests.push(options);
-    return;
-  }
-
-  // If we are under maxSockets create a new one.
-  self.createSocket(options, function(socket) {
-    socket.on('free', onFree);
-    socket.on('close', onCloseOrRemove);
-    socket.on('agentRemove', onCloseOrRemove);
-    req.onSocket(socket);
-
-    function onFree() {
-      self.emit('free', socket, options);
-    }
-
-    function onCloseOrRemove(err) {
-      self.removeSocket(socket);
-      socket.removeListener('free', onFree);
-      socket.removeListener('close', onCloseOrRemove);
-      socket.removeListener('agentRemove', onCloseOrRemove);
-    }
-  });
-};
-
-TunnelingAgent.prototype.createSocket = function createSocket(options, cb) {
-  var self = this;
-  var placeholder = {};
-  self.sockets.push(placeholder);
-
-  var connectOptions = mergeOptions({}, self.proxyOptions, {
-    method: 'CONNECT',
-    path: options.host + ':' + options.port,
-    agent: false,
-    headers: {
-      host: options.host + ':' + options.port
-    }
-  });
-  if (options.localAddress) {
-    connectOptions.localAddress = options.localAddress;
-  }
-  if (connectOptions.proxyAuth) {
-    connectOptions.headers = connectOptions.headers || {};
-    connectOptions.headers['Proxy-Authorization'] = 'Basic ' +
-        new Buffer(connectOptions.proxyAuth).toString('base64');
-  }
-
-  debug('making CONNECT request');
-  var connectReq = self.request(connectOptions);
-  connectReq.useChunkedEncodingByDefault = false; // for v0.6
-  connectReq.once('response', onResponse); // for v0.6
-  connectReq.once('upgrade', onUpgrade);   // for v0.6
-  connectReq.once('connect', onConnect);   // for v0.7 or later
-  connectReq.once('error', onError);
-  connectReq.end();
-
-  function onResponse(res) {
-    // Very hacky. This is necessary to avoid http-parser leaks.
-    res.upgrade = true;
-  }
-
-  function onUpgrade(res, socket, head) {
-    // Hacky.
-    process.nextTick(function() {
-      onConnect(res, socket, head);
-    });
-  }
-
-  function onConnect(res, socket, head) {
-    connectReq.removeAllListeners();
-    socket.removeAllListeners();
-
-    if (res.statusCode !== 200) {
-      debug('tunneling socket could not be established, statusCode=%d',
-        res.statusCode);
-      socket.destroy();
-      var error = new Error('tunneling socket could not be established, ' +
-        'statusCode=' + res.statusCode);
-      error.code = 'ECONNRESET';
-      options.request.emit('error', error);
-      self.removeSocket(placeholder);
-      return;
-    }
-    if (head.length > 0) {
-      debug('got illegal response body from proxy');
-      socket.destroy();
-      var error = new Error('got illegal response body from proxy');
-      error.code = 'ECONNRESET';
-      options.request.emit('error', error);
-      self.removeSocket(placeholder);
-      return;
-    }
-    debug('tunneling connection has established');
-    self.sockets[self.sockets.indexOf(placeholder)] = socket;
-    return cb(socket);
-  }
-
-  function onError(cause) {
-    connectReq.removeAllListeners();
-
-    debug('tunneling socket could not be established, cause=%s\n',
-          cause.message, cause.stack);
-    var error = new Error('tunneling socket could not be established, ' +
-                          'cause=' + cause.message);
-    error.code = 'ECONNRESET';
-    options.request.emit('error', error);
-    self.removeSocket(placeholder);
-  }
-};
-
-TunnelingAgent.prototype.removeSocket = function removeSocket(socket) {
-  var pos = this.sockets.indexOf(socket)
-  if (pos === -1) {
-    return;
-  }
-  this.sockets.splice(pos, 1);
-
-  var pending = this.requests.shift();
-  if (pending) {
-    // If we have pending requests and a socket gets closed a new one
-    // needs to be created to take over in the pool for the one that closed.
-    this.createSocket(pending, function(socket) {
-      pending.request.onSocket(socket);
-    });
-  }
-};
-
-function createSecureSocket(options, cb) {
-  var self = this;
-  TunnelingAgent.prototype.createSocket.call(self, options, function(socket) {
-    var hostHeader = options.request.getHeader('host');
-    var tlsOptions = mergeOptions({}, self.options, {
-      socket: socket,
-      servername: hostHeader ? hostHeader.replace(/:.*$/, '') : options.host
-    });
-
-    // 0 is dummy port for v0.6
-    var secureSocket = tls.connect(0, tlsOptions);
-    self.sockets[self.sockets.indexOf(socket)] = secureSocket;
-    cb(secureSocket);
-  });
-}
-
-
-function toOptions(host, port, localAddress) {
-  if (typeof host === 'string') { // since v0.10
-    return {
-      host: host,
-      port: port,
-      localAddress: localAddress
-    };
-  }
-  return host; // for v0.11 or later
-}
-
-function mergeOptions(target) {
-  for (var i = 1, len = arguments.length; i < len; ++i) {
-    var overrides = arguments[i];
-    if (typeof overrides === 'object') {
-      var keys = Object.keys(overrides);
-      for (var j = 0, keyLen = keys.length; j < keyLen; ++j) {
-        var k = keys[j];
-        if (overrides[k] !== undefined) {
-          target[k] = overrides[k];
-        }
-      }
-    }
-  }
-  return target;
-}
-
-
-var debug;
-if (process.env.NODE_DEBUG && /\btunnel\b/.test(process.env.NODE_DEBUG)) {
-  debug = function() {
-    var args = Array.prototype.slice.call(arguments);
-    if (typeof args[0] === 'string') {
-      args[0] = 'TUNNEL: ' + args[0];
-    } else {
-      args.unshift('TUNNEL:');
-    }
-    console.error.apply(console, args);
-  }
-} else {
-  debug = function() {};
-}
-exports.debug = debug; // for test
 
 
 /***/ }),
@@ -21035,18 +21009,45 @@ module.exports.shellSync = (cmd, opts) => handleShell(module.exports.sync, cmd, 
 /***/ 956:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
-module.exports = paginationMethodsPlugin
+// Generated by CoffeeScript 2.4.1
+(function() {
+  var NodeType, XMLDummy, XMLNode;
 
-function paginationMethodsPlugin (octokit) {
-  octokit.getFirstPage = __webpack_require__(777).bind(null, octokit)
-  octokit.getLastPage = __webpack_require__(649).bind(null, octokit)
-  octokit.getNextPage = __webpack_require__(550).bind(null, octokit)
-  octokit.getPreviousPage = __webpack_require__(563).bind(null, octokit)
-  octokit.hasFirstPage = __webpack_require__(536)
-  octokit.hasLastPage = __webpack_require__(336)
-  octokit.hasNextPage = __webpack_require__(929)
-  octokit.hasPreviousPage = __webpack_require__(558)
-}
+  XMLNode = __webpack_require__(733);
+
+  NodeType = __webpack_require__(683);
+
+  // Represents a  raw node
+  module.exports = XMLDummy = class XMLDummy extends XMLNode {
+    // Initializes a new instance of `XMLDummy`
+
+    // `XMLDummy` is a special node representing a node with 
+    // a null value. Dummy nodes are created while recursively
+    // building the XML tree. Simply skipping null values doesn't
+    // work because that would break the recursive chain.
+    constructor(parent) {
+      super(parent);
+      this.type = NodeType.Dummy;
+    }
+
+    // Creates and returns a deep clone of `this`
+    clone() {
+      return Object.create(this);
+    }
+
+    // Converts the XML fragment to string
+
+    // `options.pretty` pretty prints the result
+    // `options.indent` indentation for pretty print
+    // `options.offset` how many indentations to add to every line for pretty print
+    // `options.newline` newline sequence for pretty print
+    toString(options) {
+      return '';
+    }
+
+  };
+
+}).call(this);
 
 
 /***/ }),
@@ -21208,7 +21209,7 @@ exports.convert2nimn = convert2nimn;
 
 "use strict";
 
-const {PassThrough} = __webpack_require__(413);
+const {PassThrough} = __webpack_require__(794);
 
 module.exports = options => {
 	options = Object.assign({}, options);
