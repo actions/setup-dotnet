@@ -169,6 +169,10 @@ export class DotnetCoreInstaller {
         core.addPath(
           path.join(process.env['LocalAppData'] + '', 'Microsoft', 'dotnet')
         );
+        core.exportVariable(
+          'DOTNET_ROOT',
+          path.join(process.env['LocalAppData'] + '', 'Microsoft', 'dotnet')
+        );
       } else {
         // This is the default set in install-dotnet.sh
         core.addPath(path.join(process.env['HOME'] + '', '.dotnet'));
