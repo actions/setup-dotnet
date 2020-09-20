@@ -34,7 +34,7 @@ Matrix Testing:
 ```yaml
 jobs:
   build:
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         dotnet: [ '2.2.103', '3.0', '3.1.x' ]
@@ -46,6 +46,26 @@ jobs:
         with:
           dotnet-version: ${{ matrix.dotnet }}
       - run: dotnet build <my project>
+```
+
+Side by Side Testing:
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Dotnet Side by Side testing sample
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '2.2.103'
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '3.1.x'
+      - run: dotnet build <my project>
+      - run: dotnet test <my project>
 ```
 
 Authentication for nuget feeds:
