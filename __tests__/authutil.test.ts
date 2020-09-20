@@ -81,11 +81,7 @@ describe('authutil tests', () => {
   beforeEach(async () => {
     await io.rmRF(fakeSourcesDirForTesting);
     await io.mkdirP(fakeSourcesDirForTesting);
-  }, 30000);
-
-  afterAll(async () => {
-    await io.rmRF(fakeSourcesDirForTesting);
-  }, 30000);
+  }, 100000);
 
   beforeEach(() => {
     if (fs.existsSync(nugetConfigFile)) {

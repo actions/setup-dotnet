@@ -1,15 +1,14 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using System;
+using Newtonsoft.Json;
 
 namespace sample_csproj
 {
-    [TestClass]
-    public class Program
+    class Program
     {
-        [TestMethod]
-        public void TestMethod1()
+        static void Main(string[] args)
         {
-            Console.WriteLine("Hello, World!");
+            var json = JsonConvert.SerializeObject(new[] {"Hello", "World!" });
+            Console.WriteLine(json);
         }
     }
 }
