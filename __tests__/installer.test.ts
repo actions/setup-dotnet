@@ -74,6 +74,9 @@ describe('version tests', () => {
 
 describe('installer tests', () => {
   beforeAll(async () => {
+    process.env.RUNNER_TOOL_CACHE = toolDir;
+    process.env.DOTNET_INSTALL_DIR = toolDir;
+    process.env.RUNNER_TEMP = tempDir;
     await io.rmRF(toolDir);
     await io.rmRF(tempDir);
   });
@@ -85,23 +88,21 @@ describe('installer tests', () => {
     } catch {
       console.log('Failed to remove test directories');
     }
-  }, 100000);
+  }, 30000);
 
   it('Resolving a normal generic version works', async () => {
     const dotnetInstaller = new installer.DotnetCoreInstaller('3.1.x');
-    let versInfo = await dotnetInstaller.resolveInfos(
-      ['win-x64'],
+    let versInfo = await dotnetInstaller.resolveVersion(
       new installer.DotNetVersionInfo('3.1.x')
     );
 
-    expect(versInfo.resolvedVersion.startsWith('3.1.'));
+    expect(versInfo.startsWith('3.1.'));
   }, 100000);
 
   it('Resolving a nonexistent generic version fails', async () => {
     const dotnetInstaller = new installer.DotnetCoreInstaller('999.1.x');
     try {
-      await dotnetInstaller.resolveInfos(
-        ['win-x64'],
+      await dotnetInstaller.resolveVersion(
         new installer.DotNetVersionInfo('999.1.x')
       );
       fail();
@@ -112,53 +113,47 @@ describe('installer tests', () => {
 
   it('Resolving a exact stable version works', async () => {
     const dotnetInstaller = new installer.DotnetCoreInstaller('3.1.201');
-    let versInfo = await dotnetInstaller.resolveInfos(
-      ['win-x64'],
+    let versInfo = await dotnetInstaller.resolveVersion(
       new installer.DotNetVersionInfo('3.1.201')
     );
 
-    expect(versInfo.resolvedVersion).toBe('3.1.201');
+    expect(versInfo).toBe('3.1.201');
   }, 100000);
 
   it('Resolving a exact preview version works', async () => {
     const dotnetInstaller = new installer.DotnetCoreInstaller(
-      '5.0.0-preview.4'
+      '5.0.0-preview.6'
     );
-    let versInfo = await dotnetInstaller.resolveInfos(
-      ['win-x64'],
-      new installer.DotNetVersionInfo('5.0.0-preview.4')
+    let versInfo = await dotnetInstaller.resolveVersion(
+      new installer.DotNetVersionInfo('5.0.0-preview.6')
     );
 
-    expect(versInfo.resolvedVersion).toBe('5.0.0-preview.4');
+    expect(versInfo).toBe('5.0.0-preview.6');
   }, 100000);
 
   it('Acquires version of dotnet if no matching version is installed', async () => {
-    await getDotnet('2.2.205');
-    const dotnetDir = path.join(toolDir, 'dncs', '2.2.205', os.arch());
-
-    expect(fs.existsSync(`${dotnetDir}.complete`)).toBe(true);
+    await getDotnet('3.1.201');
+    expect(fs.existsSync(path.join(toolDir, 'sdk', '3.1.201'))).toBe(true);
     if (IS_WINDOWS) {
-      expect(fs.existsSync(path.join(dotnetDir, 'dotnet.exe'))).toBe(true);
+      expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
     } else {
-      expect(fs.existsSync(path.join(dotnetDir, 'dotnet'))).toBe(true);
+      expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
     }
   }, 400000); //This needs some time to download on "slower" internet connections
 
-  it('Acquires version of dotnet if no matching version is installed', async () => {
-    const dotnetDir = path.join(toolDir, 'dncs', '2.2.105', os.arch());
-
+  it('Acquires version of dotnet from global.json if no matching version is installed', async () => {
     const globalJsonPath = path.join(process.cwd(), 'global.json');
-    const jsonContents = `{${os.EOL}"sdk": {${os.EOL}"version": "2.2.105"${os.EOL}}${os.EOL}}`;
+    const jsonContents = `{${os.EOL}"sdk": {${os.EOL}"version": "3.1.201"${os.EOL}}${os.EOL}}`;
     if (!fs.existsSync(globalJsonPath)) {
       fs.writeFileSync(globalJsonPath, jsonContents);
     }
     await setup.run();
 
-    expect(fs.existsSync(`${dotnetDir}.complete`)).toBe(true);
+    expect(fs.existsSync(path.join(toolDir, 'sdk', '3.1.201'))).toBe(true);
     if (IS_WINDOWS) {
-      expect(fs.existsSync(path.join(dotnetDir, 'dotnet.exe'))).toBe(true);
+      expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
     } else {
-      expect(fs.existsSync(path.join(dotnetDir, 'dotnet'))).toBe(true);
+      expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
     }
     fs.unlinkSync(globalJsonPath);
   }, 100000);
@@ -171,30 +166,7 @@ describe('installer tests', () => {
       thrown = true;
     }
     expect(thrown).toBe(true);
-  }, 100000);
-
-  it('Uses version of dotnet installed in cache', async () => {
-    const dotnetDir: string = path.join(toolDir, 'dncs', '250.0.0', os.arch());
-    await io.mkdirP(dotnetDir);
-    fs.writeFileSync(`${dotnetDir}.complete`, 'hello');
-    // This will throw if it doesn't find it in the cache (because no such version exists)
-    await getDotnet('250.0.0');
-    return;
-  });
-
-  it('Doesnt use version of dotnet that was only partially installed in cache', async () => {
-    const dotnetDir: string = path.join(toolDir, 'dncs', '251.0.0', os.arch());
-    await io.mkdirP(dotnetDir);
-    let thrown = false;
-    try {
-      // This will throw if it doesn't find it in the cache (because no such version exists)
-      await getDotnet('251.0.0');
-    } catch {
-      thrown = true;
-    }
-    expect(thrown).toBe(true);
-    return;
-  });
+  }, 30000);
 
   it('Uses an up to date bash download script', async () => {
     const httpCallbackClient = new hc.HttpClient('setup-dotnet-test', [], {
@@ -214,7 +186,7 @@ describe('installer tests', () => {
     expect(normalizeFileContents(currentContents)).toBe(
       normalizeFileContents(upToDateContents)
     );
-  }, 100000);
+  }, 30000);
 
   it('Uses an up to date powershell download script', async () => {
     var httpCallbackClient = new hc.HttpClient('setup-dotnet-test', [], {
@@ -234,7 +206,7 @@ describe('installer tests', () => {
     expect(normalizeFileContents(currentContents)).toBe(
       normalizeFileContents(upToDateContents)
     );
-  }, 100000);
+  }, 30000);
 });
 
 function normalizeFileContents(contents: string): string {
