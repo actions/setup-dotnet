@@ -18,6 +18,7 @@ describe('installer tests', () => {
     process.env.RUNNER_TOOL_CACHE = toolDir;
     process.env.DOTNET_INSTALL_DIR = toolDir;
     process.env.RUNNER_TEMP = tempDir;
+    process.env.DOTNET_ROOT = '';
     await io.rmRF(toolDir);
     await io.rmRF(tempDir);
   });
@@ -39,7 +40,12 @@ describe('installer tests', () => {
     } else {
       expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
     }
-  }, 400000); //This needs some time to download on "slower" internet connections
+
+    expect(process.env.DOTNET_ROOT).toBeDefined;
+    expect(process.env.PATH).toBeDefined;
+    expect(process.env.DOTNET_ROOT).toBe(toolDir);
+    expect(process.env.PATH?.startsWith(toolDir)).toBe(true);
+  }, 600000); //This needs some time to download on "slower" internet connections
 
   it('Acquires generic version of dotnet if no matching version is installed', async () => {
     await getDotnet('3.1');
@@ -52,7 +58,12 @@ describe('installer tests', () => {
     } else {
       expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
     }
-  }, 400000); //This needs some time to download on "slower" internet connections
+
+    expect(process.env.DOTNET_ROOT).toBeDefined;
+    expect(process.env.PATH).toBeDefined;
+    expect(process.env.DOTNET_ROOT).toBe(toolDir);
+    expect(process.env.PATH?.startsWith(toolDir)).toBe(true);
+  }, 600000); //This needs some time to download on "slower" internet connections
 
   it('Throws if no location contains correct dotnet version', async () => {
     let thrown = false;
