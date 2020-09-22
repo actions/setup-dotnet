@@ -16974,8 +16974,8 @@ class DotnetCoreInstaller {
             releasesInfo = releasesInfo.filter((info) => {
                 // channel-version is the first 2 elements of the version (e.g. 2.1), filter out versions that don't match 2.1.x.
                 const sdkParts = info['channel-version'].split('.');
-                if (versionParts.length == 2 &&
-                    !(versionParts[2] == 'x' || versionParts[2] == '*')) {
+                if (versionParts.length >= 2 &&
+                    !(versionParts[1] == 'x' || versionParts[1] == '*')) {
                     return versionParts[0] == sdkParts[0] && versionParts[1] == sdkParts[1];
                 }
                 return versionParts[0] == sdkParts[0];
