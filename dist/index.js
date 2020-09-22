@@ -16971,7 +16971,6 @@ class DotnetCoreInstaller {
             const response = yield httpClient.getJson(DotNetCoreIndexUrl);
             const result = response.result || {};
             let releasesInfo = result['releases-index'];
-            console.log(versionParts);
             releasesInfo = releasesInfo.filter((info) => {
                 // channel-version is the first 2 elements of the version (e.g. 2.1), filter out versions that don't match 2.1.x.
                 const sdkParts = info['channel-version'].split('.');
