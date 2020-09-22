@@ -4,8 +4,6 @@ import os = require('os');
 import path = require('path');
 import hc = require('@actions/http-client');
 
-import each from 'jest-each';
-
 const toolDir = path.join(__dirname, 'runner', 'tools');
 const tempDir = path.join(__dirname, 'runner', 'temp');
 
@@ -15,62 +13,6 @@ import * as setup from '../src/setup-dotnet';
 import * as installer from '../src/installer';
 
 const IS_WINDOWS = process.platform === 'win32';
-
-describe('version tests', () => {
-  each(['3.1.999', '3.1.101-preview.3']).test(
-    "Exact version '%s' should be the same",
-    vers => {
-      let versInfo = new installer.DotNetVersionInfo(vers);
-
-      expect(versInfo.isExactVersion()).toBe(true);
-      expect(versInfo.version()).toBe(vers);
-    }
-  );
-
-  each([
-    ['3.1.x', '3.1'],
-    ['1.1.*', '1.1'],
-    ['2.0', '2.0']
-  ]).test("Generic version '%s' should be '%s'", (vers, resVers) => {
-    let versInfo = new installer.DotNetVersionInfo(vers);
-
-    expect(versInfo.isExactVersion()).toBe(false);
-    expect(versInfo.version()).toBe(resVers);
-  });
-
-  each([
-    '',
-    '.',
-    '..',
-    ' . ',
-    '. ',
-    ' .',
-    ' . . ',
-    ' .. ',
-    ' .  ',
-    '-1.-1',
-    '-1',
-    '-1.-1.-1',
-    '..3',
-    '1..3',
-    '1..',
-    '.2.3',
-    '.2.x',
-    '1',
-    '2.x',
-    '*.*.1',
-    '*.1',
-    '*.',
-    '1.2.',
-    '1.2.-abc',
-    'a.b',
-    'a.b.c',
-    'a.b.c-preview',
-    ' 0 . 1 . 2 '
-  ]).test("Malformed version '%s' should throw", vers => {
-    expect(() => new installer.DotNetVersionInfo(vers)).toThrow();
-  });
-});
 
 describe('installer tests', () => {
   beforeAll(async () => {
@@ -89,47 +31,6 @@ describe('installer tests', () => {
       console.log('Failed to remove test directories');
     }
   }, 30000);
-
-  it('Resolving a normal generic version works', async () => {
-    const dotnetInstaller = new installer.DotnetCoreInstaller('3.1.x');
-    let versInfo = await dotnetInstaller.resolveVersion(
-      new installer.DotNetVersionInfo('3.1.x')
-    );
-
-    expect(versInfo.startsWith('3.1.'));
-  }, 100000);
-
-  it('Resolving a nonexistent generic version fails', async () => {
-    const dotnetInstaller = new installer.DotnetCoreInstaller('999.1.x');
-    try {
-      await dotnetInstaller.resolveVersion(
-        new installer.DotNetVersionInfo('999.1.x')
-      );
-      fail();
-    } catch {
-      expect(true);
-    }
-  }, 100000);
-
-  it('Resolving a exact stable version works', async () => {
-    const dotnetInstaller = new installer.DotnetCoreInstaller('3.1.201');
-    let versInfo = await dotnetInstaller.resolveVersion(
-      new installer.DotNetVersionInfo('3.1.201')
-    );
-
-    expect(versInfo).toBe('3.1.201');
-  }, 100000);
-
-  it('Resolving a exact preview version works', async () => {
-    const dotnetInstaller = new installer.DotnetCoreInstaller(
-      '5.0.0-preview.6'
-    );
-    let versInfo = await dotnetInstaller.resolveVersion(
-      new installer.DotNetVersionInfo('5.0.0-preview.6')
-    );
-
-    expect(versInfo).toBe('5.0.0-preview.6');
-  }, 100000);
 
   it('Acquires version of dotnet if no matching version is installed', async () => {
     await getDotnet('3.1.201');

@@ -253,19 +253,28 @@ export class DotnetCoreInstaller {
     const response = await httpClient.getJson<any>(DotNetCoreIndexUrl);
     const result = response.result || {};
     let releasesInfo: any[] = result['releases-index'];
+
+    console.log(versionParts);
+
     releasesInfo = releasesInfo.filter((info: any) => {
       // channel-version is the first 2 elements of the version (e.g. 2.1), filter out versions that don't match 2.1.x.
       const sdkParts: string[] = info['channel-version'].split('.');
-      if (versionParts.length >= 2 && versionParts[1] != 'x') {
+      if (
+        versionParts.length == 2 ||
+        (versionParts.length > 2 &&
+          !(versionParts[2] == 'x' || versionParts[2] == '*'))
+      ) {
         return versionParts[0] == sdkParts[0] && versionParts[1] == sdkParts[1];
       }
       return versionParts[0] == sdkParts[0];
     });
+
     if (releasesInfo.length === 0) {
       throw `Could not find info for version ${versionParts.join(
         '.'
       )} at ${DotNetCoreIndexUrl}`;
     }
+
     return releasesInfo[0]['releases.json'];
   }
 
