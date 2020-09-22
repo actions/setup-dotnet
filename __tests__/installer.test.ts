@@ -9,7 +9,6 @@ const tempDir = path.join(__dirname, 'runner', 'temp');
 
 process.env['RUNNER_TOOL_CACHE'] = toolDir;
 process.env['RUNNER_TEMP'] = tempDir;
-import * as setup from '../src/setup-dotnet';
 import * as installer from '../src/installer';
 
 const IS_WINDOWS = process.platform === 'win32';
@@ -41,23 +40,6 @@ describe('installer tests', () => {
       expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
     }
   }, 400000); //This needs some time to download on "slower" internet connections
-
-  it('Acquires version of dotnet from global.json if no matching version is installed', async () => {
-    const globalJsonPath = path.join(process.cwd(), 'global.json');
-    const jsonContents = `{${os.EOL}"sdk": {${os.EOL}"version": "3.1.201"${os.EOL}}${os.EOL}}`;
-    if (!fs.existsSync(globalJsonPath)) {
-      fs.writeFileSync(globalJsonPath, jsonContents);
-    }
-    await setup.run();
-
-    expect(fs.existsSync(path.join(toolDir, 'sdk', '3.1.201'))).toBe(true);
-    if (IS_WINDOWS) {
-      expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
-    } else {
-      expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
-    }
-    fs.unlinkSync(globalJsonPath);
-  }, 100000);
 
   it('Acquires generic version of dotnet if no matching version is installed', async () => {
     await getDotnet('3.1');
