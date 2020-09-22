@@ -62,7 +62,7 @@ describe('installer tests', () => {
   it('Acquires generic version of dotnet if no matching version is installed', async () => {
     await getDotnet('3.1');
     var directory = fs
-      .readdirSync(path.join('/usr/local/share/dotnet/', 'sdk'))
+      .readdirSync(path.join(toolDir, 'sdk'))
       .filter(fn => fn.startsWith('3.1.'));
     expect(directory.length > 0).toBe(true);
     if (IS_WINDOWS) {
