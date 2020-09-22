@@ -59,6 +59,19 @@ describe('installer tests', () => {
     fs.unlinkSync(globalJsonPath);
   }, 100000);
 
+  it('Acquires generic version of dotnet if no matching version is installed', async () => {
+    await getDotnet('3.1');
+    var directory = fs
+      .readdirSync(path.join('/usr/local/share/dotnet/', 'sdk'))
+      .filter(fn => fn.startsWith('3.1.'));
+    expect(directory.length > 0).toBe(true);
+    if (IS_WINDOWS) {
+      expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
+    } else {
+      expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
+    }
+  }, 400000); //This needs some time to download on "slower" internet connections
+
   it('Throws if no location contains correct dotnet version', async () => {
     let thrown = false;
     try {
