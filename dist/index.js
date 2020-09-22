@@ -16797,15 +16797,14 @@ class DotNetVersionInfo {
     constructor(version) {
         this.isExactVersionSet = false;
         this.inputVersion = version;
-        //Note: No support for previews when using generic
-        let parts = version.split('.');
-        // Check for exact match, and that there are at least 3 parts to the version (preview/rc versions have more than 3 parts)
-        if (semver.valid(semver.clean(version) || '') != null &&
-            parts.length >= 3) {
+        // Check for exact match
+        if (semver.valid(semver.clean(version) || '') != null) {
             this.fullversion = semver.clean(version);
             this.isExactVersionSet = true;
             return;
         }
+        //Note: No support for previews when using generic
+        let parts = version.split('.');
         if (parts.length < 2 || parts.length > 3)
             this.throwInvalidVersionFormat();
         if (parts.length == 3 && parts[2] !== 'x' && parts[2] !== '*') {
@@ -16902,8 +16901,8 @@ class DotnetCoreInstaller {
                 fs_1.chmodSync(escapedScript, '777');
                 const scriptPath = yield io.which(escapedScript, true);
                 let scriptArguments = [];
-                if (this.version) {
-                    scriptArguments.push('--version', this.version);
+                if (calculatedVersion) {
+                    scriptArguments.push('--version', calculatedVersion);
                 }
                 // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
                 resultCode = yield exec.exec(`"${scriptPath}"`, scriptArguments, {
@@ -16976,7 +16975,8 @@ class DotnetCoreInstaller {
             releasesInfo = releasesInfo.filter((info) => {
                 // channel-version is the first 2 elements of the version (e.g. 2.1), filter out versions that don't match 2.1.x.
                 const sdkParts = info['channel-version'].split('.');
-                if (versionParts.length == 2 || versionParts.length > 2 && !(versionParts[2] == 'x' || versionParts[2] == '*')) {
+                if (versionParts.length == 2 &&
+                    !(versionParts[2] == 'x' || versionParts[2] == '*')) {
                     return versionParts[0] == sdkParts[0] && versionParts[1] == sdkParts[1];
                 }
                 return versionParts[0] == sdkParts[0];
