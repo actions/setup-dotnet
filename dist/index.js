@@ -16797,14 +16797,15 @@ class DotNetVersionInfo {
     constructor(version) {
         this.isExactVersionSet = false;
         this.inputVersion = version;
-        // Check for exact match
-        if (semver.valid(semver.clean(version) || '') != null) {
+        //Note: No support for previews when using generic
+        let parts = version.split('.');
+        // Check for exact match, and that there are at least 3 parts to the version (preview/rc versions have more than 3 parts)
+        if (semver.valid(semver.clean(version) || '') != null &&
+            parts.length >= 3) {
             this.fullversion = semver.clean(version);
             this.isExactVersionSet = true;
             return;
         }
-        //Note: No support for previews when using generic
-        let parts = version.split('.');
         if (parts.length < 2 || parts.length > 3)
             this.throwInvalidVersionFormat();
         if (parts.length == 3 && parts[2] !== 'x' && parts[2] !== '*') {
@@ -16916,6 +16917,7 @@ class DotnetCoreInstaller {
             }
             if (process.env['DOTNET_INSTALL_DIR']) {
                 core.addPath(process.env['DOTNET_INSTALL_DIR']);
+                core.exportVariable('DOTNET_ROOT', process.env['DOTNET_INSTALL_DIR']);
             }
             else {
                 if (IS_WINDOWS) {
@@ -16926,6 +16928,7 @@ class DotnetCoreInstaller {
                 else {
                     // This is the default set in install-dotnet.sh
                     core.addPath(path.join(process.env['HOME'] + '', '.dotnet'));
+                    core.exportVariable('DOTNET_ROOT', path.join(process.env['HOME'] + '', '.dotnet'));
                 }
             }
             console.log(process.env['PATH']);
