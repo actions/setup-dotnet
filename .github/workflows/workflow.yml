@@ -75,7 +75,82 @@ jobs:
         run: __tests__/verify-dotnet.sh 3.1.201 2.2.402
       - name: Verify dotnet (Windows)
         if: runner.os == 'windows'
-        run: __tests__/verify-dotnet.ps1 3.1.201
+        run: __tests__/verify-dotnet.ps1 3.1.201 2.2.402
+
+      # Clear cache before 2 digit install
+      - name: Clear tool cache (macOS)
+        if: runner.os == 'macos'
+        run: |
+          rm -rf "/Users/runner/.dotnet"
+      - name: Clear tool cache (Ubuntu)
+        if: runner.os == 'linux'
+        run: |
+          rm -rf "/usr/share/dotnet"
+      - name: Clear tool cache (Windows)
+        if: runner.os == 'windows'
+        run: |
+          Remove-Item $env:LocalAppData\Microsoft\dotnet/*  -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item "$env:ProgramFiles\dotnet/*"  -Recurse -Force -ErrorAction SilentlyContinue
+      - name: Setup dotnet 2.0
+        uses: ./
+        with:
+          dotnet-version: 2.0
+      - name: Verify dotnet
+        if: runner.os != 'windows'
+        run: __tests__/verify-dotnet-version.sh 2.0.9
+      - name: Verify dotnet (Windows)
+        if: runner.os == 'windows'
+        run: __tests__/verify-dotnet-version.ps1 2.0.9
+
+      # Clear cache before .x version install
+      - name: Clear tool cache (macOS)
+        if: runner.os == 'macos'
+        run: |
+          rm -rf "/Users/runner/.dotnet"
+      - name: Clear tool cache (Ubuntu)
+        if: runner.os == 'linux'
+        run: |
+          rm -rf "/usr/share/dotnet"
+      - name: Clear tool cache (Windows)
+        if: runner.os == 'windows'
+        run: |
+          Remove-Item $env:LocalAppData\Microsoft\dotnet/*  -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item "$env:ProgramFiles\dotnet/*"  -Recurse -Force -ErrorAction SilentlyContinue
+      - name: Setup dotnet 2.0.x
+        uses: ./
+        with:
+          dotnet-version: 2.0.x
+      - name: Verify dotnet
+        if: runner.os != 'windows'
+        run: __tests__/verify-dotnet-version.sh 2.0.9
+      - name: Verify dotnet (Windows)
+        if: runner.os == 'windows'
+        run: __tests__/verify-dotnet-version.ps1 2.0.9
+
+      # Clear cache before .* version install
+      - name: Clear tool cache (macOS)
+        if: runner.os == 'macos'
+        run: |
+          rm -rf "/Users/runner/.dotnet"
+      - name: Clear tool cache (Ubuntu)
+        if: runner.os == 'linux'
+        run: |
+          rm -rf "/usr/share/dotnet"
+      - name: Clear tool cache (Windows)
+        if: runner.os == 'windows'
+        run: |
+          Remove-Item $env:LocalAppData\Microsoft\dotnet/*  -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item "$env:ProgramFiles\dotnet/*"  -Recurse -Force -ErrorAction SilentlyContinue
+      - name: Setup dotnet 2.0.*
+        uses: ./
+        with:
+          dotnet-version: 2.0.*
+      - name: Verify dotnet
+        if: runner.os != 'windows'
+        run: __tests__/verify-dotnet-version.sh 2.0.9
+      - name: Verify dotnet (Windows)
+        if: runner.os == 'windows'
+        run: __tests__/verify-dotnet-version.ps1 2.0.9
 
   test-proxy:
     runs-on: ubuntu-latest
