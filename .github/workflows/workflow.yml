@@ -89,8 +89,12 @@ jobs:
       - name: Clear tool cache (Windows)
         if: runner.os == 'windows'
         run: |
-          Remove-Item $env:LocalAppData\Microsoft\dotnet/*  -Recurse -Force -ErrorAction SilentlyContinue
-          Remove-Item "$env:ProgramFiles\dotnet/*"  -Recurse -Force -ErrorAction SilentlyContinue
+          $SleepTime = 0
+          while ((Test-Path $env:LocalAppData\Microsoft\dotnet) -and ($SleepTime -lt 120)) {
+            Start-Sleep $SleepTime
+            Remove-Item $env:LocalAppData\Microsoft\dotnet/*  -Recurse -Force -ErrorAction SilentlyContinue
+            $SleepTime += 5
+          }
       # 2.0, 3.0, 5.0 needs to be in single quotes to interpret as a string instead of as an integer
       - name: Setup dotnet '2.0'
         uses: ./
@@ -109,8 +113,12 @@ jobs:
       - name: Clear tool cache (Windows)
         if: runner.os == 'windows'
         run: |
-          Remove-Item $env:LocalAppData\Microsoft\dotnet/*  -Recurse -Force -ErrorAction SilentlyContinue
-          Remove-Item "$env:ProgramFiles\dotnet/*"  -Recurse -Force -ErrorAction SilentlyContinue
+          $SleepTime = 0
+          while ((Test-Path $env:LocalAppData\Microsoft\dotnet) -and ($SleepTime -lt 120)) {
+            Start-Sleep $SleepTime
+            Remove-Item $env:LocalAppData\Microsoft\dotnet/*  -Recurse -Force -ErrorAction SilentlyContinue
+            $SleepTime += 5
+          }
       - name: Setup dotnet 2.0.x
         uses: ./
         with:
@@ -128,8 +136,12 @@ jobs:
       - name: Clear tool cache (Windows)
         if: runner.os == 'windows'
         run: |
-          Remove-Item $env:LocalAppData\Microsoft\dotnet/*  -Recurse -Force -ErrorAction SilentlyContinue
-          Remove-Item "$env:ProgramFiles\dotnet/*"  -Recurse -Force -ErrorAction SilentlyContinue
+          $SleepTime = 0
+          while ((Test-Path $env:LocalAppData\Microsoft\dotnet) -and ($SleepTime -lt 120)) {
+            Start-Sleep $SleepTime
+            Remove-Item $env:LocalAppData\Microsoft\dotnet/*  -Recurse -Force -ErrorAction SilentlyContinue
+            $SleepTime += 5
+          }
       - name: Setup dotnet 2.0.*
         uses: ./
         with:
