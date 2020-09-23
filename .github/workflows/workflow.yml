@@ -91,10 +91,11 @@ jobs:
         run: |
           Remove-Item $env:LocalAppData\Microsoft\dotnet/*  -Recurse -Force -ErrorAction SilentlyContinue
           Remove-Item "$env:ProgramFiles\dotnet/*"  -Recurse -Force -ErrorAction SilentlyContinue
-      - name: Setup dotnet 2.0
+      # 2.0, 3.0, 5.0 needs to be in single quotes to interpret as a string instead of as an integer
+      - name: Setup dotnet '2.0'
         uses: ./
         with:
-          dotnet-version: 2.0
+          dotnet-version: '2.0'
       - name: Verify dotnet
         if: runner.os != 'windows'
         run: __tests__/verify-dotnet-version.sh 2.0.9
