@@ -75,7 +75,62 @@ jobs:
         run: __tests__/verify-dotnet.sh 3.1.201 2.2.402
       - name: Verify dotnet (Windows)
         if: runner.os == 'windows'
-        run: __tests__/verify-dotnet.ps1 3.1.201
+        run: __tests__/verify-dotnet.ps1 3.1.201 2.2.402
+
+      # Set new cache before 2 digit install
+      - name: Set new tool cache (macOS)
+        if: runner.os == 'macos'
+        run: |
+          echo "::set-env name=DOTNET_INSTALL_DIR::/Users/runner/.dotnet2"
+      - name: Set new tool cache (Ubuntu)
+        if: runner.os == 'linux'
+        run: |
+          echo "::set-env name=DOTNET_INSTALL_DIR::/home/runner/.dotnet2"
+      - name: Set new tool cache (Windows)
+        if: runner.os == 'windows'
+        run: |
+          echo "::set-env name=DOTNET_INSTALL_DIR::$env:LocalAppData\Microsoft\dotnet2"
+      # 2.0, 3.0, 5.0 needs to be in single quotes to interpret as a string instead of as an integer
+      - name: Setup dotnet '2.0'
+        uses: ./
+        with:
+          dotnet-version: '2.0'
+
+      # Clear cache before .x version install
+      - name: Set new tool cache (macOS)
+        if: runner.os == 'macos'
+        run: |
+          echo "::set-env name=DOTNET_INSTALL_DIR::/Users/runner/.dotnet3"
+      - name: Set new tool cache (Ubuntu)
+        if: runner.os == 'linux'
+        run: |
+          echo "::set-env name=DOTNET_INSTALL_DIR::/home/runner/.dotnet3"
+      - name: Set new tool cache (Windows)
+        if: runner.os == 'windows'
+        run: |
+          echo "::set-env name=DOTNET_INSTALL_DIR::$env:LocalAppData\Microsoft\dotnet3"
+      - name: Setup dotnet 2.0.x
+        uses: ./
+        with:
+          dotnet-version: 2.0.x
+
+      # Clear cache before .* version install
+      - name: Set new tool cache (macOS)
+        if: runner.os == 'macos'
+        run: |
+          echo "::set-env name=DOTNET_INSTALL_DIR::/Users/runner/.dotnet4"
+      - name: Set new tool cache (Ubuntu)
+        if: runner.os == 'linux'
+        run: |
+          echo "::set-env name=DOTNET_INSTALL_DIR::/home/runner/.dotnet4"
+      - name: Set new tool cache (Windows)
+        if: runner.os == 'windows'
+        run: |
+          echo "::set-env name=DOTNET_INSTALL_DIR::$env:LocalAppData\Microsoft\dotnet4"
+      - name: Setup dotnet 2.0.*
+        uses: ./
+        with:
+          dotnet-version: 2.0.*
 
   test-proxy:
     runs-on: ubuntu-latest

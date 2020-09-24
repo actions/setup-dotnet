@@ -16901,8 +16901,8 @@ class DotnetCoreInstaller {
                 fs_1.chmodSync(escapedScript, '777');
                 const scriptPath = yield io.which(escapedScript, true);
                 let scriptArguments = [];
-                if (this.version) {
-                    scriptArguments.push('--version', this.version);
+                if (calculatedVersion) {
+                    scriptArguments.push('--version', calculatedVersion);
                 }
                 // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
                 resultCode = yield exec.exec(`"${scriptPath}"`, scriptArguments, {
@@ -16916,6 +16916,7 @@ class DotnetCoreInstaller {
             }
             if (process.env['DOTNET_INSTALL_DIR']) {
                 core.addPath(process.env['DOTNET_INSTALL_DIR']);
+                core.exportVariable('DOTNET_ROOT', process.env['DOTNET_INSTALL_DIR']);
             }
             else {
                 if (IS_WINDOWS) {
@@ -16926,6 +16927,7 @@ class DotnetCoreInstaller {
                 else {
                     // This is the default set in install-dotnet.sh
                     core.addPath(path.join(process.env['HOME'] + '', '.dotnet'));
+                    core.exportVariable('DOTNET_ROOT', path.join(process.env['HOME'] + '', '.dotnet'));
                 }
             }
             console.log(process.env['PATH']);
@@ -16972,7 +16974,8 @@ class DotnetCoreInstaller {
             releasesInfo = releasesInfo.filter((info) => {
                 // channel-version is the first 2 elements of the version (e.g. 2.1), filter out versions that don't match 2.1.x.
                 const sdkParts = info['channel-version'].split('.');
-                if (versionParts.length >= 2 && versionParts[1] != 'x') {
+                if (versionParts.length >= 2 &&
+                    !(versionParts[1] == 'x' || versionParts[1] == '*')) {
                     return versionParts[0] == sdkParts[0] && versionParts[1] == sdkParts[1];
                 }
                 return versionParts[0] == sdkParts[0];

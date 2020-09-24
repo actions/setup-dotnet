@@ -146,8 +146,8 @@ export class DotnetCoreInstaller {
       const scriptPath = await io.which(escapedScript, true);
 
       let scriptArguments: string[] = [];
-      if (this.version) {
-        scriptArguments.push('--version', this.version);
+      if (calculatedVersion) {
+        scriptArguments.push('--version', calculatedVersion);
       }
 
       // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
@@ -163,6 +163,7 @@ export class DotnetCoreInstaller {
 
     if (process.env['DOTNET_INSTALL_DIR']) {
       core.addPath(process.env['DOTNET_INSTALL_DIR']);
+      core.exportVariable('DOTNET_ROOT', process.env['DOTNET_INSTALL_DIR']);
     } else {
       if (IS_WINDOWS) {
         // This is the default set in install-dotnet.ps1
@@ -176,6 +177,10 @@ export class DotnetCoreInstaller {
       } else {
         // This is the default set in install-dotnet.sh
         core.addPath(path.join(process.env['HOME'] + '', '.dotnet'));
+        core.exportVariable(
+          'DOTNET_ROOT',
+          path.join(process.env['HOME'] + '', '.dotnet')
+        );
       }
     }
 
@@ -245,19 +250,25 @@ export class DotnetCoreInstaller {
     const response = await httpClient.getJson<any>(DotNetCoreIndexUrl);
     const result = response.result || {};
     let releasesInfo: any[] = result['releases-index'];
+
     releasesInfo = releasesInfo.filter((info: any) => {
       // channel-version is the first 2 elements of the version (e.g. 2.1), filter out versions that don't match 2.1.x.
       const sdkParts: string[] = info['channel-version'].split('.');
-      if (versionParts.length >= 2 && versionParts[1] != 'x') {
+      if (
+        versionParts.length >= 2 &&
+        !(versionParts[1] == 'x' || versionParts[1] == '*')
+      ) {
         return versionParts[0] == sdkParts[0] && versionParts[1] == sdkParts[1];
       }
       return versionParts[0] == sdkParts[0];
     });
+
     if (releasesInfo.length === 0) {
       throw `Could not find info for version ${versionParts.join(
         '.'
       )} at ${DotNetCoreIndexUrl}`;
     }
+
     return releasesInfo[0]['releases.json'];
   }
 
