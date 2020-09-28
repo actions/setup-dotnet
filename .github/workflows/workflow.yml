@@ -124,7 +124,7 @@ jobs:
       - name: Set new tool cache (Ubuntu)
         if: runner.os == 'linux'
         run: |
-          echo "DOTNET_INSTALL_DIR::/home/runner/.dotnet4" >> $GITHUB_ENV
+          echo "DOTNET_INSTALL_DIR=/home/runner/.dotnet4" >> $GITHUB_ENV
       - name: Set new tool cache (Windows)
         if: runner.os == 'windows'
         shell: bash
