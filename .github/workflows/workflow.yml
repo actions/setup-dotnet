@@ -81,15 +81,16 @@ jobs:
       - name: Set new tool cache (macOS)
         if: runner.os == 'macos'
         run: |
-          echo "::set-env name=DOTNET_INSTALL_DIR::/Users/runner/.dotnet2"
+          echo "DOTNET_INSTALL_DIR=/Users/runner/.dotnet2" >> $GITHUB_ENV
       - name: Set new tool cache (Ubuntu)
         if: runner.os == 'linux'
         run: |
-          echo "::set-env name=DOTNET_INSTALL_DIR::/home/runner/.dotnet2"
+          echo "DOTNET_INSTALL_DIR=/home/runner/.dotnet2" >> $GITHUB_ENV
       - name: Set new tool cache (Windows)
         if: runner.os == 'windows'
+        shell: bash
         run: |
-          echo "::set-env name=DOTNET_INSTALL_DIR::$env:LocalAppData\Microsoft\dotnet2"
+          echo "DOTNET_INSTALL_DIR=$LocalAppData\Microsoft\dotnet2" >> $GITHUB_ENV
       # 2.0, 3.0, 5.0 needs to be in single quotes to interpret as a string instead of as an integer
       - name: Setup dotnet '2.0'
         uses: ./
@@ -100,15 +101,16 @@ jobs:
       - name: Set new tool cache (macOS)
         if: runner.os == 'macos'
         run: |
-          echo "::set-env name=DOTNET_INSTALL_DIR::/Users/runner/.dotnet3"
+          echo "DOTNET_INSTALL_DIR=/Users/runner/.dotnet3" >> $GITHUB_ENV
       - name: Set new tool cache (Ubuntu)
         if: runner.os == 'linux'
         run: |
-          echo "::set-env name=DOTNET_INSTALL_DIR::/home/runner/.dotnet3"
+          echo "DOTNET_INSTALL_DIR=/home/runner/.dotnet3" >> $GITHUB_ENV
       - name: Set new tool cache (Windows)
         if: runner.os == 'windows'
+        shell: bash
         run: |
-          echo "::set-env name=DOTNET_INSTALL_DIR::$env:LocalAppData\Microsoft\dotnet3"
+          echo "DOTNET_INSTALL_DIR=$LocalAppData\Microsoft\dotnet3"  >> $GITHUB_ENV
       - name: Setup dotnet 2.0.x
         uses: ./
         with:
@@ -118,15 +120,16 @@ jobs:
       - name: Set new tool cache (macOS)
         if: runner.os == 'macos'
         run: |
-          echo "::set-env name=DOTNET_INSTALL_DIR::/Users/runner/.dotnet4"
+          echo "DOTNET_INSTALL_DIR=/Users/runner/.dotnet4" >> $GITHUB_ENV
       - name: Set new tool cache (Ubuntu)
         if: runner.os == 'linux'
         run: |
-          echo "::set-env name=DOTNET_INSTALL_DIR::/home/runner/.dotnet4"
+          echo "DOTNET_INSTALL_DIR=/home/runner/.dotnet4" >> $GITHUB_ENV
       - name: Set new tool cache (Windows)
         if: runner.os == 'windows'
+        shell: bash
         run: |
-          echo "::set-env name=DOTNET_INSTALL_DIR::$env:LocalAppData\Microsoft\dotnet4"
+          echo "DOTNET_INSTALL_DIR=$LocalAppData\Microsoft\dotnet4" >> $GITHUB_ENV
       - name: Setup dotnet 2.0.*
         uses: ./
         with:
