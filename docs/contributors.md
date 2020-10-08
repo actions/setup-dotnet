@@ -22,3 +22,13 @@ If you would like to contribute there are a few things to consider:
 ## Writing tests
 
 With any contribution please take time to consider how this can be tested to maintain high quality. Current tests can be found in the folder __tests__ for examples.
+
+## Creating new version
+
+Details on versioning can be found here: https://github.com/actions/toolkit/blob/main/docs/action-versioning.md
+Create a new release using the UI. Version format should be `v1.x.x`. Creating a new major version requires reaction from users and should be done only with breaking changes.
+Once the new release is created, the v1 tag needs to be updated as well.
+```
+git tag -fa v1 -m "Update v1 tag"
+git push origin v1 --force
+```
