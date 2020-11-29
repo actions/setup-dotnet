@@ -1,0 +1,13 @@
+C:\Users\peete\OneDrive\Documenten\GitHub\WindowsServer-main\WindowsServer\WindowsServer\bin\Debug\netcoreapp3.1\WindowsServer.exe
+C:\Users\peete\OneDrive\Documenten\GitHub\WindowsServer-main\WindowsServer\WindowsServer\bin\Debug\netcoreapp3.1\WindowsServer.deps.json
+C:\Users\peete\OneDrive\Documenten\GitHub\WindowsServer-main\WindowsServer\WindowsServer\bin\Debug\netcoreapp3.1\WindowsServer.runtimeconfig.json
+C:\Users\peete\OneDrive\Documenten\GitHub\WindowsServer-main\WindowsServer\WindowsServer\bin\Debug\netcoreapp3.1\WindowsServer.runtimeconfig.dev.json
+C:\Users\peete\OneDrive\Documenten\GitHub\WindowsServer-main\WindowsServer\WindowsServer\bin\Debug\netcoreapp3.1\WindowsServer.dll
+C:\Users\peete\OneDrive\Documenten\GitHub\WindowsServer-main\WindowsServer\WindowsServer\bin\Debug\netcoreapp3.1\WindowsServer.pdb
+C:\Users\peete\OneDrive\Documenten\GitHub\WindowsServer-main\WindowsServer\WindowsServer\obj\Debug\netcoreapp3.1\WindowsServer.csprojAssemblyReference.cache
+C:\Users\peete\OneDrive\Documenten\GitHub\WindowsServer-main\WindowsServer\WindowsServer\obj\Debug\netcoreapp3.1\WindowsServer.csproj.CoreCompileInputs.cache
+C:\Users\peete\OneDrive\Documenten\GitHub\WindowsServer-main\WindowsServer\WindowsServer\obj\Debug\netcoreapp3.1\WindowsServer.AssemblyInfoInputs.cache
+C:\Users\peete\OneDrive\Documenten\GitHub\WindowsServer-main\WindowsServer\WindowsServer\obj\Debug\netcoreapp3.1\WindowsServer.AssemblyInfo.cs
+C:\Users\peete\OneDrive\Documenten\GitHub\WindowsServer-main\WindowsServer\WindowsServer\obj\Debug\netcoreapp3.1\WindowsServer.dll
+C:\Users\peete\OneDrive\Documenten\GitHub\WindowsServer-main\WindowsServer\WindowsServer\obj\Debug\netcoreapp3.1\WindowsServer.pdb
+C:\Users\peete\OneDrive\Documenten\GitHub\WindowsServer-main\WindowsServer\WindowsServer\obj\Debug\netcoreapp3.1\WindowsServer.genruntimeconfig.cache
