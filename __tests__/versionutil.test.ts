@@ -65,7 +65,7 @@ describe('version tests', () => {
   ]).test(
     "Resolving version '%s' as '%s'",
     async (input, expectedVersion) => {
-      const dotnetInstaller = new installer.DotnetCoreInstaller(input);
+      const dotnetInstaller = new installer.DotnetCoreInstaller(input, '');
       let versInfo = await dotnetInstaller.resolveVersion(
         new installer.DotNetVersionInfo(input)
       );
@@ -77,7 +77,7 @@ describe('version tests', () => {
   );
 
   it('Resolving a nonexistent generic version fails', async () => {
-    const dotnetInstaller = new installer.DotnetCoreInstaller('999.1.x');
+    const dotnetInstaller = new installer.DotnetCoreInstaller('999.1.x', '');
     try {
       await dotnetInstaller.resolveVersion(
         new installer.DotNetVersionInfo('999.1.x')
