@@ -69,7 +69,7 @@ describe('installer tests', () => {
     await getDotnet('3.1', 'x86');
     var directory = fs
       .readdirSync(path.join(toolDir, 'sdk'))
-      .filter(fn => fn.startsWith('3.1.'))
+      .filter(fn => fn.startsWith('3.1.'));
     expect(directory.length > 0).toBe(true);
     if (IS_WINDOWS) {
       expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
@@ -142,6 +142,9 @@ function normalizeFileContents(contents: string): string {
 }
 
 async function getDotnet(version: string, architecture: string): Promise<void> {
-  const dotnetInstaller = new installer.DotnetCoreInstaller(version, architecture);
+  const dotnetInstaller = new installer.DotnetCoreInstaller(
+    version,
+    architecture
+  );
   await dotnetInstaller.installDotnet();
 }
