@@ -76,7 +76,7 @@ export class DotNetVersionInfo {
 }
 
 export class DotnetCoreInstaller {
-  constructor(version: string, architecture:string) {
+  constructor(version: string, architecture: string) {
     this.version = version;
     this.architecture = architecture;
   }

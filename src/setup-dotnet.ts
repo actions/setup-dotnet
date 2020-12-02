@@ -30,7 +30,10 @@ export async function run() {
     }
 
     if (version) {
-      const dotnetInstaller = new installer.DotnetCoreInstaller(version, architecture);
+      const dotnetInstaller = new installer.DotnetCoreInstaller(
+        version,
+        architecture
+      );
       await dotnetInstaller.installDotnet();
     }
 
