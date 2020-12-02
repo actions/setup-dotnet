@@ -76,8 +76,9 @@ export class DotNetVersionInfo {
 }
 
 export class DotnetCoreInstaller {
-  constructor(version: string) {
+  constructor(version: string, architecture:string) {
     this.version = version;
+    this.architecture = architecture;
   }
 
   public async installDotnet() {
@@ -148,6 +149,10 @@ export class DotnetCoreInstaller {
       let scriptArguments: string[] = [];
       if (calculatedVersion) {
         scriptArguments.push('--version', calculatedVersion);
+      }
+
+      if (this.architecture) {
+        scriptArguments.push('--architecture', this.architecture);
       }
 
       // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
@@ -273,6 +278,7 @@ export class DotnetCoreInstaller {
   }
 
   private version: string;
+  private architecture: string;
 }
 
 const DotNetCoreIndexUrl: string =

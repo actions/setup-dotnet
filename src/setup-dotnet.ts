@@ -14,6 +14,7 @@ export async function run() {
     // Proxy, auth, (etc) are still set up, even if no version is identified
     //
     let version = core.getInput('dotnet-version');
+    let architecture = core.getInput('dotnet-architecture');
     if (!version) {
       // Try to fall back to global.json
       core.debug('No version found, trying to find version from global.json');
@@ -29,7 +30,7 @@ export async function run() {
     }
 
     if (version) {
-      const dotnetInstaller = new installer.DotnetCoreInstaller(version);
+      const dotnetInstaller = new installer.DotnetCoreInstaller(version, architecture);
       await dotnetInstaller.installDotnet();
     }
 

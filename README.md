@@ -30,6 +30,17 @@ steps:
 - run: dotnet build <my project>
 ```
 
+Architecture:
+```yaml
+steps:
+- uses: actions/checkout@main
+- uses: actions/setup-dotnet@v1
+  with:
+    dotnet-version: '3.1.x' # SDK Version to use; x will use the latest version of the 3.1 channel
+    dotnet-achitecture: 'x86'
+- run: dotnet build <my project>
+```
+
 Matrix Testing:
 ```yaml
 jobs:
