@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dotnet: [ '2.2.103', '3.0', '3.1.x', '5.0.100' ]
+        dotnet: [ '2.2.103', '3.0', '3.1.x', '5.0.101' ]
     name: Dotnet ${{ matrix.dotnet }} sample
     steps:
       - uses: actions/checkout@v2
@@ -63,7 +63,7 @@ jobs:
       - name: Setup dotnet
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '5.0.100'
+          dotnet-version: '5.0.101'
       - run: dotnet build <my project>
       - run: dotnet test <my project>
 ```
