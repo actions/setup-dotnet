@@ -2,9 +2,9 @@ $os = $args[0]
 
 $linuxDotnetPaths = @("/usr/share/dotnet", "$env:HOME/.dotnet")
 $macOSDotnetPaths = @("$env:HOME/.dotnet")
-$windowsDotnetPaths = @("$env:LocalAppData\Microsoft\dotnet/*",
+$windowsDotnetPaths = @("$env:HOME\.dotnet",
                         "$env:ProgramFiles\dotnet/*",
-                        "$env:HOME\.dotnet")
+                        "$env:LocalAppData\Microsoft\dotnet/*")
 
 $pathsToClear = @()
 
