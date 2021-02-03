@@ -100,17 +100,17 @@ jobs:
       - name: Clear installed dotnet versions
         shell: pwsh
         run: __tests__/clear-installed-dotnet.ps1 ${{ runner.os }}
-      - name: Setup dotnet 5.0.*
+      - name: Setup dotnet 3.1.*
         uses: ./
         with:
-          dotnet-version: 5.0.*
+          dotnet-version: 3.1.*
       - name: Verify dotnet
         if: runner.os != 'windows'
-        run: __tests__/verify-dotnet.sh 5.0
+        run: __tests__/verify-dotnet.sh 3.1
       - name: Verify dotnet (Windows)
         if: runner.os == 'windows'
-        run: __tests__/verify-dotnet.ps1 5.0
-        
+        run: __tests__/verify-dotnet.ps1 3.1
+
   test-proxy:
     runs-on: ubuntu-latest
     container:
