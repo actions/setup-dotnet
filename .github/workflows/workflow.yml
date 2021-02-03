@@ -46,26 +46,25 @@ jobs:
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-
-      - name: Clear tool cache (macOS)
-        if: runner.os == 'macos'
-        run: |
-          echo $PATH
-          dotnet --info
-          rm -rf "/Users/runner/.dotnet"
-      - name: Clear tool cache (Ubuntu)
-        if: runner.os == 'linux'
-        run: |
-          echo $PATH
-          dotnet --info
-          rm -rf "/usr/share/dotnet"
-      - name: Clear tool cache (Windows)
-        if: runner.os == 'windows'
-        run: |
-          echo $env:PATH
-          dotnet --info
-          Remove-Item $env:LocalAppData\Microsoft\dotnet/*  -Recurse -Force -ErrorAction SilentlyContinue
-          Remove-Item "$env:ProgramFiles\dotnet/*"  -Recurse -Force -ErrorAction SilentlyContinue
+      # - name: Clear tool cache (macOS)
+      #   if: runner.os == 'macos'
+      #   run: |
+      #     echo $PATH
+      #     dotnet --info
+      #     rm -rf "/Users/runner/.dotnet"
+      # - name: Clear tool cache (Ubuntu)
+      #   if: runner.os == 'linux'
+      #   run: |
+      #     echo $PATH
+      #     dotnet --info
+      #     rm -rf "/usr/share/dotnet"
+      # - name: Clear tool cache (Windows)
+      #   if: runner.os == 'windows'
+      #   run: |
+      #     echo $env:PATH
+      #     dotnet --info
+      #     Remove-Item $env:LocalAppData\Microsoft\dotnet/*  -Recurse -Force -ErrorAction SilentlyContinue
+      #     Remove-Item "$env:ProgramFiles\dotnet/*"  -Recurse -Force -ErrorAction SilentlyContinue
       # Side-by-side install of 2.2 and 3.1 used for the test project
       - name: Setup dotnet 2.2.402
         uses: ./
