@@ -8,11 +8,11 @@ $windowsDotnetPaths = @("$env:LocalAppData\Microsoft\dotnet/*", "$env:ProgramFil
 
 $pathsToClear = @()
 
-if ($os == "linux") {
+if ($os -eq "linux") {
     $pathsToClear = $linuxDotnetPaths
-} elseif ($os == "macOS") {
+} elseif ($os -eq "macOS") {
     $pathsToClear = $macOSDotnetPaths
-} elseif ($os == "windows") {
+} elseif ($os -eq "windows") {
     $pathsToClear = $windowsDotnetPaths
 }
 
