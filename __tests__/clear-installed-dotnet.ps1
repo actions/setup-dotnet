@@ -24,4 +24,10 @@ foreach ($path in $pathsToClear) {
     }
 }
 
-Get-Command "dotnet --info"
+try {
+    Get-Command "dotnet --info"
+    Write-Host "dotnet was not removed"
+    exit 1
+} catch {
+    Write-Host "dotnet was removed successfully"
+}
