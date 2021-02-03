@@ -19,6 +19,6 @@ if ($os -eq "Linux") {
 foreach ($path in $pathsToClear) {
     if (Test-Path $path) {
         Write-Host "Clear $path path"
-        Remove-Item $path -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item $path -Recurse -Force
     }
 }
