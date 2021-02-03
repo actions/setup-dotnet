@@ -10,12 +10,6 @@ assignees: ''
 **Description:**
 A clear and concise description of what the bug is.
 
-**Expected behavior:**
-A description of what you expected to happen.
-
-**Actual behavior:**
-A description of what is actually happening.
-
 **Task version:**
 Specify the task version
 
@@ -30,3 +24,9 @@ Specify the task version
 
 **Repro steps:**  
 A description with steps to reproduce the issue. If your have a public example or repo to share, please provide the link.
+
+**Expected behavior:**
+A description of what you expected to happen.
+
+**Actual behavior:**
+A description of what is actually happening.
