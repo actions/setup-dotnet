@@ -45,7 +45,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Clear toolcache
         shell: pwsh
-        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+        run: __tests__/clear-installed-dotnet.ps1 ${{ runner.os }}
       # - name: Clear tool cache (macOS)
       #   if: runner.os == 'macos'
       #   run: |

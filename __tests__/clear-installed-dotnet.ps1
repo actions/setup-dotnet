@@ -1,5 +1,3 @@
-Write-Host $args[0]
-
 $os = $args[0]
 
 $linuxDotnetPaths = @("/usr/share/dotnet", "$env:HOME/.dotnet")
