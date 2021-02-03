@@ -13,7 +13,6 @@ if ($os -eq "Linux") {
 } elseif ($os -eq "macOS") {
     $pathsToClear = $macOSDotnetPaths
 } elseif ($os -eq "Windows") {
-    Write-Host $env:LocalAppData
     $pathsToClear = $windowsDotnetPaths
 }
 
