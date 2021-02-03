@@ -1,11 +1,16 @@
 name: Main workflow
 
 on:
+  workflow_dispatch:
   pull_request:
+    paths-ignore:
+      - '**.md'
   push:
     branches:
       - main
       - releases/*
+    paths-ignore:
+      - '**.md'
 
 jobs:
   build:
@@ -13,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-16.04, ubuntu-18.04, ubuntu-20.04, windows-latest, macOS-latest]
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -34,7 +39,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-16.04, ubuntu-18.04, ubuntu-20.04, windows-latest, macOS-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
