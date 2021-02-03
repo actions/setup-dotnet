@@ -43,7 +43,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Clear toolcache
+      - name: Clear installed dotnet versions
         shell: pwsh
         run: __tests__/clear-installed-dotnet.ps1 ${{ runner.os }}
       # - name: Clear tool cache (macOS)
@@ -86,24 +86,33 @@ jobs:
         run: __tests__/verify-dotnet.ps1 3.1.201 2.2.402
 
       # Set new cache before 2 digit install
-      - name: Set new tool cache (macOS)
-        if: runner.os == 'macos'
-        run: |
-          echo "DOTNET_INSTALL_DIR=/Users/runner/.dotnet2" >> $GITHUB_ENV
-      - name: Set new tool cache (Ubuntu)
-        if: runner.os == 'linux'
-        run: |
-          echo "DOTNET_INSTALL_DIR=/home/runner/.dotnet2" >> $GITHUB_ENV
-      - name: Set new tool cache (Windows)
-        if: runner.os == 'windows'
-        shell: bash
-        run: |
-          echo "DOTNET_INSTALL_DIR=$LocalAppData\Microsoft\dotnet2" >> $GITHUB_ENV
+      # - name: Set new tool cache (macOS)
+      #   if: runner.os == 'macos'
+      #   run: |
+      #     echo "DOTNET_INSTALL_DIR=/Users/runner/.dotnet2" >> $GITHUB_ENV
+      # - name: Set new tool cache (Ubuntu)
+      #   if: runner.os == 'linux'
+      #   run: |
+      #     echo "DOTNET_INSTALL_DIR=/home/runner/.dotnet2" >> $GITHUB_ENV
+      # - name: Set new tool cache (Windows)
+      #   if: runner.os == 'windows'
+      #   shell: bash
+      #   run: |
+      #     echo "DOTNET_INSTALL_DIR=$LocalAppData\Microsoft\dotnet2" >> $GITHUB_ENV
       # 2.0, 3.0, 5.0 needs to be in single quotes to interpret as a string instead of as an integer
-      - name: Setup dotnet '2.0'
+      - name: Clear installed dotnet versions
+        shell: pwsh
+        run: __tests__/clear-installed-dotnet.ps1 ${{ runner.os }}
+      - name: Setup dotnet '3.1'
         uses: ./
         with:
-          dotnet-version: '2.0'
+          dotnet-version: '3.1'
+      - name: Verify dotnet
+        if: runner.os != 'windows'
+        run: __tests__/verify-dotnet.sh 3.1
+      - name: Verify dotnet (Windows)
+        if: runner.os == 'windows'
+        run: __tests__/verify-dotnet.ps1 3.1
 
       # Clear cache before .x version install
       - name: Set new tool cache (macOS)
