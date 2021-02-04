@@ -64,11 +64,12 @@ jobs:
         run: |
           if (-Not (Test-Path "../nuget.config")) { throw "nuget file not generated correctly" }
       - name: Verify dotnet
-        if: runner.os != 'windows'
-        run: __tests__/verify-dotnet.sh 3.1.201 2.2.402
-      - name: Verify dotnet (Windows)
-        if: runner.os == 'windows'
+        # if: runner.os != 'windows'
+        shell: pwsh
         run: __tests__/verify-dotnet.ps1 3.1.201 2.2.402
+      # - name: Verify dotnet (Windows)
+        # if: runner.os == 'windows'
+        # run: __tests__/verify-dotnet.ps1 3.1.201 2.2.402
 
   test-setup-without-patch-version:
     runs-on: ${{ matrix.operating-system }}
@@ -88,11 +89,12 @@ jobs:
         with:
           dotnet-version: '3.1'
       - name: Verify dotnet
-        if: runner.os != 'windows'
-        run: __tests__/verify-dotnet.sh 3.1
-      - name: Verify dotnet (Windows)
-        if: runner.os == 'windows'
+        # if: runner.os != 'windows'
+        shell: pwsh
         run: __tests__/verify-dotnet.ps1 3.1
+      # - name: Verify dotnet (Windows)
+      #   if: runner.os == 'windows'
+      #   run: __tests__/verify-dotnet.ps1 3.1
   
   test-setup-x-patch-version:
     runs-on: ${{ matrix.operating-system }}
