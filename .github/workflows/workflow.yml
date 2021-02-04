@@ -169,8 +169,7 @@ jobs:
         env:
           NUGET_AUTH_TOKEN: NOTATOKEN
       - name: Verify dotnet
-        shell: pwsh
-        run: __tests__/verify-dotnet.ps1 3.1.201
+        run: __tests__/verify-dotnet.sh 3.1.201
 
   test-bypass-proxy:
     runs-on: ubuntu-latest
@@ -190,5 +189,4 @@ jobs:
         env:
           NUGET_AUTH_TOKEN: NOTATOKEN
       - name: Verify dotnet
-        shell: pwsh
-        run: __tests__/verify-dotnet.ps1 3.1.201
+        run: __tests__/verify-dotnet.sh 3.1.201
