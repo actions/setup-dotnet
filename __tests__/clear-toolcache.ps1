@@ -1,21 +1,11 @@
-$os = $args[0]
-
-$linuxDotnetPaths = @("/usr/share/dotnet")
-$macOSDotnetPaths = @("$env:HOME/.dotnet")
-$windowsDotnetPaths = @("$env:ProgramFiles\dotnet/*",
-                        "$env:LocalAppData\Microsoft\dotnet/*")
-
-$pathsToClear = @()
-
-if ($os -eq "Linux") {
-    $pathsToClear = $linuxDotnetPaths
-} elseif ($os -eq "macOS") {
-    $pathsToClear = $macOSDotnetPaths
-} elseif ($os -eq "Windows") {
-    $pathsToClear = $windowsDotnetPaths
+$dotnetPaths = @{
+    Linux = @("/usr/share/dotnet")
+    macOS = @("$env:HOME/.dotnet")
+    Windows = @("$env:ProgramFiles\dotnet/*",
+                  "$env:LocalAppData\Microsoft\dotnet/*")
 }
 
-foreach ($path in $pathsToClear) {
+foreach ($path in $dotnetPaths[$args[0]]) {
     if (Test-Path $path) {
         Write-Host "Clear $path path"
         Remove-Item $path -Recurse -Force
