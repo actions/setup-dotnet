@@ -62,8 +62,7 @@ jobs:
       - name: Verify nuget config file
         shell: pwsh
         run: |
-          Get-ChildItem .
-          # if (-Not (Test-Path "./nuget.config")) { throw "nuget file not generated correctly" }
+          if (-Not (Test-Path "../nuget.config")) { throw "nuget file not generated correctly" }
       - name: Verify dotnet
         if: runner.os != 'windows'
         run: __tests__/verify-dotnet.sh 3.1.201 2.2.402
