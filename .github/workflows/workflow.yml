@@ -91,7 +91,7 @@ jobs:
         shell: pwsh
         run: __tests__/verify-dotnet.ps1 3.1 2.2
   
-  test-setup-x-patch-version:
+  test-setup-latest-patch-version:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
