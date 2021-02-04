@@ -8,7 +8,7 @@ Write-Host "Found '$dotnet'"
 
 $version = & $dotnet --version | Out-String | ForEach-Object { $_.Trim() }
 Write-Host "Version $version"
-if ($version -notmatch $args[0])
+if (-not ($version.StartsWith($args[0])))
 {
   Write-Host "PATH='$env:PATH'"
   throw "Unexpected version"
@@ -20,8 +20,10 @@ if ($args[1])
   $versions = & $dotnet --list-sdks | ForEach-Object { $_.SubString(0, $_.IndexOf('[')).Trim() }
   Write-Host "Installed versions: $versions"
   $isInstalledVersion = $false
-  foreach ($version in $versions) {
-    if ($version.StartsWith($args[1].ToString())) {
+  foreach ($version in $versions)
+  {
+    if ($version.StartsWith($args[1].ToString())) 
+    {
       $isInstalledVersion = $true
       break
     }
