@@ -10,18 +10,18 @@ $version = & $dotnet --version | Out-String | ForEach-Object { $_.Trim() }
 Write-Host "Version $version"
 if ($version -notmatch $args[0])
 {
-  Write-Host "PATH='$env:path'"
+  Write-Host "PATH='$env:PATH'"
   throw "Unexpected version"
 }
 
 if ($args[1])
 {
   # SDKs are listed on multiple lines with the path afterwards in square brackets
-  $version = & $dotnet --list-sdks | ForEach-Object { $_.SubString(0, $_.IndexOf('[')).Trim() }
-  Write-Host "Version $version"
-  if (-not ($version -contains $args[1]))
+  $versions = & $dotnet --list-sdks | ForEach-Object { $_.SubString(0, $_.IndexOf('[')).Trim() } | Out-String
+  Write-Host "Version $versions"
+  if ($version -notmatch $args[1])
   {
-    Write-Host "PATH='$env:path'"
+    Write-Host "PATH='$env:PATH'"
     throw "Unexpected version"
   }
 }
