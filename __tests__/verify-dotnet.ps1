@@ -17,9 +17,16 @@ if ($version -notmatch $args[0])
 if ($args[1])
 {
   # SDKs are listed on multiple lines with the path afterwards in square brackets
-  $versions = & $dotnet --list-sdks | ForEach-Object { $_.SubString(0, $_.IndexOf('[')).Trim() } | Out-String
-  Write-Host "Version $versions"
-  if ($versions -notmatch $args[1])
+  $versions = & $dotnet --list-sdks | ForEach-Object { $_.SubString(0, $_.IndexOf('[')).Trim() }
+  Write-Host "Installed versions: $versions"
+  $isInstalledVersion = $false
+  foreach ($version in $versions) {
+    if ($version.StartsWith($args[1])) {
+      $isInstalledVersion = $true
+      break
+    }
+  }
+  if (-not $isInstalledVersion)
   {
     Write-Host "PATH='$env:PATH'"
     throw "Unexpected version"
