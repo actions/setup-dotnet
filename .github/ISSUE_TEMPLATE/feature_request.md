@@ -9,7 +9,7 @@ assignees: ''
 **Description:**
 Describe your proposal.
 
-**Justification**
+**Justification:**
 Justification or a use case for your proposal.
 
 **Are you willing to submit a PR?**
