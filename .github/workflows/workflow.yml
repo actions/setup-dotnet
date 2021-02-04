@@ -100,7 +100,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      # Dotnet .x version install
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
@@ -125,7 +124,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      # Dotnet .* version install
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
