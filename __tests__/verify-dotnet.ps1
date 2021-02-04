@@ -8,7 +8,7 @@ Write-Host "Found '$dotnet'"
 
 $version = & $dotnet --version | Out-String | ForEach-Object { $_.Trim() }
 Write-Host "Version $version"
-if ($version -ne $args[0])
+if ($version -contains $args[0])
 {
   Write-Host "PATH='$env:path'"
   throw "Unexpected version"
