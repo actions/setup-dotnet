@@ -19,7 +19,7 @@ if ($args[1])
   # SDKs are listed on multiple lines with the path afterwards in square brackets
   $versions = & $dotnet --list-sdks | ForEach-Object { $_.SubString(0, $_.IndexOf('[')).Trim() } | Out-String
   Write-Host "Version $versions"
-  if ($version -notmatch $args[1])
+  if ($versions -notmatch $args[1])
   {
     Write-Host "PATH='$env:PATH'"
     throw "Unexpected version"
