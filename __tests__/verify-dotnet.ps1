@@ -21,7 +21,7 @@ if ($args[1])
   Write-Host "Installed versions: $versions"
   $isInstalledVersion = $false
   foreach ($version in $versions) {
-    if ($version.StartsWith($args[1])) {
+    if ($version.StartsWith($args[1].ToString())) {
       $isInstalledVersion = $true
       break
     }
