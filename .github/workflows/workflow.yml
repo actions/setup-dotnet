@@ -64,12 +64,8 @@ jobs:
         run: |
           if (-Not (Test-Path "../nuget.config")) { throw "nuget file not generated correctly" }
       - name: Verify dotnet
-        # if: runner.os != 'windows'
         shell: pwsh
         run: __tests__/verify-dotnet.ps1 3.1.201 2.2.402
-      # - name: Verify dotnet (Windows)
-        # if: runner.os == 'windows'
-        # run: __tests__/verify-dotnet.ps1 3.1.201 2.2.402
 
   test-setup-without-patch-version:
     runs-on: ${{ matrix.operating-system }}
@@ -88,13 +84,13 @@ jobs:
         uses: ./
         with:
           dotnet-version: '3.1'
+      - name: Setup dotnet '2.2'
+        uses: ./
+        with:
+          dotnet-version: '2.2'
       - name: Verify dotnet
-        # if: runner.os != 'windows'
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 3.1
-      # - name: Verify dotnet (Windows)
-      #   if: runner.os == 'windows'
-      #   run: __tests__/verify-dotnet.ps1 3.1
+        run: __tests__/verify-dotnet.ps1 3.1 2.2
   
   test-setup-x-patch-version:
     runs-on: ${{ matrix.operating-system }}
@@ -112,12 +108,13 @@ jobs:
         uses: ./
         with:
           dotnet-version: 3.1.x
+      - name: Setup dotnet 2.2.x
+        uses: ./
+        with:
+          dotnet-version: 2.2.x
       - name: Verify dotnet
-        if: runner.os != 'windows'
-        run: __tests__/verify-dotnet.sh 3.1
-      - name: Verify dotnet (Windows)
-        if: runner.os == 'windows'
-        run: __tests__/verify-dotnet.ps1 3.1
+        shell: pwsh
+        run: __tests__/verify-dotnet.ps1 3.1 2.2
 
   test-setup-with-wildcard:
     runs-on: ${{ matrix.operating-system }}
@@ -135,12 +132,13 @@ jobs:
         uses: ./
         with:
           dotnet-version: 3.1.*
+      - name: Setup dotnet 2.2.*
+        uses: ./
+        with:
+          dotnet-version: 2.2.*
       - name: Verify dotnet
-        if: runner.os != 'windows'
-        run: __tests__/verify-dotnet.sh 3.1
-      - name: Verify dotnet (Windows)
-        if: runner.os == 'windows'
-        run: __tests__/verify-dotnet.ps1 3.1
+        shell: pwsh
+        run: __tests__/verify-dotnet.ps1 3.1 2.2
 
   test-proxy:
     runs-on: ubuntu-latest
