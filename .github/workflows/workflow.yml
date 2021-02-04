@@ -34,7 +34,7 @@ jobs:
       if: runner.os != 'windows'
       run: __tests__/verify-no-unstaged-changes.sh
 
-  test:
+  test-setup-full-version:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
@@ -66,7 +66,7 @@ jobs:
         if: runner.os == 'windows'
         run: __tests__/verify-dotnet.ps1 3.1.201 2.2.402
 
-  test-v2:
+  test-setup-without-patch-version:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
@@ -91,7 +91,7 @@ jobs:
         if: runner.os == 'windows'
         run: __tests__/verify-dotnet.ps1 3.1
   
-  test-v3:
+  test-setup-x-patch-version:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
@@ -116,7 +116,7 @@ jobs:
         if: runner.os == 'windows'
         run: __tests__/verify-dotnet.ps1 3.1
 
-  test-v4:
+  test-setup-with-wildcard:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
