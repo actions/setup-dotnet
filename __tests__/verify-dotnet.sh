@@ -3,10 +3,10 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
-if [ ! -f "../nuget.config" ]; then
-  echo "nuget file not generated correctly"
-  exit 1
-fi
+# if [ ! -f "../nuget.config" ]; then
+#   echo "nuget file not generated correctly"
+#   exit 1
+# fi
 
 dotnet_version="$(dotnet --version)"
 echo "Found dotnet version '$dotnet_version'"
