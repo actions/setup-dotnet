@@ -33,4 +33,4 @@ jobs:
         shell: pwsh
         run: |
           $version = & dotnet --version
-          if (-not $version.StartsWith(${{ matrix.dotnet-version }})) { throw "Unexpected version" }
+          if (-not $version.StartsWith("${{ matrix.dotnet-version }}")) { throw "Unexpected version" }
