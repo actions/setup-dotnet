@@ -2,10 +2,14 @@ name: Main workflow
 
 on:
   pull_request:
+    paths-ignore:
+      - '**.md'
   push:
     branches:
       - main
       - releases/*
+    paths-ignore:
+      - '**.md'
 
 jobs:
   build:
@@ -29,7 +33,7 @@ jobs:
       if: runner.os != 'windows'
       run: __tests__/verify-no-unstaged-changes.sh
 
-  test:
+  test-setup-full-version:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
@@ -38,25 +42,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Clear tool cache (macOS)
-        if: runner.os == 'macos'
-        run: |
-          echo $PATH
-          dotnet --info
-          rm -rf "/Users/runner/.dotnet"
-      - name: Clear tool cache (Ubuntu)
-        if: runner.os == 'linux'
-        run: |
-          echo $PATH
-          dotnet --info
-          rm -rf "/usr/share/dotnet"
-      - name: Clear tool cache (Windows)
-        if: runner.os == 'windows'
-        run: |
-          echo $env:PATH
-          dotnet --info
-          Remove-Item $env:LocalAppData\Microsoft\dotnet/*  -Recurse -Force -ErrorAction SilentlyContinue
-          Remove-Item "$env:ProgramFiles\dotnet/*"  -Recurse -Force -ErrorAction SilentlyContinue
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
       # Side-by-side install of 2.2 and 3.1 used for the test project
       - name: Setup dotnet 2.2.402
         uses: ./
@@ -70,70 +58,86 @@ jobs:
           source-url: https://api.nuget.org/v3/index.json
         env:
           NUGET_AUTH_TOKEN: NOTATOKEN
+      - name: Verify nuget config file
+        shell: pwsh
+        run: |
+          if (-Not (Test-Path "../nuget.config")) { throw "nuget file not generated correctly" }
       - name: Verify dotnet
-        if: runner.os != 'windows'
-        run: __tests__/verify-dotnet.sh 3.1.201 2.2.402
-      - name: Verify dotnet (Windows)
-        if: runner.os == 'windows'
+        shell: pwsh
         run: __tests__/verify-dotnet.ps1 3.1.201 2.2.402
 
-      # Set new cache before 2 digit install
-      - name: Set new tool cache (macOS)
-        if: runner.os == 'macos'
-        run: |
-          echo "DOTNET_INSTALL_DIR=/Users/runner/.dotnet2" >> $GITHUB_ENV
-      - name: Set new tool cache (Ubuntu)
-        if: runner.os == 'linux'
-        run: |
-          echo "DOTNET_INSTALL_DIR=/home/runner/.dotnet2" >> $GITHUB_ENV
-      - name: Set new tool cache (Windows)
-        if: runner.os == 'windows'
-        shell: bash
-        run: |
-          echo "DOTNET_INSTALL_DIR=$LocalAppData\Microsoft\dotnet2" >> $GITHUB_ENV
+  test-setup-without-patch-version:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
       # 2.0, 3.0, 5.0 needs to be in single quotes to interpret as a string instead of as an integer
-      - name: Setup dotnet '2.0'
+      - name: Setup dotnet '3.1'
         uses: ./
         with:
-          dotnet-version: '2.0'
+          dotnet-version: '3.1'
+      - name: Setup dotnet '2.2'
+        uses: ./
+        with:
+          dotnet-version: '2.2'
+      - name: Verify dotnet
+        shell: pwsh
+        run: __tests__/verify-dotnet.ps1 3.1 2.2
+  
+  test-setup-latest-patch-version:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+      - name: Setup dotnet 3.1.x
+        uses: ./
+        with:
+          dotnet-version: 3.1.x
+      - name: Setup dotnet 2.2.x
+        uses: ./
+        with:
+          dotnet-version: 2.2.x
+      - name: Verify dotnet
+        shell: pwsh
+        run: __tests__/verify-dotnet.ps1 3.1 2.2
 
-      # Clear cache before .x version install
-      - name: Set new tool cache (macOS)
-        if: runner.os == 'macos'
-        run: |
-          echo "DOTNET_INSTALL_DIR=/Users/runner/.dotnet3" >> $GITHUB_ENV
-      - name: Set new tool cache (Ubuntu)
-        if: runner.os == 'linux'
-        run: |
-          echo "DOTNET_INSTALL_DIR=/home/runner/.dotnet3" >> $GITHUB_ENV
-      - name: Set new tool cache (Windows)
-        if: runner.os == 'windows'
-        shell: bash
-        run: |
-          echo "DOTNET_INSTALL_DIR=$LocalAppData\Microsoft\dotnet3"  >> $GITHUB_ENV
-      - name: Setup dotnet 2.0.x
+  test-setup-with-wildcard:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+      - name: Setup dotnet 3.1.*
         uses: ./
         with:
-          dotnet-version: 2.0.x
-
-      # Clear cache before .* version install
-      - name: Set new tool cache (macOS)
-        if: runner.os == 'macos'
-        run: |
-          echo "DOTNET_INSTALL_DIR=/Users/runner/.dotnet4" >> $GITHUB_ENV
-      - name: Set new tool cache (Ubuntu)
-        if: runner.os == 'linux'
-        run: |
-          echo "DOTNET_INSTALL_DIR=/home/runner/.dotnet4" >> $GITHUB_ENV
-      - name: Set new tool cache (Windows)
-        if: runner.os == 'windows'
-        shell: bash
-        run: |
-          echo "DOTNET_INSTALL_DIR=$LocalAppData\Microsoft\dotnet4" >> $GITHUB_ENV
-      - name: Setup dotnet 2.0.*
+          dotnet-version: 3.1.*
+      - name: Setup dotnet 2.2.*
         uses: ./
         with:
-          dotnet-version: 2.0.*
+          dotnet-version: 2.2.*
+      - name: Verify dotnet
+        shell: pwsh
+        run: __tests__/verify-dotnet.ps1 3.1 2.2
 
   test-proxy:
     runs-on: ubuntu-latest
