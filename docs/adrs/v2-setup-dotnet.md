@@ -4,7 +4,7 @@ Date: 2021-02-15
 Status: Proposed
 
 # Context
-- GitHub-hosted Ubuntu and Windows runners have .NET versions pre-installed in system directories (Ubuntu:`/usr/share/dotnet`, Windows:`C:\Program Files\dotnet`), but the `v1` version of action installs .NET to user's directory `$HOME/.dotnet` for that runners. It means that action always download and install .NET version even if it is pre-installed and after using the action all pre-installed .NET versions are unavailable.
+- GitHub-hosted Ubuntu and Windows runners have .NET versions pre-installed in system directories (Ubuntu:`/usr/share/dotnet`, Windows:`C:\Program Files\dotnet`), but the `v1` version of action installs .NET to user's directory (Ubuntu:`/home/runner/.dotnet`, Windows: `C:\Users\runneradmin\AppData\Local\Microsoft\dotnet`) for that runners. It means that action always download and install .NET version even if it is pre-installed and after using the action all pre-installed .NET versions are unavailable.
 The behavior is different for macOS runners because pre-installation directory matches the one that is used by action. It means action can use pre-installed versions if it exists, which speeds up customer's workflow.
 
 - According to .NET documentation (https://docs.microsoft.com/en-us/dotnet/core/versions/selection), .NET CLI will use the latest installed .NET SDK and .NET runtime if there are multiple versions installed side-by-side.
