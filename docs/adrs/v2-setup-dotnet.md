@@ -18,7 +18,7 @@ https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-install-script
 
 # v2-preview
 There will be a v2-preview branch that will be created for development and testing. Any changes will first be merged into v2-preview branch. After a period of testing & verification, the v2-preview branch will be merged into the main branch and a v2 tag will be created. Any GitHub public documentation and starter workflows that mention setup-dotnet will then be updated to use v2 instead of v1: [README.md](https://github.com/actions/setup-dotnet/blob/main/README.md
-), [action.yml](https://github.com/actions/setup-dotnet/blob/main/action.yml)
+), [action.yml](https://github.com/actions/setup-dotnet/blob/main/action.yml), [GitHub docs](https://docs.github.com/en/actions/guides/building-and-testing-net#using-a-specific-net-version)
 
 # Consequences
 - Customers will be able to use pre-installed .NET versions with setup-dotnet action on Windows and Ubuntu.
