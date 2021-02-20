@@ -13,8 +13,8 @@ It is unclear for customers who expect that .NET specified in the task will be u
 # Proposal
 - Change .NET installation path for Windows and Ubuntu images to match the location of pre-installed versions by using `-InstallDir` (Windows) and `--install-dir` (Ubuntu) property for installer scripts:
 https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-install-script
-- Implement additional flag to create `global.json` file in runtime to set installed .NET version as a current one.
-- Release new task version to avoid breacking changes for customers.
+- Implement additional input to create `global.json` file in runtime to set installed .NET version as a current one.
+- Release new task version to avoid breaking changes for customers.
 
 # v2-preview
 There will be a v2-preview branch that will be created for development and testing. Any changes will first be merged into v2-preview branch. After a period of testing & verification, the v2-preview branch will be merged into the main branch and a v2 tag will be created. Any GitHub public documentation and starter workflows that mention setup-dotnet will then be updated to use v2 instead of v1: [README.md](https://github.com/actions/setup-dotnet/blob/main/README.md
