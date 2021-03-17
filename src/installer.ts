@@ -39,7 +39,9 @@ export class DotNetVersionInfo {
     }
 
     const major = this.getVersionNumberOrThrow(parts[0]);
-    const minor = ['x', '*'].includes(parts[1]) ? parts[1] : this.getVersionNumberOrThrow(parts[1]);
+    const minor = ['x', '*'].includes(parts[1])
+      ? parts[1]
+      : this.getVersionNumberOrThrow(parts[1]);
 
     this.fullversion = major + '.' + minor;
   }
