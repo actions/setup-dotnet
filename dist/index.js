@@ -16869,20 +16869,14 @@ class DotNetVersionInfo {
             return;
         }
         //Note: No support for previews when using generic
-        let parts = version.split('.');
+        const parts = version.split('.');
         if (parts.length < 2 || parts.length > 3)
             this.throwInvalidVersionFormat();
         if (parts.length == 3 && parts[2] !== 'x' && parts[2] !== '*') {
             this.throwInvalidVersionFormat();
         }
-        let major = this.getVersionNumberOrThrow(parts[0]);
-        let minor;
-        if (parts[1] === 'x') {
-            minor = parts[1];
-        }
-        else {
-            minor = this.getVersionNumberOrThrow(parts[1]);
-        }
+        const major = this.getVersionNumberOrThrow(parts[0]);
+        const minor = ['x', '*'].includes(parts[1]) ? parts[1] : this.getVersionNumberOrThrow(parts[1]);
         this.fullversion = major + '.' + minor;
     }
     getVersionNumberOrThrow(input) {
