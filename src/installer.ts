@@ -39,7 +39,12 @@ export class DotNetVersionInfo {
     }
 
     let major = this.getVersionNumberOrThrow(parts[0]);
-    let minor = this.getVersionNumberOrThrow(parts[1]);
+    let minor;
+    if (parts[1] === 'x') {
+      minor = parts[1];
+    } else {
+      minor = this.getVersionNumberOrThrow(parts[1]);
+    }
 
     this.fullversion = major + '.' + minor;
   }
@@ -60,7 +65,9 @@ export class DotNetVersionInfo {
   }
 
   private throwInvalidVersionFormat() {
-    throw 'Invalid version format! Supported: 1.2.3, 1.2, 1.2.x, 1.2.*';
+    throw new Error(
+      'Invalid version format! Supported: 1.2.3, 1.2, 1.2.x, 1.2.*'
+    );
   }
 
   /**
@@ -187,7 +194,7 @@ export class DotnetCoreInstaller {
     console.log(process.env['PATH']);
 
     if (resultCode != 0) {
-      throw `Failed to install dotnet ${resultCode}. ${output}`;
+      throw new Error(`Failed to install dotnet ${resultCode}. ${output}`);
     }
   }
 
@@ -236,7 +243,9 @@ export class DotnetCoreInstaller {
     );
 
     if (releasesInfo.length == 0) {
-      throw `Could not find dotnet core version. Please ensure that specified version ${versionInfo.inputVersion} is valid.`;
+      throw new Error(
+        `Could not find dotnet core version. Please ensure that specified version ${versionInfo.inputVersion} is valid.`
+      );
     }
 
     let release = releasesInfo[0];
@@ -264,9 +273,11 @@ export class DotnetCoreInstaller {
     });
 
     if (releasesInfo.length === 0) {
-      throw `Could not find info for version ${versionParts.join(
-        '.'
-      )} at ${DotNetCoreIndexUrl}`;
+      throw new Error(
+        `Could not find info for version ${versionParts.join(
+          '.'
+        )} at ${DotNetCoreIndexUrl}`
+      );
     }
 
     return releasesInfo[0]['releases.json'];
