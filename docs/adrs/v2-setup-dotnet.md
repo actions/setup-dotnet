@@ -7,13 +7,13 @@ Status: Proposed
 - GitHub-hosted Ubuntu and Windows runners have .NET versions pre-installed in system directories (Ubuntu:`/usr/share/dotnet`, Windows:`C:\Program Files\dotnet`), but the `v1` version of action installs .NET to user's directory (Ubuntu:`/home/runner/.dotnet`, Windows: `C:\Users\runneradmin\AppData\Local\Microsoft\dotnet`) for that runners. It means that action always download and install .NET version even if it is pre-installed and after using the action all pre-installed .NET versions are unavailable.
 The behavior is different for macOS runners because pre-installation directory matches the one that is used by action. It means action can use pre-installed versions if it exists, which speeds up customer's workflow.
 
-- According to .NET documentation (https://docs.microsoft.com/en-us/dotnet/core/versions/selection), .NET CLI will use the latest installed .NET SDK and .NET runtime if there are multiple versions installed side-by-side.
-It is unclear for customers who expect that .NET specified in the task will be used for their project.
+- The different behavior of setup task on Ubuntu, Windows and MacOS runners is being unclear and confusing for customers.
+
+- .NET supports installing and using multiple versions of .NET SDK and .NET runtime sidy-by-side and .NET CLI will use the latest of installed .NET SDK and .NET runtime version, this behavior is defined by .NET design (https://docs.microsoft.com/en-us/dotnet/core/versions/selection). The common practice is specifying required versions in project file. From other side, the presence of pre-installed .NET versions that are higher than version that the customers specify in the setup task can be breaking for some customers, who expect only one installed .NET version on runner after using setup task, so we should release new task version for consistent behavior on all runners and avoid breaking changes.
 
 # Proposal
 - Change .NET installation path for Windows and Ubuntu images to match the location of pre-installed versions by using `-InstallDir` (Windows) and `--install-dir` (Ubuntu) property for installer scripts:
 https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-install-script
-- Implement additional input to create `global.json` file in runtime to set installed .NET version as a current one.
 - Release new task version to avoid breaking changes for customers.
 
 # v2-preview
@@ -25,4 +25,3 @@ There will be a v2-preview branch that will be created for development and testi
 
 # Consequences
 - Customers will be able to use pre-installed .NET versions with setup-dotnet action on Windows and Ubuntu.
-- The current .NET version will be forced to the version that the customer specifies in the action inputs.
