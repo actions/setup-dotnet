@@ -13,7 +13,7 @@ This action sets up a [dotnet core cli](https://github.com/dotnet/cli) environme
 Please Note: GitHub hosted runners have some versions of the .NET SDK
 preinstalled. Installed versions are subject to change. Please refer to the
 documentation
-[software installed on github hosted runners](https://help.github.com/en/actions/reference/software-installed-on-github-hosted-runners)
+[software installed on github hosted runners](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-software)
 for .NET SDK versions that are currently available.
 
 # Usage
