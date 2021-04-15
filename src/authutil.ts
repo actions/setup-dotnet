@@ -25,9 +25,7 @@ export function configAuthentication(
   writeFeedToFile(feedUrl, existingNuGetConfig, tempNuGetConfig);
 }
 
-function isValidKey(
-  key: string
-): boolean {
+function isValidKey(key: string): boolean {
   return /^[0-9\w\-\_\.]+$/i.test(key);
 }
 
