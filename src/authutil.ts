@@ -26,7 +26,7 @@ export function configAuthentication(
 }
 
 function isValidKey(key: string): boolean {
-  return /^[0-9\w\-\_\.]+$/i.test(key);
+  return /^[\w\-\.]+$/i.test(key);
 }
 
 function writeFeedToFile(
