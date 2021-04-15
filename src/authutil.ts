@@ -115,7 +115,7 @@ function writeFeedToFile(
   sourceKeys.forEach(key => {
     if (!isValidKey(key)) {
       throw new Error(
-        "Source name can contain letters, numbers, and '-', '_', '.' symbols only, Please, fix source name in NuGet.config and try again."
+        "Source name can contain letters, numbers, and '-', '_', '.' symbols only. Please, fix source name in NuGet.config and try again."
       );
     }
 
