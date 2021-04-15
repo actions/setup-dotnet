@@ -25,6 +25,12 @@ export function configAuthentication(
   writeFeedToFile(feedUrl, existingNuGetConfig, tempNuGetConfig);
 }
 
+function isValidKey(
+  key: string
+): boolean {
+  return /^[0-9\w\-\_\.]+$/i.test(key);
+}
+
 function writeFeedToFile(
   feedUrl: string,
   existingFileLocation: string,
@@ -109,9 +115,9 @@ function writeFeedToFile(
   xml = xml.ele('packageSourceCredentials');
 
   sourceKeys.forEach(key => {
-    if (key.indexOf(' ') > -1) {
+    if (!isValidKey(key)) {
       throw new Error(
-        "This action currently can't handle source names with spaces. Remove the space from your repo's NuGet.config and try again."
+        "Source name can contain letters, numbers, and '-', '_', '.' symbols only, Please, fix source name in NuGet.config and try again."
       );
     }
 
