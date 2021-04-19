@@ -28,13 +28,14 @@ export function configAuthentication(
 }
 
 function getExistingNugetConfig(processRoot: string) {
+  const defaultConfigName = 'nuget.config';
   const configFileNames = fs
     .readdirSync(processRoot)
-    .filter(filename => filename.toLowerCase() === 'nuget.config');
+    .filter(filename => filename.toLowerCase() === defaultConfigName);
   if (configFileNames.length) {
     return configFileNames[0];
   }
-  return 'nuget.config';
+  return defaultConfigName;
 }
 
 function writeFeedToFile(

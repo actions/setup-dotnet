@@ -4848,13 +4848,14 @@ function configAuthentication(feedUrl, existingFileLocation = '', processRoot = 
 }
 exports.configAuthentication = configAuthentication;
 function getExistingNugetConfig(processRoot) {
+    const defaultConfigName = 'nuget.config';
     const configFileNames = fs
         .readdirSync(processRoot)
-        .filter(filename => filename.toLowerCase() === 'nuget.config');
+        .filter(filename => filename.toLowerCase() === defaultConfigName);
     if (configFileNames.length) {
         return configFileNames[0];
     }
-    return 'nuget.config';
+    return defaultConfigName;
 }
 function writeFeedToFile(feedUrl, existingFileLocation, tempFileLocation) {
     console.log(`dotnet-auth: Finding any source references in ${existingFileLocation}, writing a new temporary configuration file with credentials to ${tempFileLocation}`);
