@@ -13,7 +13,7 @@ export function configAuthentication(
 ) {
   const existingNuGetConfig: string = path.resolve(
     processRoot,
-    existingFileLocation == '' ? 'nuget.config' : existingFileLocation
+    existingFileLocation == '' ? getExistingNugetConfig(processRoot) : existingFileLocation
   );
 
   const tempNuGetConfig: string = path.resolve(
@@ -23,6 +23,14 @@ export function configAuthentication(
   );
 
   writeFeedToFile(feedUrl, existingNuGetConfig, tempNuGetConfig);
+}
+
+function getExistingNugetConfig(processRoot: string) {
+  const configFileNames = fs.readdirSync(processRoot).filter(filename => filename.toLowerCase() == 'nuget.config')
+  if (configFileNames.length) {
+    return configFileNames[0];
+  }
+  return 'nuget.config';
 }
 
 function writeFeedToFile(
