@@ -4840,7 +4840,7 @@ const github = __importStar(__webpack_require__(469));
 const xmlbuilder = __importStar(__webpack_require__(312));
 const xmlParser = __importStar(__webpack_require__(989));
 function configAuthentication(feedUrl, existingFileLocation = '', processRoot = process.cwd()) {
-    const existingNuGetConfig = path.resolve(processRoot, existingFileLocation == ''
+    const existingNuGetConfig = path.resolve(processRoot, existingFileLocation === ''
         ? getExistingNugetConfig(processRoot)
         : existingFileLocation);
     const tempNuGetConfig = path.resolve(processRoot, '../', 'nuget.config');
@@ -4850,7 +4850,7 @@ exports.configAuthentication = configAuthentication;
 function getExistingNugetConfig(processRoot) {
     const configFileNames = fs
         .readdirSync(processRoot)
-        .filter(filename => filename.toLowerCase() == 'nuget.config');
+        .filter(filename => filename.toLowerCase() === 'nuget.config');
     if (configFileNames.length) {
         return configFileNames[0];
     }
