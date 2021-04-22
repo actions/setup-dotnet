@@ -4840,11 +4840,23 @@ const github = __importStar(__webpack_require__(469));
 const xmlbuilder = __importStar(__webpack_require__(312));
 const xmlParser = __importStar(__webpack_require__(989));
 function configAuthentication(feedUrl, existingFileLocation = '', processRoot = process.cwd()) {
-    const existingNuGetConfig = path.resolve(processRoot, existingFileLocation == '' ? 'nuget.config' : existingFileLocation);
+    const existingNuGetConfig = path.resolve(processRoot, existingFileLocation === ''
+        ? getExistingNugetConfig(processRoot)
+        : existingFileLocation);
     const tempNuGetConfig = path.resolve(processRoot, '../', 'nuget.config');
     writeFeedToFile(feedUrl, existingNuGetConfig, tempNuGetConfig);
 }
 exports.configAuthentication = configAuthentication;
+function getExistingNugetConfig(processRoot) {
+    const defaultConfigName = 'nuget.config';
+    const configFileNames = fs
+        .readdirSync(processRoot)
+        .filter(filename => filename.toLowerCase() === defaultConfigName);
+    if (configFileNames.length) {
+        return configFileNames[0];
+    }
+    return defaultConfigName;
+}
 function writeFeedToFile(feedUrl, existingFileLocation, tempFileLocation) {
     console.log(`dotnet-auth: Finding any source references in ${existingFileLocation}, writing a new temporary configuration file with credentials to ${tempFileLocation}`);
     let xml;
