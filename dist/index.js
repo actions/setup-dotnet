@@ -16881,14 +16881,16 @@ class DotNetVersionInfo {
             return;
         }
         //Note: No support for previews when using generic
-        let parts = version.split('.');
+        const parts = version.split('.');
         if (parts.length < 2 || parts.length > 3)
             this.throwInvalidVersionFormat();
         if (parts.length == 3 && parts[2] !== 'x' && parts[2] !== '*') {
             this.throwInvalidVersionFormat();
         }
-        let major = this.getVersionNumberOrThrow(parts[0]);
-        let minor = this.getVersionNumberOrThrow(parts[1]);
+        const major = this.getVersionNumberOrThrow(parts[0]);
+        const minor = ['x', '*'].includes(parts[1])
+            ? parts[1]
+            : this.getVersionNumberOrThrow(parts[1]);
         this.fullversion = major + '.' + minor;
     }
     getVersionNumberOrThrow(input) {
@@ -16906,7 +16908,7 @@ class DotNetVersionInfo {
         }
     }
     throwInvalidVersionFormat() {
-        throw 'Invalid version format! Supported: 1.2.3, 1.2, 1.2.x, 1.2.*';
+        throw new Error('Invalid version format! Supported: 1.2.3, 1.2, 1.2.x, 1.2.*');
     }
     /**
      * If true exacatly one version should be resolved
@@ -17009,7 +17011,7 @@ class DotnetCoreInstaller {
             }
             console.log(process.env['PATH']);
             if (resultCode != 0) {
-                throw `Failed to install dotnet ${resultCode}. ${output}`;
+                throw new Error(`Failed to install dotnet ${resultCode}. ${output}`);
             }
         });
     }
@@ -17037,7 +17039,7 @@ class DotnetCoreInstaller {
             // Sort for latest version
             releasesInfo = releasesInfo.sort((a, b) => semver.rcompare(a['sdk']['version'], b['sdk']['version']));
             if (releasesInfo.length == 0) {
-                throw `Could not find dotnet core version. Please ensure that specified version ${versionInfo.inputVersion} is valid.`;
+                throw new Error(`Could not find dotnet core version. Please ensure that specified version ${versionInfo.inputVersion} is valid.`);
             }
             let release = releasesInfo[0];
             return release['sdk']['version'];
@@ -17058,7 +17060,7 @@ class DotnetCoreInstaller {
                 return versionParts[0] == sdkParts[0];
             });
             if (releasesInfo.length === 0) {
-                throw `Could not find info for version ${versionParts.join('.')} at ${DotNetCoreIndexUrl}`;
+                throw new Error(`Could not find info for version ${versionParts.join('.')} at ${DotNetCoreIndexUrl}`);
             }
             return releasesInfo[0]['releases.json'];
         });
