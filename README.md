@@ -13,7 +13,7 @@ This action sets up a [dotnet core cli](https://github.com/dotnet/cli) environme
 Please Note: GitHub hosted runners have some versions of the .NET SDK
 preinstalled. Installed versions are subject to change. Please refer to the
 documentation
-[software installed on github hosted runners](https://help.github.com/en/actions/reference/software-installed-on-github-hosted-runners)
+[software installed on github hosted runners](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-software)
 for .NET SDK versions that are currently available.
 
 # Usage
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dotnet: [ '2.2.103', '3.0', '3.1.x' ]
+        dotnet: [ '2.1.x', '3.1.x', '5.0.x' ]
     name: Dotnet ${{ matrix.dotnet }} sample
     steps:
       - uses: actions/checkout@v2
@@ -59,7 +59,7 @@ jobs:
       - name: Setup dotnet
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '2.2.103'
+          dotnet-version: '2.1.x'
       - name: Setup dotnet
         uses: actions/setup-dotnet@v1
         with:
@@ -113,7 +113,7 @@ build:
     - uses: actions/checkout@main
     - uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '3.1.100' # SDK Version to use.
+        dotnet-version: '3.1.x' # SDK Version to use.
 ```
 
 # License
