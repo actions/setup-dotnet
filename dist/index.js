@@ -4847,6 +4847,9 @@ function configAuthentication(feedUrl, existingFileLocation = '', processRoot = 
     writeFeedToFile(feedUrl, existingNuGetConfig, tempNuGetConfig);
 }
 exports.configAuthentication = configAuthentication;
+function isValidKey(key) {
+    return /^[\w\-\.]+$/i.test(key);
+}
 function getExistingNugetConfig(processRoot) {
     const defaultConfigName = 'nuget.config';
     const configFileNames = fs
@@ -4922,8 +4925,8 @@ function writeFeedToFile(feedUrl, existingFileLocation, tempFileLocation) {
     }
     xml = xml.ele('packageSourceCredentials');
     sourceKeys.forEach(key => {
-        if (key.indexOf(' ') > -1) {
-            throw new Error("This action currently can't handle source names with spaces. Remove the space from your repo's NuGet.config and try again.");
+        if (!isValidKey(key)) {
+            throw new Error("Source name can contain letters, numbers, and '-', '_', '.' symbols only. Please, fix source name in NuGet.config and try again.");
         }
         xml = xml
             .ele(key)
