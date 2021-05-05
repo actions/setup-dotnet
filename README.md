@@ -23,10 +23,20 @@ See [action.yml](action.yml)
 Basic:
 ```yaml
 steps:
-- uses: actions/checkout@main
+- uses: actions/checkout@v2
 - uses: actions/setup-dotnet@v1
   with:
     dotnet-version: '3.1.x' # SDK Version to use; x will use the latest version of the 3.1 channel
+- run: dotnet build <my project>
+```
+
+Preview version:
+```yml
+steps:
+- uses: actions@checkout@v2
+  with:
+    dotnet-version: '6.0.x'
+    include-prerelease: true
 - run: dotnet build <my project>
 ```
 
