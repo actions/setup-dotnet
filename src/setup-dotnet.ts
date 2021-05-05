@@ -30,7 +30,14 @@ export async function run() {
     }
 
     if (version) {
-      const dotnetInstaller = new installer.DotnetCoreInstaller(version);
+      const includePrerelease: boolean =
+        (core.getInput('include-prerelease') || 'false').toLowerCase() ===
+        'true';
+
+      const dotnetInstaller = new installer.DotnetCoreInstaller(
+        version,
+        includePrerelease
+      );
       await dotnetInstaller.installDotnet();
     }
 
