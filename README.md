@@ -109,7 +109,7 @@ steps:
 - uses: actions/setup-dotnet@v1
   with:
     dotnet-version: 3.1.x
-- name: Publish the package to NuGet Org
+- name: Publish the package to nuget.org
   run: dotnet nuget push */bin/Release/*.nupkg -k $NUGET_AUTH_TOKEN -s https://api.nuget.org/v3/index.json
   env:
     NUGET_AUTH_TOKEN: ${{ secrets.NUGET_TOKEN }}
