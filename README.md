@@ -93,10 +93,10 @@ steps:
 - run: dotnet build <my project>
 - name: Create the package
   run: dotnet pack --configuration Release <my project>
- - name: Publish the package to GPR
+- name: Publish the package to GPR
   run: dotnet nuget push <my project>/bin/Release/*.nupkg
 
-# Authticates packages to push to Azure Artifacts
+# Authenticates packages to push to Azure Artifacts
 - uses: actions/setup-dotnet@v1
   with:
     source-url: https://pkgs.dev.azure.com/<your-organization>/_packaging/<your-feed-name>/nuget/v3/index.json
@@ -104,6 +104,16 @@ steps:
     NUGET_AUTH_TOKEN: ${{secrets.AZURE_DEVOPS_PAT}} # Note, create a secret with this name in Settings
 - name: Publish the package to Azure Artifacts
   run: dotnet nuget push <my project>/bin/Release/*.nupkg
+
+# Authenticates packages to push to nuget.org.
+# It's only the way to push a package to nuget.org feed for macOS/Linux machines due to API key config store limitations.
+- uses: actions/setup-dotnet@v1
+  with:
+    dotnet-version: 3.1.x
+- name: Publish the package to nuget.org
+  run: dotnet nuget push */bin/Release/*.nupkg -k $NUGET_AUTH_TOKEN -s https://api.nuget.org/v3/index.json
+  env:
+    NUGET_AUTH_TOKEN: ${{ secrets.NUGET_TOKEN }}
 ```
 
 ## Environment Variables to use with dotnet
