@@ -96,7 +96,7 @@ steps:
 - name: Publish the package to GPR
   run: dotnet nuget push <my project>/bin/Release/*.nupkg
 
-# Authticates packages to push to Azure Artifacts
+# Authenticates packages to push to Azure Artifacts
 - uses: actions/setup-dotnet@v1
   with:
     source-url: https://pkgs.dev.azure.com/<your-organization>/_packaging/<your-feed-name>/nuget/v3/index.json
@@ -105,7 +105,8 @@ steps:
 - name: Publish the package to Azure Artifacts
   run: dotnet nuget push <my project>/bin/Release/*.nupkg
 
-# Authticates packages to push to NuGet Org
+# Authenticates packages to push to nuget.org.
+# It's only the way to push a package to nuget.org feed for macOS/Linus machines due to API key config store limitations.
 - uses: actions/setup-dotnet@v1
   with:
     dotnet-version: 3.1.x
