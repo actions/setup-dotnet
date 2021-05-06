@@ -106,7 +106,7 @@ steps:
   run: dotnet nuget push <my project>/bin/Release/*.nupkg
 
 # Authenticates packages to push to nuget.org.
-# It's only the way to push a package to nuget.org feed for macOS/Linus machines due to API key config store limitations.
+# It's only the way to push a package to nuget.org feed for macOS/Linux machines due to API key config store limitations.
 - uses: actions/setup-dotnet@v1
   with:
     dotnet-version: 3.1.x
