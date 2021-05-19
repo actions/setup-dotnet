@@ -1,4 +1,5 @@
 import * as core from '@actions/core';
+import * as exec from '@actions/exec';
 import * as installer from './installer';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -14,6 +15,7 @@ export async function run() {
     // Proxy, auth, (etc) are still set up, even if no version is identified
     //
     let version = core.getInput('dotnet-version');
+    let runrestore = core.getInput('run-restore');
     if (!version) {
       // Try to fall back to global.json
       core.debug('No version found, trying to find version from global.json');
@@ -39,6 +41,35 @@ export async function run() {
         includePrerelease
       );
       await dotnetInstaller.installDotnet();
+      if (runrestore)
+      {
+          var options: ExecOptions = {
+            listeners: {
+              stdout: (data: Buffer) => {
+                output += data.toString();
+              }
+            },
+            env: envVariables
+          };
+          const powershellPath = await io.which('powershell', true);
+          let resultCode = await exec.exec(
+            `"${powershellPath}"`,
+            [
+              '-NoLogo',
+              '-Sta',
+              '-NoProfile',
+              '-NonInteractive',
+              '-ExecutionPolicy',
+              'Unrestricted',
+              '-Command',
+              'dotnet restore'
+            ],
+            options
+          );
+          if (resultCode != 0) {
+            throw new Error(`Failed to restore projects. Err Code=${resultCode} ${output}`);
+          }
+      }
     }
 
     const sourceUrl: string = core.getInput('source-url');
