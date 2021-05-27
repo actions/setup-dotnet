@@ -1,107 +1,28 @@
 name: Release new action version
 on:
+  release:
+    types: [released]
   workflow_dispatch:
     inputs:
       TAG_NAME:
         description: 'Tag name that the major tag will point to'
         required: true
 
-defaults:
-  run:
-    shell: pwsh
+env:
+  TAG_NAME: ${{ github.event.inputs.TAG_NAME || github.event.release.tag_name }}
 
 jobs:
   update_tag:
-    name: Update the major tag to include the ${{ github.event.inputs.TAG_NAME }} changes
+    name: Update the major tag to include the ${{ github.event.inputs.TAG_NAME || github.event.release.tag_name }} changes
+    environment:
+      name: releaseNewActionVersion
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-    - name: Check if the ${{ github.event.inputs.TAG_NAME }} tag exists
-      id: validate-source-tag
-      uses: actions/github-script@v3
-      with:
-        script: |
-          try{
-            const sourceTag = await github.git.getRef({
-              ...context.repo,
-              ref: "tags/${{ github.event.inputs.TAG_NAME }}"
-            });
-
-            const sourceTagSHA = sourceTag.data.object.sha
-            core.setOutput('source-tag-sha', sourceTagSHA)
-          } catch (error) {
-            core.setFailed(error.message);
-          }
-
-    - name: Validate the ${{ github.event.inputs.TAG_NAME }} tag
-      run: |
-        $versionToValidate = "${{ github.event.inputs.TAG_NAME }}".TrimStart("v")
-        if ($versionToValidate.Split(".").length -lt 3) {
-          echo "::error::The version specified in the ${{ github.event.inputs.TAG_NAME }} tag is short. You have to specify the full version, for example: 'v1.0.0'"
-          exit 1
-        }
-
-        [Semver]$semanticVersion = $null
-        if(-not [Semver]::TryParse($versionToValidate, [ref]$semanticVersion)) {
-          echo "::error::The ${{ github.event.inputs.TAG_NAME }} tag contains unsupported type of version. Only semantic versioning specification is acceptable"
-          exit 1
-        }
-
-        if ($semanticVersion.PreReleaseLabel -or $semanticVersion.BuildLabel) {
-          echo "::error::You have to specify only stable version to update the major tag"
-          exit 1
-        }
-
-    - name: Update the major tag
+    - name: Update the ${{ env.TAG_NAME }} tag
       id: update-major-tag
-      uses: actions/github-script@v3
+      uses: actions/publish-action@v0.1.0
       with:
-        script: |
-          try{
-            const majorTag = "${{ github.event.inputs.TAG_NAME }}".split(".")[0];
-            core.setOutput('major-tag', majorTag)
-            const refName = `tags/${majorTag}`;
-
-            const { data: foundRefs } = await github.git.listMatchingRefs({
-              ...context.repo,
-              ref: refName
-            });
-
-            const matchingRef = foundRefs.find( refObj => refObj.ref.endsWith(refName) );
-            
-            if (matchingRef !== undefined) {
-              core.info(`Updating the ${majorTag} tag to point to the ${{ github.event.inputs.TAG_NAME }} tag`);
-              await github.git.updateRef({
-                ...context.repo,
-                ref: refName,
-                sha: '${{ steps.validate-source-tag.outputs.source-tag-sha }}',
-                force: true
-              });
-            } else {
-              core.info(`Creating the ${majorTag} tag from the ${{ github.event.inputs.TAG_NAME }} tag`);
-              await github.git.createRef({
-                ...context.repo,
-                ref: `refs/${refName}`,
-                sha: '${{ steps.validate-source-tag.outputs.source-tag-sha }}'
-              });
-            }
-          } catch (error) {
-            core.setFailed(error.message);
-          }
-
-    - name: Send slack message
-      if: failure()
-      run: |
-        curl `
-          -X POST `
-          -H 'Content-type: application/json' `
-          --data '{\"text\":\"Failed to update a major tag for the ${{ github.repository }} action\"}' `
-          ${{ secrets.SLACK }}
-
-    - name: Send slack message
-      if: success()
-      run: |
-        curl `
-          -X POST `
-          -H 'Content-type: application/json' `
-          --data '{\"text\":\"The ${{ steps.update-major-tag.outputs.major-tag }} tag has been successfully updated for the ${{ github.repository }} action to include changes from the ${{ github.event.inputs.TAG_NAME }}\"}' `
-          ${{ secrets.SLACK }}
+        source-tag: ${{ env.TAG_NAME }}
+        slack-webhook: ${{ secrets.SLACK_WEBHOOK }}
