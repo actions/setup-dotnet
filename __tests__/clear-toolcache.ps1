@@ -1,13 +1,13 @@
 $dotnetPaths = @{
-    Linux = @("/usr/share/dotnet")
-    macOS = @("$env:HOME/.dotnet")
-    Windows = @("$env:ProgramFiles\dotnet/*",
-                  "$env:LocalAppData\Microsoft\dotnet/*")
+    Linux = "/usr/share/dotnet"
+    macOS = "$env:HOME/.dotnet"
+    Windows = "$env:ProgramFiles\dotnet", "$env:LocalAppData\Microsoft\dotnet"
 }
 
-foreach ($path in $dotnetPaths[$args[0]]) {
-    if (Test-Path $path) {
-        Write-Host "Clear $path path"
-        Remove-Item $path -Recurse -Force
+foreach ($srcPath in $dotnetPaths[$args[0]]) {
+    if (Test-Path $srcPath) {
+        Write-Host "Move $srcPath path"
+        $dstPath = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName())
+        Move-Item -Path $srcPath -Destination $dstPath
     }
 }
