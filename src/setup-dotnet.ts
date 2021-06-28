@@ -20,7 +20,8 @@ export async function run() {
       const globalJsonPath = path.join(process.cwd(), 'global.json');
       if (fs.existsSync(globalJsonPath)) {
         const globalJson = JSON.parse(
-          fs.readFileSync(globalJsonPath, {encoding: 'utf8'})
+          // .trim() is necessary to strip BOM https://github.com/nodejs/node/issues/20649
+          fs.readFileSync(globalJsonPath, {encoding: 'utf8'}).trim()
         );
         if (globalJson.sdk && globalJson.sdk.version) {
           version = globalJson.sdk.version;
@@ -29,7 +30,14 @@ export async function run() {
     }
 
     if (version) {
-      const dotnetInstaller = new installer.DotnetCoreInstaller(version);
+      const includePrerelease: boolean =
+        (core.getInput('include-prerelease') || 'false').toLowerCase() ===
+        'true';
+
+      const dotnetInstaller = new installer.DotnetCoreInstaller(
+        version,
+        includePrerelease
+      );
       await dotnetInstaller.installDotnet();
     }
 

@@ -4840,11 +4840,26 @@ const github = __importStar(__webpack_require__(469));
 const xmlbuilder = __importStar(__webpack_require__(312));
 const xmlParser = __importStar(__webpack_require__(989));
 function configAuthentication(feedUrl, existingFileLocation = '', processRoot = process.cwd()) {
-    const existingNuGetConfig = path.resolve(processRoot, existingFileLocation == '' ? 'nuget.config' : existingFileLocation);
+    const existingNuGetConfig = path.resolve(processRoot, existingFileLocation === ''
+        ? getExistingNugetConfig(processRoot)
+        : existingFileLocation);
     const tempNuGetConfig = path.resolve(processRoot, '../', 'nuget.config');
     writeFeedToFile(feedUrl, existingNuGetConfig, tempNuGetConfig);
 }
 exports.configAuthentication = configAuthentication;
+function isValidKey(key) {
+    return /^[\w\-\.]+$/i.test(key);
+}
+function getExistingNugetConfig(processRoot) {
+    const defaultConfigName = 'nuget.config';
+    const configFileNames = fs
+        .readdirSync(processRoot)
+        .filter(filename => filename.toLowerCase() === defaultConfigName);
+    if (configFileNames.length) {
+        return configFileNames[0];
+    }
+    return defaultConfigName;
+}
 function writeFeedToFile(feedUrl, existingFileLocation, tempFileLocation) {
     console.log(`dotnet-auth: Finding any source references in ${existingFileLocation}, writing a new temporary configuration file with credentials to ${tempFileLocation}`);
     let xml;
@@ -4910,8 +4925,8 @@ function writeFeedToFile(feedUrl, existingFileLocation, tempFileLocation) {
     }
     xml = xml.ele('packageSourceCredentials');
     sourceKeys.forEach(key => {
-        if (key.indexOf(' ') > -1) {
-            throw new Error("This action currently can't handle source names with spaces. Remove the space from your repo's NuGet.config and try again.");
+        if (!isValidKey(key)) {
+            throw new Error("Source name can contain letters, numbers, and '-', '_', '.' symbols only. Please, fix source name in NuGet.config and try again.");
         }
         xml = xml
             .ele(key)
@@ -7814,14 +7829,18 @@ function run() {
                 core.debug('No version found, trying to find version from global.json');
                 const globalJsonPath = path.join(process.cwd(), 'global.json');
                 if (fs.existsSync(globalJsonPath)) {
-                    const globalJson = JSON.parse(fs.readFileSync(globalJsonPath, { encoding: 'utf8' }));
+                    const globalJson = JSON.parse(
+                    // .trim() is necessary to strip BOM https://github.com/nodejs/node/issues/20649
+                    fs.readFileSync(globalJsonPath, { encoding: 'utf8' }).trim());
                     if (globalJson.sdk && globalJson.sdk.version) {
                         version = globalJson.sdk.version;
                     }
                 }
             }
             if (version) {
-                const dotnetInstaller = new installer.DotnetCoreInstaller(version);
+                const includePrerelease = (core.getInput('include-prerelease') || 'false').toLowerCase() ===
+                    'true';
+                const dotnetInstaller = new installer.DotnetCoreInstaller(version, includePrerelease);
                 yield dotnetInstaller.installDotnet();
             }
             const sourceUrl = core.getInput('source-url');
@@ -16868,15 +16887,16 @@ class DotNetVersionInfo {
             this.isExactVersionSet = true;
             return;
         }
-        //Note: No support for previews when using generic
-        let parts = version.split('.');
+        const parts = version.split('.');
         if (parts.length < 2 || parts.length > 3)
             this.throwInvalidVersionFormat();
         if (parts.length == 3 && parts[2] !== 'x' && parts[2] !== '*') {
             this.throwInvalidVersionFormat();
         }
-        let major = this.getVersionNumberOrThrow(parts[0]);
-        let minor = this.getVersionNumberOrThrow(parts[1]);
+        const major = this.getVersionNumberOrThrow(parts[0]);
+        const minor = ['x', '*'].includes(parts[1])
+            ? parts[1]
+            : this.getVersionNumberOrThrow(parts[1]);
         this.fullversion = major + '.' + minor;
     }
     getVersionNumberOrThrow(input) {
@@ -16894,7 +16914,7 @@ class DotNetVersionInfo {
         }
     }
     throwInvalidVersionFormat() {
-        throw 'Invalid version format! Supported: 1.2.3, 1.2, 1.2.x, 1.2.*';
+        throw new Error('Invalid version format! Supported: 1.2.3, 1.2, 1.2.x, 1.2.*');
     }
     /**
      * If true exacatly one version should be resolved
@@ -16908,8 +16928,9 @@ class DotNetVersionInfo {
 }
 exports.DotNetVersionInfo = DotNetVersionInfo;
 class DotnetCoreInstaller {
-    constructor(version) {
+    constructor(version, includePrerelease = false) {
         this.version = version;
+        this.includePrerelease = includePrerelease;
     }
     installDotnet() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -16997,7 +17018,7 @@ class DotnetCoreInstaller {
             }
             console.log(process.env['PATH']);
             if (resultCode != 0) {
-                throw `Failed to install dotnet ${resultCode}. ${output}`;
+                throw new Error(`Failed to install dotnet ${resultCode}. ${output}`);
             }
         });
     }
@@ -17016,16 +17037,24 @@ class DotnetCoreInstaller {
             const releasesResult = releasesResponse.result || {};
             let releasesInfo = releasesResult['releases'];
             releasesInfo = releasesInfo.filter((releaseInfo) => {
-                return (semver.satisfies(releaseInfo['sdk']['version'], versionInfo.version()) ||
-                    semver.satisfies(releaseInfo['sdk']['version-display'], versionInfo.version()));
+                return (semver.satisfies(releaseInfo['sdk']['version'], versionInfo.version(), {
+                    includePrerelease: this.includePrerelease
+                }) ||
+                    semver.satisfies(releaseInfo['sdk']['version-display'], versionInfo.version(), {
+                        includePrerelease: this.includePrerelease
+                    }));
             });
             // Exclude versions that are newer than the latest if using not exact
             let latestSdk = releasesResult['latest-sdk'];
-            releasesInfo = releasesInfo.filter((releaseInfo) => semver.lte(releaseInfo['sdk']['version'], latestSdk));
+            releasesInfo = releasesInfo.filter((releaseInfo) => semver.lte(releaseInfo['sdk']['version'], latestSdk, {
+                includePrerelease: this.includePrerelease
+            }));
             // Sort for latest version
-            releasesInfo = releasesInfo.sort((a, b) => semver.rcompare(a['sdk']['version'], b['sdk']['version']));
+            releasesInfo = releasesInfo.sort((a, b) => semver.rcompare(a['sdk']['version'], b['sdk']['version'], {
+                includePrerelease: this.includePrerelease
+            }));
             if (releasesInfo.length == 0) {
-                throw `Could not find dotnet core version. Please ensure that specified version ${versionInfo.inputVersion} is valid.`;
+                throw new Error(`Could not find dotnet core version. Please ensure that specified version ${versionInfo.inputVersion} is valid.`);
             }
             let release = releasesInfo[0];
             return release['sdk']['version'];
@@ -17046,7 +17075,7 @@ class DotnetCoreInstaller {
                 return versionParts[0] == sdkParts[0];
             });
             if (releasesInfo.length === 0) {
-                throw `Could not find info for version ${versionParts.join('.')} at ${DotNetCoreIndexUrl}`;
+                throw new Error(`Could not find info for version ${versionParts.join('.')} at ${DotNetCoreIndexUrl}`);
             }
             return releasesInfo[0]['releases.json'];
         });

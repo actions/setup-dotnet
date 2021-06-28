@@ -13,7 +13,7 @@ This action sets up a [dotnet core cli](https://github.com/dotnet/cli) environme
 Please Note: GitHub hosted runners have some versions of the .NET SDK
 preinstalled. Installed versions are subject to change. Please refer to the
 documentation
-[software installed on github hosted runners](https://help.github.com/en/actions/reference/software-installed-on-github-hosted-runners)
+[software installed on github hosted runners](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-software)
 for .NET SDK versions that are currently available.
 
 # Usage
@@ -23,10 +23,21 @@ See [action.yml](action.yml)
 Basic:
 ```yaml
 steps:
-- uses: actions/checkout@main
+- uses: actions/checkout@v2
 - uses: actions/setup-dotnet@v1
   with:
     dotnet-version: '3.1.x' # SDK Version to use; x will use the latest version of the 3.1 channel
+- run: dotnet build <my project>
+```
+
+Preview version:
+```yml
+steps:
+- uses: actions@checkout@v2
+- uses: actions/setup-dotnet@v1
+  with:
+    dotnet-version: '6.0.x'
+    include-prerelease: true
 - run: dotnet build <my project>
 ```
 
@@ -37,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dotnet: [ '2.2.103', '3.0', '3.1.x' ]
+        dotnet: [ '2.1.x', '3.1.x', '5.0.x' ]
     name: Dotnet ${{ matrix.dotnet }} sample
     steps:
       - uses: actions/checkout@v2
@@ -59,7 +70,7 @@ jobs:
       - name: Setup dotnet
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '2.2.103'
+          dotnet-version: '2.1.x'
       - name: Setup dotnet
         uses: actions/setup-dotnet@v1
         with:
@@ -82,10 +93,10 @@ steps:
 - run: dotnet build <my project>
 - name: Create the package
   run: dotnet pack --configuration Release <my project>
- - name: Publish the package to GPR
+- name: Publish the package to GPR
   run: dotnet nuget push <my project>/bin/Release/*.nupkg
 
-# Authticates packages to push to Azure Artifacts
+# Authenticates packages to push to Azure Artifacts
 - uses: actions/setup-dotnet@v1
   with:
     source-url: https://pkgs.dev.azure.com/<your-organization>/_packaging/<your-feed-name>/nuget/v3/index.json
@@ -93,6 +104,16 @@ steps:
     NUGET_AUTH_TOKEN: ${{secrets.AZURE_DEVOPS_PAT}} # Note, create a secret with this name in Settings
 - name: Publish the package to Azure Artifacts
   run: dotnet nuget push <my project>/bin/Release/*.nupkg
+
+# Authenticates packages to push to nuget.org.
+# It's only the way to push a package to nuget.org feed for macOS/Linux machines due to API key config store limitations.
+- uses: actions/setup-dotnet@v1
+  with:
+    dotnet-version: 3.1.x
+- name: Publish the package to nuget.org
+  run: dotnet nuget push */bin/Release/*.nupkg -k $NUGET_AUTH_TOKEN -s https://api.nuget.org/v3/index.json
+  env:
+    NUGET_AUTH_TOKEN: ${{ secrets.NUGET_TOKEN }}
 ```
 
 ## Environment Variables to use with dotnet
@@ -113,7 +134,7 @@ build:
     - uses: actions/checkout@main
     - uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '3.1.100' # SDK Version to use.
+        dotnet-version: '3.1.x' # SDK Version to use.
 ```
 
 # License

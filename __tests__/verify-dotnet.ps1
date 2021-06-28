@@ -3,30 +3,34 @@ if (!$args[0])
   throw "Must supply dotnet version argument"
 }
 
-if (-Not (Test-Path "../nuget.config"))
-{
-  throw "nuget file not generated correctly"
-}
-
 $dotnet = Get-Command dotnet | Select-Object -First 1 | ForEach-Object { $_.Path }
 Write-Host "Found '$dotnet'"
 
 $version = & $dotnet --version | Out-String | ForEach-Object { $_.Trim() }
 Write-Host "Version $version"
-if ($version -ne $args[0])
+if (-not ($version.StartsWith($args[0].ToString())))
 {
-  Write-Host "PATH='$env:path'"
+  Write-Host "PATH='$env:PATH'"
   throw "Unexpected version"
 }
 
 if ($args[1])
 {
   # SDKs are listed on multiple lines with the path afterwards in square brackets
-  $version = & $dotnet --list-sdks | ForEach-Object { $_.SubString(0, $_.IndexOf('[')).Trim() }
-  Write-Host "Version $version"
-  if (-not ($version -contains $args[1]))
+  $versions = & $dotnet --list-sdks | ForEach-Object { $_.SubString(0, $_.IndexOf('[')).Trim() }
+  Write-Host "Installed versions: $versions"
+  $isInstalledVersion = $false
+  foreach ($version in $versions)
   {
-    Write-Host "PATH='$env:path'"
+    if ($version.StartsWith($args[1].ToString())) 
+    {
+      $isInstalledVersion = $true
+      break
+    }
+  }
+  if (-not $isInstalledVersion)
+  {
+    Write-Host "PATH='$env:PATH'"
     throw "Unexpected version"
   }
 }
