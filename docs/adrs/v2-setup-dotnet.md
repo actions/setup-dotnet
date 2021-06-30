@@ -13,9 +13,9 @@ Status: Proposed
 - It means that action always download and install .NET version even if it is pre-installed. Also after using the action all pre-installed .NET versions are unavailable because `DOTNET_ROOT` is overriden to user directory.
 The behavior is different for macOS runners because pre-installation directory matches the one that is used by action. It means action can use pre-installed versions if it exists, which speeds up customer's workflow.
 
-- The different behavior of setup task on Ubuntu, Windows and MacOS runners is being unclear and confusing for customers.
+- The different behavior of setup task on Ubuntu, Windows and MacOS runners is unclear and confusing for customers.
 
-- .NET supports installing and using multiple versions of .NET SDK and .NET runtime sidy-by-side and .NET CLI will use **the latest** of installed .NET SDK and .NET runtime version, this behavior is defined by .NET design (https://docs.microsoft.com/en-us/dotnet/core/versions/selection). The recommended practice is [specifying required versions in project file](https://docs.microsoft.com/en-us/dotnet/core/versions/selection#the-sdk-uses-the-latest-installed-version).
+- .NET supports installing and using multiple versions of .NET SDK and .NET runtime sidy-by-side. .NET CLI will use the latest of installed .NET SDK and .NET runtime version if there is no global.json file containing a different version. This behavior is defined by .NET design (https://docs.microsoft.com/en-us/dotnet/core/versions/selection).
 
 - The action contains logic to handle inputs with wildcards, for example `5.0.x`, `5.0.*`, `5.x` or `5.*`. This logic uses metadata from `https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/releases-index.json` to retrieve the list of available releases and get the latest release version for the specified major and/or minor version from input. After that, installer script (`dotnet-install.ps1` for Windows or `dotnet-install.sh` for Linux and MacOS) installs required SDK using exact version as a parameter.
 
