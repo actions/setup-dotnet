@@ -3,13 +3,13 @@ name: Main workflow
 on:
   pull_request:
     paths-ignore:
-      - '**.md'
+      - "**.md"
   push:
     branches:
       - main
       - releases/*
     paths-ignore:
-      - '**.md'
+      - "**.md"
 
 jobs:
   build:
@@ -19,19 +19,20 @@ jobs:
       matrix:
         operating-system: [ubuntu-latest, windows-latest, macOS-latest]
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Set Node.js 12
-      uses: actions/setup-node@v1
-      with:
-        node-version: 12.x
-    - run: npm ci
-    - run: npm run build
-    - run: npm run format-check
-    - run: npm test
-    - name: Verify no unstaged changes
-      if: runner.os != 'windows'
-      run: __tests__/verify-no-unstaged-changes.sh
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set Node.js 12
+        uses: actions/setup-node@v2
+        with:
+          node-version: 12.x
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run format-check
+      - run: npm test
+      - name: Verify no unstaged changes
+        if: runner.os != 'windows'
+        run: __tests__/verify-no-unstaged-changes.sh
 
   test-setup-full-version:
     runs-on: ${{ matrix.operating-system }}
@@ -82,15 +83,15 @@ jobs:
       - name: Setup dotnet '3.1'
         uses: ./
         with:
-          dotnet-version: '3.1'
+          dotnet-version: "3.1"
       - name: Setup dotnet '2.2'
         uses: ./
         with:
-          dotnet-version: '2.2'
+          dotnet-version: "2.2"
       - name: Verify dotnet
         shell: pwsh
         run: __tests__/verify-dotnet.ps1 3.1 2.2
-  
+
   test-setup-latest-patch-version:
     runs-on: ${{ matrix.operating-system }}
     strategy:
