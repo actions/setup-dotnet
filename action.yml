@@ -16,6 +16,9 @@ inputs:
   include-prerelease:
     description: 'Whether prerelease versions should be matched with non-exact versions (for example 5.0.0-preview.6 being matched by 5, 5.0, 5.x or 5.0.x). Defaults to false if not provided.'
     required: False
+  run-restore:
+    description: 'Optionally run dotnet restore on the project after the target .NET SDK is installed.'
+    required: False
 runs:
   using: 'node12'
   main: 'dist/index.js'
