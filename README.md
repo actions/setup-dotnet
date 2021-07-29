@@ -118,7 +118,7 @@ steps:
 
 ## Environment Variables to use with dotnet
 
-Some environment variables may be necessary for your particular case or to improve logging. Some examples are listed below, but the full list with complete details can be found here: https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet#environment-variables
+Some environment variables may be necessary for your particular case or to improve logging. Some examples are listed below, but the full list with complete details can be found here: https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-environment-variables
 
 - DOTNET_NOLOGO - removes logo and telemetry message from first run of dotnet cli (default: false)
 - DOTNET_CLI_TELEMETRY_OPTOUT - opt-out of telemetry being sent to Microsoft (default: false)
