@@ -53,9 +53,11 @@ describe('setup-dotnet tests', () => {
       fs.writeFileSync(globalJsonPath, jsonContents);
     }
 
-    const version = '3.1'
-    const installer = new dotnetInstaller.DotnetCoreInstaller(version)
-    const patchVersion = await installer.resolveVersion(new dotnetInstaller.DotNetVersionInfo(version))
+    const version = '3.1';
+    const installer = new dotnetInstaller.DotnetCoreInstaller(version);
+    const patchVersion = await installer.resolveVersion(
+      new dotnetInstaller.DotNetVersionInfo(version)
+    );
     await setup.run();
 
     expect(fs.existsSync(path.join(toolDir, 'sdk', patchVersion))).toBe(true);
