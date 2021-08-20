@@ -19,7 +19,7 @@ describe('setup-dotnet tests', () => {
     await io.rmRF(tempDir);
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     try {
       await io.rmRF(path.join(process.cwd(), 'global.json'));
       await io.rmRF(toolDir);
