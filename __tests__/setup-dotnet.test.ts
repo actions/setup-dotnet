@@ -7,6 +7,7 @@ const toolDir = path.join(__dirname, 'runner', 'tools2');
 const tempDir = path.join(__dirname, 'runner', 'temp2');
 
 import * as setup from '../src/setup-dotnet';
+import * as dotnetInstaller from '../src/installer';
 
 const IS_WINDOWS = process.platform === 'win32';
 
@@ -51,9 +52,13 @@ describe('setup-dotnet tests', () => {
     if (!fs.existsSync(globalJsonPath)) {
       fs.writeFileSync(globalJsonPath, jsonContents);
     }
+
+    const version = '3.1'
+    const installer = new dotnetInstaller.DotnetCoreInstaller(version)
+    const patchVersion = await installer.resolveVersion(new dotnetInstaller.DotNetVersionInfo(version))
     await setup.run();
 
-    expect(fs.existsSync(path.join(toolDir, 'sdk', '3.1.412'))).toBe(true);
+    expect(fs.existsSync(path.join(toolDir, 'sdk', patchVersion))).toBe(true);
     if (IS_WINDOWS) {
       expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
     } else {
