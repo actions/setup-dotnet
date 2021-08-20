@@ -10,7 +10,7 @@ import * as setup from '../src/setup-dotnet';
 
 const IS_WINDOWS = process.platform === 'win32';
 
-describe.only('setup-dotnet tests', () => {
+describe('setup-dotnet tests', () => {
   beforeAll(async () => {
     process.env.RUNNER_TOOL_CACHE = toolDir;
     process.env.DOTNET_INSTALL_DIR = toolDir;
@@ -45,7 +45,7 @@ describe.only('setup-dotnet tests', () => {
     }
   }, 400000);
 
-  it.only('Acquires version of dotnet from global.json with rollForward option, install the latest patch', async () => {
+  it('Acquires version of dotnet from global.json with rollForward option, install the latest patch', async () => {
     const globalJsonPath = path.join(process.cwd(), 'global.json');
     const jsonContents = `{${os.EOL}"sdk": {${os.EOL}"version":"3.1.201",${os.EOL}"rollForward":"latestFeature"${os.EOL}}${os.EOL}}`;
     if (!fs.existsSync(globalJsonPath)) {
