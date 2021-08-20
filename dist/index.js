@@ -7853,14 +7853,15 @@ function run() {
 }
 exports.run = run;
 function getVersionFromGlobalJson(globalJsonPath) {
-    let version = "";
+    let version = '';
     const globalJson = JSON.parse(
     // .trim() is necessary to strip BOM https://github.com/nodejs/node/issues/20649
     fs.readFileSync(globalJsonPath, { encoding: 'utf8' }).trim());
     if (globalJson.sdk && globalJson.sdk.version) {
         version = globalJson.sdk.version;
         const rollForward = globalJson.sdk.rollForward;
-        if (rollForward && (rollForward === 'latestFeature' || rollForward === 'latestPatch')) {
+        if (rollForward &&
+            (rollForward === 'latestFeature' || rollForward === 'latestPatch')) {
             const [major, minor] = version.split('.');
             version = `${major}.${minor}`;
         }
