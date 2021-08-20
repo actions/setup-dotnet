@@ -44,4 +44,20 @@ describe('setup-dotnet tests', () => {
       expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
     }
   }, 400000);
+
+  it('Acquires version of dotnet from global.json if no matching version is installed', async () => {
+    const globalJsonPath = path.join(process.cwd(), 'global.json');
+    const jsonContents = `{${os.EOL}"sdk": {${os.EOL}"version": "3.1.201",${os.EOL}"rollForward": "latestFeature"${os.EOL}}${os.EOL}}`;
+    if (!fs.existsSync(globalJsonPath)) {
+      fs.writeFileSync(globalJsonPath, jsonContents);
+    }
+    await setup.run();
+
+    expect(fs.existsSync(path.join(toolDir, 'sdk', '3.1.412'))).toBe(true);
+    if (IS_WINDOWS) {
+      expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
+    } else {
+      expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
+    }
+  }, 400000);
 });
