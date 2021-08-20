@@ -7853,15 +7853,16 @@ function run() {
 }
 exports.run = run;
 function getVersionFromGlobalJson(globalJsonPath) {
+    var _a;
+    const optionValues = ['latestFeature', 'latestPatch'];
     let version = '';
     const globalJson = JSON.parse(
     // .trim() is necessary to strip BOM https://github.com/nodejs/node/issues/20649
     fs.readFileSync(globalJsonPath, { encoding: 'utf8' }).trim());
     if (globalJson.sdk && globalJson.sdk.version) {
         version = globalJson.sdk.version;
-        const rollForward = globalJson.sdk.rollForward;
-        if (rollForward &&
-            (rollForward === 'latestFeature' || rollForward === 'latestPatch')) {
+        const rollForward = (_a = globalJson.sdk.rollForward) !== null && _a !== void 0 ? _a : '';
+        if (optionValues.includes(rollForward)) {
             const [major, minor] = version.split('.');
             version = `${major}.${minor}`;
         }
