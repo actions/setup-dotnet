@@ -49,7 +49,6 @@ export async function run() {
 }
 
 function getVersionFromGlobalJson(globalJsonPath: string): string {
-  const optionValues = ['latestFeature', 'latestPatch'];
   let version: string = '';
   const globalJson = JSON.parse(
     // .trim() is necessary to strip BOM https://github.com/nodejs/node/issues/20649
@@ -57,8 +56,8 @@ function getVersionFromGlobalJson(globalJsonPath: string): string {
   );
   if (globalJson.sdk && globalJson.sdk.version) {
     version = globalJson.sdk.version;
-    const rollForward = globalJson.sdk.rollForward ?? '';
-    if (optionValues.includes(rollForward)) {
+    const rollForward = globalJson.sdk.rollForward;
+    if (rollForward && rollForward === 'latestFeature') {
       const [major, minor] = version.split('.');
       version = `${major}.${minor}`;
     }
