@@ -33,7 +33,7 @@ steps:
 Preview version:
 ```yml
 steps:
-- uses: actions@checkout@v2
+- uses: actions/checkout@v2
 - uses: actions/setup-dotnet@v1
   with:
     dotnet-version: '6.0.x'
