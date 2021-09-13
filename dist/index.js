@@ -7829,12 +7829,7 @@ function run() {
                 core.debug('No version found, trying to find version from global.json');
                 const globalJsonPath = path.join(process.cwd(), 'global.json');
                 if (fs.existsSync(globalJsonPath)) {
-                    const globalJson = JSON.parse(
-                    // .trim() is necessary to strip BOM https://github.com/nodejs/node/issues/20649
-                    fs.readFileSync(globalJsonPath, { encoding: 'utf8' }).trim());
-                    if (globalJson.sdk && globalJson.sdk.version) {
-                        version = globalJson.sdk.version;
-                    }
+                    version = getVersionFromGlobalJson(globalJsonPath);
                 }
             }
             if (version) {
@@ -7857,6 +7852,21 @@ function run() {
     });
 }
 exports.run = run;
+function getVersionFromGlobalJson(globalJsonPath) {
+    let version = '';
+    const globalJson = JSON.parse(
+    // .trim() is necessary to strip BOM https://github.com/nodejs/node/issues/20649
+    fs.readFileSync(globalJsonPath, { encoding: 'utf8' }).trim());
+    if (globalJson.sdk && globalJson.sdk.version) {
+        version = globalJson.sdk.version;
+        const rollForward = globalJson.sdk.rollForward;
+        if (rollForward && rollForward === 'latestFeature') {
+            const [major, minor] = version.split('.');
+            version = `${major}.${minor}`;
+        }
+    }
+    return version;
+}
 run();
 
 
