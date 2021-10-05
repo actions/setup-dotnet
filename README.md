@@ -4,7 +4,7 @@
   <a href="https://github.com/actions/setup-dotnet"><img alt="GitHub Actions status" src="https://github.com/actions/setup-dotnet/workflows/Main%20workflow/badge.svg"></a>
 </p>
 
-This action sets up a [dotnet core cli](https://github.com/dotnet/cli) environment for use in actions by:
+This action sets up a [.NET CLI](https://github.com/dotnet/sdk) environment for use in actions by:
 
 - optionally downloading and caching a version of dotnet by SDK version and adding to PATH
 - registering problem matchers for error output
