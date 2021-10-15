@@ -32,8 +32,8 @@ jobs:
     - name: Verify no unstaged changes
       if: runner.os != 'windows'
       run: __tests__/verify-no-unstaged-changes.sh
-
-test-setup-multiple-versions:
+  
+  test-setup-multiple-versions:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
@@ -49,9 +49,9 @@ test-setup-multiple-versions:
         uses: ./
         with:
           dotnet-version: '2.2.402 , 3.1.404 , 5.0.100'
-     - name: Verify dotnet
+      - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 ru
+        run: __tests__/verify-dotnet.ps1 ru 
 
   test-setup-full-version:
     runs-on: ${{ matrix.operating-system }}
