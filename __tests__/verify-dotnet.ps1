@@ -6,12 +6,15 @@ if (!$args[0])
 $dotnet = Get-Command dotnet | Select-Object -First 1 | ForEach-Object { $_.Path }
 Write-Host "Found '$dotnet'"
 
-$version = & $dotnet --version | Out-String | ForEach-Object { $_.Trim() }
-Write-Host "Version $version"
-if (-not ($version.StartsWith($args[0].ToString())))
+if($args.count -eq 1)
 {
-  Write-Host "PATH='$env:PATH'"
-  throw "Unexpected version"
+  $version = & $dotnet --version | Out-String | ForEach-Object { $_.Trim() }
+  Write-Host "Version $version"
+  if (-not ($version.StartsWith($args[0].ToString())))
+  {
+    Write-Host "PATH='$env:PATH'"
+    throw "Unexpected version"
+  }
 }
 
 if ($args[1])
@@ -19,16 +22,17 @@ if ($args[1])
   # SDKs are listed on multiple lines with the path afterwards in square brackets
   $versions = & $dotnet --list-sdks | ForEach-Object { $_.SubString(0, $_.IndexOf('[')).Trim() }
   Write-Host "Installed versions: $versions"
-  $isInstalledVersion = $false
-  foreach ($version in $versions)
-  {
-    if ($version.StartsWith($args[1].ToString())) 
+  $InstalledVersionCount = 0
+  foreach($arg in $args){
+    foreach ($version in $versions)
     {
-      $isInstalledVersion = $true
-      break
+      if ($version.StartsWith($arg.ToString())) 
+      {
+        $InstalledVersionCount++
+      }
     }
-  }
-  if (-not $isInstalledVersion)
+   }
+  if ( $InstalledVersionCount -ne $args.Count)
   {
     Write-Host "PATH='$env:PATH'"
     throw "Unexpected version"
@@ -49,6 +53,13 @@ Write-Host "Sample output: $sample_output"
 if ($args[1])
 {
   if ($sample_output -notlike "*Test Run Successful.*Test Run Successful.*")
+  {
+    throw "Unexpected output"
+  }
+}
+if ($args[2])
+{
+  if ($sample_output -notlike "*Test Run Successful.*Test Run Successful.*Test Run Successful.*")
   {
     throw "Unexpected output"
   }
