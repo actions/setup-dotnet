@@ -48,7 +48,7 @@ jobs:
       - name: Setup dotnet 2.2.402 and 3.1.404
         uses: ./
         with:
-          dotnet-version: |
+          dotnet-versions: |
              2.2.402
              3.1.404
       - name: Verify dotnet
