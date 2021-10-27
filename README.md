@@ -36,7 +36,9 @@ steps:
 - uses: actions/checkout@v2
 -  uses: actions/setup-dotnet@v1
   with:
-    dotnet-version: '2.2.207 , 3.1.20'
+    dotnet-version: | 
+    3.1.20
+    2.2.207 
 - run: dotnet build <my project>
 ```
 Preview version:

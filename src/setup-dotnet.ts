@@ -14,7 +14,8 @@ export async function run() {
     // Proxy, auth, (etc) are still set up, even if no version is identified
     //
     let version = core.getInput('dotnet-version');
-    if (!version) {
+    let versions = core.getMultilineInput('dotnet-versions');
+    if (!version && !versions.length) {
       // Try to fall back to global.json
       core.debug('No version found, trying to find version from global.json');
       const globalJsonPath = path.join(process.cwd(), 'global.json');
@@ -22,7 +23,23 @@ export async function run() {
         version = getVersionFromGlobalJson(globalJsonPath);
       }
     }
+    if (version && versions) {
+      core.warning(
+        "Multiple version inputs have been specified, Please specify either 'dotnet-version' or 'dotnet-versions'"
+      );
+    }
+    if (versions && !version) {
+      const includePrerelease: boolean =
+        (core.getInput('include-prerelease') || 'false').toLowerCase() ===
+        'true';
 
+      const dotnetInstaller = new installer.DotnetCoreInstaller(
+        '',
+        versions,
+        includePrerelease
+      );
+      await dotnetInstaller.installDotnetVersions();
+    }
     if (version) {
       const includePrerelease: boolean =
         (core.getInput('include-prerelease') || 'false').toLowerCase() ===
@@ -30,6 +47,7 @@ export async function run() {
 
       const dotnetInstaller = new installer.DotnetCoreInstaller(
         version,
+        [],
         includePrerelease
       );
       await dotnetInstaller.installDotnet();
