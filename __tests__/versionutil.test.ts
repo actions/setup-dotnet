@@ -78,7 +78,7 @@ describe('version tests', () => {
   );
 
   it('Resolving a nonexistent generic version fails', async () => {
-    const dotnetInstaller = new installer.DotnetCoreInstaller('999.1.x');
+    const dotnetInstaller = new installer.DotnetCoreInstaller(['999.1.x']);
     try {
       await dotnetInstaller.resolveVersion(
         new installer.DotNetVersionInfo('999.1.x')
