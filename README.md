@@ -30,6 +30,22 @@ steps:
 - run: dotnet build <my project>
 ```
 
+Multiple versions:
+```yaml
+steps:
+- uses: actions/checkout@v2
+- uses: actions/setup-dotnet@v1
+  with:
+    dotnet-version: '3.1.x' # Use the latest version of the 3.1 channel
+- uses: actions/setup-dotnet@v1
+  with:
+    dotnet-version: '5.0.x' # Use the latest version of the 5.0 channel
+- uses: actions/setup-dotnet@v1
+  with:
+    dotnet-version: '6.0.x' # Use the latest version of the 6.0 channel
+- run: dotnet build <my project>
+```
+
 Preview version:
 ```yml
 steps:
