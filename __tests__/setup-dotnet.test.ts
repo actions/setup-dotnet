@@ -53,10 +53,10 @@ describe('setup-dotnet tests', () => {
       fs.writeFileSync(globalJsonPath, jsonContents);
     }
 
-    const version = ['3.1'];
+    const version = '3.1';
     const installer = new dotnetInstaller.DotnetCoreInstaller(version);
     const patchVersion = await installer.resolveVersion(
-      new dotnetInstaller.DotNetVersionInfo(version[0])
+      new dotnetInstaller.DotNetVersionInfo(version)
     );
     await setup.run();
 

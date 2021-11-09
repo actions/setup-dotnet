@@ -27,12 +27,14 @@ export async function run() {
       const includePrerelease: boolean =
         (core.getInput('include-prerelease') || 'false').toLowerCase() ===
         'true';
-
-      const dotnetInstaller = new installer.DotnetCoreInstaller(
-        versions,
-        includePrerelease
-      );
-      await dotnetInstaller.installDotnet();
+      let dotnetInstaller: installer.DotnetCoreInstaller;
+      for (const version of versions) {
+        dotnetInstaller = new installer.DotnetCoreInstaller(
+          version,
+          includePrerelease
+        );
+        await dotnetInstaller.installDotnet();
+      }
     }
 
     const sourceUrl: string = core.getInput('source-url');

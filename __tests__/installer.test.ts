@@ -34,7 +34,10 @@ describe('installer tests', () => {
 
   it('Aquires multiple versions of dotnet', async () => {
     const versions = ['2.2.207', '3.1.120'];
-    await getDotnet(versions);
+
+    for (const version of versions) {
+      await getDotnet(version);
+    }
     expect(fs.existsSync(path.join(toolDir, 'sdk', '2.2.207'))).toBe(true);
     expect(fs.existsSync(path.join(toolDir, 'sdk', '3.1.120'))).toBe(true);
 
@@ -51,7 +54,7 @@ describe('installer tests', () => {
   }, 600000);
 
   it('Acquires version of dotnet if no matching version is installed', async () => {
-    await getDotnet(['3.1.201']);
+    await getDotnet('3.1.201');
     expect(fs.existsSync(path.join(toolDir, 'sdk', '3.1.201'))).toBe(true);
     if (IS_WINDOWS) {
       expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
@@ -66,7 +69,7 @@ describe('installer tests', () => {
   }, 600000); //This needs some time to download on "slower" internet connections
 
   it('Acquires generic version of dotnet if no matching version is installed', async () => {
-    await getDotnet(['3.1']);
+    await getDotnet('3.1');
     var directory = fs
       .readdirSync(path.join(toolDir, 'sdk'))
       .filter(fn => fn.startsWith('3.1.'));
@@ -86,7 +89,7 @@ describe('installer tests', () => {
   it('Throws if no location contains correct dotnet version', async () => {
     let thrown = false;
     try {
-      await getDotnet(['1000.0.0']);
+      await getDotnet('1000.0.0');
     } catch {
       thrown = true;
     }
@@ -141,7 +144,7 @@ function normalizeFileContents(contents: string): string {
     .replace(new RegExp('\r', 'g'), '\n');
 }
 
-async function getDotnet(versions: string[]): Promise<void> {
-  const dotnetInstaller = new installer.DotnetCoreInstaller(versions);
+async function getDotnet(version: string): Promise<void> {
+  const dotnetInstaller = new installer.DotnetCoreInstaller(version);
   await dotnetInstaller.installDotnet();
 }
