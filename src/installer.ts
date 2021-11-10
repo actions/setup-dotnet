@@ -164,6 +164,13 @@ export class DotnetCoreInstaller {
         env: envVariables
       });
     }
+
+    if (resultCode != 0) {
+      throw new Error(`Failed to install dotnet ${resultCode}. ${output}`);
+    }
+  }
+
+  static addToPath() {
     if (process.env['DOTNET_INSTALL_DIR']) {
       core.addPath(process.env['DOTNET_INSTALL_DIR']);
       core.exportVariable('DOTNET_ROOT', process.env['DOTNET_INSTALL_DIR']);
@@ -188,10 +195,6 @@ export class DotnetCoreInstaller {
     }
 
     console.log(process.env['PATH']);
-
-    if (resultCode != 0) {
-      throw new Error(`Failed to install dotnet ${resultCode}. ${output}`);
-    }
   }
 
   // versionInfo - versionInfo of the SDK/Runtime

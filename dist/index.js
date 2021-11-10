@@ -8683,7 +8683,7 @@ function run() {
                     versions[0] = getVersionFromGlobalJson(globalJsonPath);
                 }
             }
-            if (versions) {
+            if (versions.length) {
                 const includePrerelease = (core.getInput('include-prerelease') || 'false').toLowerCase() ===
                     'true';
                 let dotnetInstaller;
@@ -8691,6 +8691,7 @@ function run() {
                     dotnetInstaller = new installer.DotnetCoreInstaller(version, includePrerelease);
                     yield dotnetInstaller.installDotnet();
                 }
+                installer.DotnetCoreInstaller.addToPath();
             }
             const sourceUrl = core.getInput('source-url');
             const configFile = core.getInput('config-file');
@@ -18103,27 +18104,29 @@ class DotnetCoreInstaller {
                     env: envVariables
                 });
             }
-            if (process.env['DOTNET_INSTALL_DIR']) {
-                core.addPath(process.env['DOTNET_INSTALL_DIR']);
-                core.exportVariable('DOTNET_ROOT', process.env['DOTNET_INSTALL_DIR']);
-            }
-            else {
-                if (IS_WINDOWS) {
-                    // This is the default set in install-dotnet.ps1
-                    core.addPath(path.join(process.env['LocalAppData'] + '', 'Microsoft', 'dotnet'));
-                    core.exportVariable('DOTNET_ROOT', path.join(process.env['LocalAppData'] + '', 'Microsoft', 'dotnet'));
-                }
-                else {
-                    // This is the default set in install-dotnet.sh
-                    core.addPath(path.join(process.env['HOME'] + '', '.dotnet'));
-                    core.exportVariable('DOTNET_ROOT', path.join(process.env['HOME'] + '', '.dotnet'));
-                }
-            }
-            console.log(process.env['PATH']);
             if (resultCode != 0) {
                 throw new Error(`Failed to install dotnet ${resultCode}. ${output}`);
             }
         });
+    }
+    static addToPath() {
+        if (process.env['DOTNET_INSTALL_DIR']) {
+            core.addPath(process.env['DOTNET_INSTALL_DIR']);
+            core.exportVariable('DOTNET_ROOT', process.env['DOTNET_INSTALL_DIR']);
+        }
+        else {
+            if (IS_WINDOWS) {
+                // This is the default set in install-dotnet.ps1
+                core.addPath(path.join(process.env['LocalAppData'] + '', 'Microsoft', 'dotnet'));
+                core.exportVariable('DOTNET_ROOT', path.join(process.env['LocalAppData'] + '', 'Microsoft', 'dotnet'));
+            }
+            else {
+                // This is the default set in install-dotnet.sh
+                core.addPath(path.join(process.env['HOME'] + '', '.dotnet'));
+                core.exportVariable('DOTNET_ROOT', path.join(process.env['HOME'] + '', '.dotnet'));
+            }
+        }
+        console.log(process.env['PATH']);
     }
     // versionInfo - versionInfo of the SDK/Runtime
     resolveVersion(versionInfo) {
