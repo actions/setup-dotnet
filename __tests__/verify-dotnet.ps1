@@ -20,7 +20,7 @@ if($args.count -eq 1)
 if ($args[1])
 {
   # SDKs are listed on multiple lines with the path afterwards in square brackets
-  $versions = & $dotnet --list-sdks | ForEach-Object { $_.SubString(0, $_.IndexOf('[')).Trim() }
+  $versions = & $dotnet --list-sdks select -Unique | ForEach-Object { $_.SubString(0, $_.IndexOf('[')).Trim() }
   Write-Host "Installed versions: $versions"
   $InstalledVersionCount = 0
   foreach($arg in $args){
