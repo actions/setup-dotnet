@@ -39,8 +39,8 @@ steps:
 -  uses: actions/setup-dotnet@v1
   with:
     dotnet-version: | 
-      5.0.402
-      3.1.201
+      3.1.x
+      5.0.x
 - run: dotnet build <my project>
 ```
 Preview version:
