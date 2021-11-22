@@ -8680,7 +8680,7 @@ function run() {
                 core.debug('No version found, trying to find version from global.json');
                 const globalJsonPath = path.join(process.cwd(), 'global.json');
                 if (fs.existsSync(globalJsonPath)) {
-                    versions[0] = getVersionFromGlobalJson(globalJsonPath);
+                    versions.push(getVersionFromGlobalJson(globalJsonPath));
                 }
             }
             if (versions.length) {
