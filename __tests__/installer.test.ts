@@ -32,6 +32,27 @@ describe('installer tests', () => {
     }
   }, 30000);
 
+  it('Aquires multiple versions of dotnet', async () => {
+    const versions = ['2.2.207', '3.1.120'];
+
+    for (const version of versions) {
+      await getDotnet(version);
+    }
+    expect(fs.existsSync(path.join(toolDir, 'sdk', '2.2.207'))).toBe(true);
+    expect(fs.existsSync(path.join(toolDir, 'sdk', '3.1.120'))).toBe(true);
+
+    if (IS_WINDOWS) {
+      expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
+    } else {
+      expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
+    }
+
+    expect(process.env.DOTNET_ROOT).toBeDefined;
+    expect(process.env.PATH).toBeDefined;
+    expect(process.env.DOTNET_ROOT).toBe(toolDir);
+    expect(process.env.PATH?.startsWith(toolDir)).toBe(true);
+  }, 600000);
+
   it('Acquires version of dotnet if no matching version is installed', async () => {
     await getDotnet('3.1.201');
     expect(fs.existsSync(path.join(toolDir, 'sdk', '3.1.201'))).toBe(true);
@@ -126,4 +147,5 @@ function normalizeFileContents(contents: string): string {
 async function getDotnet(version: string): Promise<void> {
   const dotnetInstaller = new installer.DotnetCoreInstaller(version);
   await dotnetInstaller.installDotnet();
+  installer.DotnetCoreInstaller.addToPath();
 }

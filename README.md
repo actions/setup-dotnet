@@ -6,7 +6,7 @@
 
 This action sets up a [.NET CLI](https://github.com/dotnet/sdk) environment for use in actions by:
 
-- optionally downloading and caching a version of dotnet by SDK version and adding to PATH
+- optionally downloading and caching a version(s) of dotnet by SDK version(s) and adding to PATH
 - registering problem matchers for error output
 - setting up authentication to private package sources like GitHub Packages
 
@@ -29,7 +29,20 @@ steps:
     dotnet-version: '3.1.x' # SDK Version to use; x will use the latest version of the 3.1 channel
 - run: dotnet build <my project>
 ```
+Multiple versions:
+> Note: In case multiple versions are installed, the latest .NET version will be used by default unless another version is specified in the `global.json` file.
 
+```yml
+steps:
+- name: Setup dotnet
+- uses: actions/checkout@v2
+-  uses: actions/setup-dotnet@v1
+  with:
+    dotnet-version: | 
+      3.1.x
+      5.0.x
+- run: dotnet build <my project>
+```
 Preview version:
 ```yml
 steps:
