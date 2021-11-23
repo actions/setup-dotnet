@@ -17089,7 +17089,7 @@ class DotnetCoreInstaller {
             }
             const releaseInfo = releasesInfo[0];
             if (releaseInfo['support-phase'] === 'eol') {
-                core.warning(`${releaseInfo['product']} ${releaseInfo['channel-version']} is no longer supported and may not work properly.`);
+                core.warning(`${releaseInfo['product']} ${releaseInfo['channel-version']} is no longer supported and will not receive security updates in the future. Please refer to https://aka.ms/dotnet-core-support for more information about the .NET support policy.`);
             }
             return releaseInfo['releases.json'];
         });
