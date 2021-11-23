@@ -18183,7 +18183,11 @@ class DotnetCoreInstaller {
             if (releasesInfo.length === 0) {
                 throw new Error(`Could not find info for version ${versionParts.join('.')} at ${DotNetCoreIndexUrl}`);
             }
-            return releasesInfo[0]['releases.json'];
+            const releaseInfo = releasesInfo[0];
+            if (releaseInfo['support-phase'] === 'eol') {
+                core.warning(`${releaseInfo['product']} ${releaseInfo['channel-version']} is no longer supported and will not receive security updates in the future. Please refer to https://aka.ms/dotnet-core-support for more information about the .NET support policy.`);
+            }
+            return releaseInfo['releases.json'];
         });
     }
 }
