@@ -16,6 +16,7 @@ describe('setup-dotnet tests', () => {
     process.env.RUNNER_TOOL_CACHE = toolDir;
     process.env.DOTNET_INSTALL_DIR = toolDir;
     process.env.RUNNER_TEMP = tempDir;
+    process.env['INPUT_INCLUDE-PRERELEASE'] = 'false';
     await io.rmRF(toolDir);
     await io.rmRF(tempDir);
   });
