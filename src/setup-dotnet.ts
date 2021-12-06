@@ -3,6 +3,7 @@ import * as installer from './installer';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as auth from './authutil';
+import stripJsonComments from 'strip-json-comments';
 
 export async function run() {
   try {
@@ -55,7 +56,9 @@ function getVersionFromGlobalJson(globalJsonPath: string): string {
   let version: string = '';
   const globalJson = JSON.parse(
     // .trim() is necessary to strip BOM https://github.com/nodejs/node/issues/20649
-    fs.readFileSync(globalJsonPath, {encoding: 'utf8'}).trim()
+    stripJsonComments(
+      fs.readFileSync(globalJsonPath, {encoding: 'utf8'}).trim()
+    )
   );
   if (globalJson.sdk && globalJson.sdk.version) {
     version = globalJson.sdk.version;

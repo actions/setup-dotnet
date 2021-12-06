@@ -67,4 +67,25 @@ describe('setup-dotnet tests', () => {
       expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
     }
   }, 400000);
+
+  it('Allows global.json with c-style comments', async () => {
+    const globalJsonPath = path.join(process.cwd(), 'global.json');
+    const jsonContents = `// single line comment
+{
+  "sdk": {/* multiline
+    comment */"version": "3.1.201"
+  }
+}`;
+    if (!fs.existsSync(globalJsonPath)) {
+      fs.writeFileSync(globalJsonPath, jsonContents);
+    }
+    await setup.run();
+
+    expect(fs.existsSync(path.join(toolDir, 'sdk', '3.1.201'))).toBe(true);
+    if (IS_WINDOWS) {
+      expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
+    } else {
+      expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
+    }
+  }, 400000);
 });
