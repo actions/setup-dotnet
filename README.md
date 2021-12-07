@@ -36,7 +36,7 @@ Multiple versions:
 steps:
 - uses: actions/checkout@v2
 - name: Setup dotnet
-- uses: actions/setup-dotnet@v1
+  uses: actions/setup-dotnet@v1
   with:
     dotnet-version: | 
       3.1.x
