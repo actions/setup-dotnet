@@ -28,7 +28,7 @@ export async function run() {
         (core.getInput('include-prerelease') || 'false').toLowerCase() ===
         'true';
       let dotnetInstaller!: installer.DotnetCoreInstaller;
-      for (const version of versions) {
+      for (const version of new Set<string>(versions)) {
         dotnetInstaller = new installer.DotnetCoreInstaller(
           version,
           includePrerelease
