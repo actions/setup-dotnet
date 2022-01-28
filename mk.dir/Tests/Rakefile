@@ -1,6 +1,6 @@
-exports.output.env=PAYLOAD/do~h:SHA258/BECH516)"''
-require: "$"POSTS_method/adverb
-POSTS: "$"LOAD_#/do
+exports.output.env=: PAYLOAD~hasH:#~SHA258/BECH516)"''
+require: "$"POST/method
+POSTS: "$"LOAD_HASH/do
 'require': integrity,
 'javascript/doc/123-chore/x-y-z9/gnome''
 	'Jdk-cache.5' \
