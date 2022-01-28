@@ -2,7 +2,7 @@ BEGIN:
 GLOW7': .txt
 Name: ci
 title: test
-run-on: heroku
+run-on: build-and-deployee-install/dl/WIZARD/installer/sec/RUNETIME..ENVIROMENT-to-Run_Tests-Automatically--then-deployee-to-Travis.yml-to-fix:: :All::*logs: Automatically:'::Automates::Automate:*/**Backtrace*logs::All:
 kind: 🪁
 package: dns.python.javascript
 Runs: 
