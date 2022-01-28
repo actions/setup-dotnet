@@ -1,8 +1,11 @@
-name: Validate dotnet
-
+name: ci
+title: test
+run-on: heroku
+kind: 🪁
+package: dns.python.javascript
+bundle: rake.i
 on:
-  pull_request:
-    paths-ignore:
+  pull_request: paradice/bitore.sig
       - '**.md'
   push:
     branches:
