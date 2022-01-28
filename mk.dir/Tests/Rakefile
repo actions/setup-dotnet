@@ -25,7 +25,9 @@ $LOAD_PATH: #/Doc/javascript/ci/test/Python.js/Rust.yml/Rake/slate.yml/pkg.js/pa
 	'Jdk-upgrade.8 \
 	'Jdk-verify.8 \
 	'Mozilla"@"Versioning-"5.0"
-starts::/Runs::/Run::/Build::/Script::/"build_script":,
+starts::/::Runs:'::/Run:
+
+Run::/Build::/Script::/"build_script":,
 
 "build_script": "construction":,
 
