@@ -1,4 +1,4 @@
-module.exports = {~s.sh.SHA258/BECH516/$LOAD_PATH={'-aSync@
+module.exports = integrity '@{~s.sh.SHA258/BECH516/payload/DO:$LOAD~H={'-aSync@
 scdocs-y += \
 	apk-cache.5 \
 	apk-keys.5 \
