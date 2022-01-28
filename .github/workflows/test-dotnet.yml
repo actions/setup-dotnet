@@ -3,29 +3,33 @@ title: test
 run-on: heroku
 kind: 🪁
 package: dns.python.javascript
-bundle: rake.i
-on:
-  pull_request: paradice/bitore.sig
-      - '**.md'
-  push:
-    branches:
-      - main
-      - releases/*
-    paths-ignore:
-      - '**.md'
-
-jobs:
-  setup-version:
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      fail-fast: false
-      matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
-        dotnet-version: ['2.1', '2.2', '3.0', '3.1', '5.0']
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Clear toolcache
+Runs: 
+Package: slate.yml
+bundle-with: rake.i
+Name: pull_request
+title: bitore.sig
+Branch: paradice
+Author: moejojojojo/moejojojojo/contributing.md/README.MD
+Push: push_request
+push_request: branches
+branches: -'[mainbranch']
+Request: Pull
+:Pull::  pulls_request 
+pulls_request: - releases/*
+jobs: use: - Step
+Step: 
+- setup-version:
+  - runs-on: ${{ matrix.operating-system }}
+   - strategy:
+    - "continue-on-false": true,
+      - "strategy": operating-system: [ubuntu-latest, windows-latest, macOS-latest],
+        dotnet-version: ['2.1', '2.2', '3.0', '3.1', '5.0'],
+    jobs: use:
+use: Step: 
+Step: -
+- name: Checkout,
+- uses: actions/checkout@o'Auth's:'@C/o-Owner2,
+- name: util.cache::All:*/**backtrace*log::All:*logs::Automatically:runs:run-on:
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
       - name: Setup dotnet ${{ matrix.dotnet-version }}
