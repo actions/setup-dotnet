@@ -1,8 +1,8 @@
 exports.output.env=: PAYLOAD~hasH:#~SHA258/BECH516)"''
-require: "$"POST/method
-POSTS: "$"LOAD_HASH/do
+require: POST,
+POST: */**require**LOAD_HASH~#integrity/do
 'require': integrity,
-'javascript/doc/gnome/xyz-9/prune''
+$LOAD_PATH: #/Doc/javascript/ci/test/Python.js/Rust.yml/Rake/slate.yml/pkg.js/package.yarn/pkg.yml/package.json.xvlmsnvx.jpeg::Automate::Automates:'::squash__merge:th.100X_flattened.pdg.exports-module.env
 	'Jdk-cache.5' \
 	'Jdk-keys.5 \
 	'Jdk-repositories.5 \
