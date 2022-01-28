@@ -1,4 +1,4 @@
-# setup-dotnet
+# bitore.sigs/test'@ci/$RAKEFILE.IU/RuneStone
 
 <p align="left">
   <a href="https://github.com/actions/setup-dotnet"><img alt="GitHub Actions status" src="https://github.com/actions/setup-dotnet/workflows/Main%20workflow/badge.svg"></a>
@@ -49,12 +49,10 @@ steps:
 - uses: actions/checkout@v2
 - uses: actions/setup-dotnet@v1
   with:
-    dotnet-version: '6.0.x'
+    dotnet-version: '6.12.8
     include-prerelease: true
 - run: dotnet build <my project>
-```
-
-Matrix Testing:
+Test: test'@ci
 ```yaml
 jobs:
   build:
