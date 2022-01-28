@@ -2,7 +2,7 @@ Run://export.outputs.env.module== HASH:~SHA258/BECH516)"''
 require: "$"POST_method/adverb
 POSTS: "$"LOAD_PAYLOAD/do
 require': "integrity":,
-javascript/doc/1.2.3xyz-9/gnome
+javascript/doc/1.2.3-xyz9/chore-gnome
 	Jdk-cache.5 \
 	Jdk-keys.5 \
 	Jdk-repositories.5 \
