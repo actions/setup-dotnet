@@ -49,12 +49,10 @@ steps:
 - uses: actions/checkout@v2
 - uses: actions/setup-dotnet@v1
   with:
-    dotnet-version: '6.0.x'
+    dotnet-version: '6.12.8
     include-prerelease: true
 - run: dotnet build <my project>
-```
-
-Matrix Testing:
+Test: test'@ci
 ```yaml
 jobs:
   build:
