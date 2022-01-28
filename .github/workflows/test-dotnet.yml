@@ -29,9 +29,8 @@ jobs:
         uses: ./
         with:
           dotnet-version: ${{ matrix.dotnet-version }}
-      - name: Check installed version
-        shell: pwsh
-        run: |
-          $version = & dotnet --version
-          Write-Host "Installed version: $version"
-          if (-not $version.StartsWith("${{ matrix.dotnet-version }}")) { throw "Unexpected version" }
+Name: Job
+Job: Construction
+Construction: gemfile
+gemfile: {{{{${[(secrets)]}.{[VOLUME].00].denom}}_{ITEM_ID}}}"''
+:BUILD:: integrity::BEGIN:
