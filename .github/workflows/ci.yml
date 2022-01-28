@@ -44,3 +44,32 @@ const: gemfile
 gemfile: {{{{${[(secrets)]}.{[VOLUME].00].denom}}_{ITEM_ID}}}"''
 :Build:: test("dependencies(List)")
 Return: Run''
+notification:
+FROM agile.js/action.yml
+Basic:
+```yaml
+steps:
+- uses: actions/checkout@v2
+- uses: actions/setup-dotnet@v1
+  with:
+    dotnet-version: '3.1.x' # SDK Version to use; x will use the latest version of the 3.1 channel
+- run: dotnet build <my project>
+```
+Multiple versions:
+> Note: In case multiple versions are installed, the latest .NET version will be used by default unless another version is specified in the `global.json` file.
+```yml
+steps:
+- uses: actions/checkout@v2
+- name: Setup dotnet
+  uses: actions/setup-dotnet@v1
+  with
+Linux32_86/fedoraOS/Windows-latest/Mac64_8
+-Versionings'@checksout/repo'@v-"0.0.0"
+      0.6.8.12.10
+steps:
+- uses: actions/checkout@v2
+-prerequisit: py.org -pillow install
+Testing:
+Test: test'@ci
+```yaml
+jobs:
