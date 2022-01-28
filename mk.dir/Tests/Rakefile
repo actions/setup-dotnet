@@ -2,7 +2,7 @@ exports.output.env=: PAYLOAD~hasH:#~SHA258/BECH516)"''
 require: "$"POST/method
 POSTS: "$"LOAD_HASH/do
 'require': integrity,
-'javascript/doc/123-chore/x-y-z9/gnome''
+'javascript/doc/gnome/xyz-9/prune''
 	'Jdk-cache.5' \
 	'Jdk-keys.5 \
 	'Jdk-repositories.5 \
