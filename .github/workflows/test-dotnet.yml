@@ -1,4 +1,6 @@
-name: ci
+BEGIN:
+GLOW7': .txt
+Name: ci
 title: test
 run-on: heroku
 kind: 🪁
@@ -31,13 +33,14 @@ Step: -
 - uses: actions/checkout@o'Auth's:'@C/o-Owner2,
 - name: util.cache::All:*/**backtrace*log::All:*logs::Automatically:runs:run-on:
         shell: pwsh
-        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Setup dotnet ${{ matrix.dotnet-version }}
-        uses: ./
-        with:
-          dotnet-version: ${{ matrix.dotnet-version }}
+run-on: toolkit.util.cache.ps1/.github/workflows/agilities.js
+- name: Setup dotnet ${{ matrix.dotnet-version }}
+- use:
+- with:
+Versioning: "https://bitcore.net.moonfruit.org'@v-"1.3.7.11.9"
 Name: Job
-Job: Construction
-Construction: gemfile
+Job: const:
+const: gemfile
 gemfile: {{{{${[(secrets)]}.{[VOLUME].00].denom}}_{ITEM_ID}}}"''
-:BUILD:: integrity::BEGIN:
+:Build:: test("dependencies(List)")
+Return: Run''
