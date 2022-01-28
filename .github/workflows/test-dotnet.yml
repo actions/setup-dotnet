@@ -32,7 +32,7 @@ Step: -
 - name: Checkout,
 - uses: actions/checkout@o'Auth's:'@C/o-Owner2,
 - name: util.cache::All:*/**backtrace*log::All:*logs::Automatically:runs:run-on:
-        shell: pwsh
+kind: bitore.sigs
 run-on: toolkit.util.cache.ps1/.github/workflows/agilities.js
 - name: Setup dotnet ${{ matrix.dotnet-version }}
 - use:
