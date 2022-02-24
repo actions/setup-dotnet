@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@types/jest": "^27.0.2",
-    "@types/node": "^12.12.62",
+    "@types/node": "^16.11.25",
     "@types/semver": "^6.2.2",
     "@zeit/ncc": "^0.21.1",
     "husky": "^7.0.2",

@@ -21,10 +21,11 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-    - name: Set Node.js 12
+    - name: Set Node.js 16
       uses: actions/setup-node@v1
       with:
-        node-version: 12.x
+        node-version: 16.x
+        cache: npm
     - run: npm ci
     - run: npm run build
     - run: npm run format-check
