@@ -24,7 +24,7 @@ Basic:
 ```yaml
 steps:
 - uses: actions/checkout@v2
-- uses: actions/setup-dotnet@v1
+- uses: actions/setup-dotnet@v2
   with:
     dotnet-version: '3.1.x' # SDK Version to use; x will use the latest version of the 3.1 channel
 - run: dotnet build <my project>
@@ -36,7 +36,7 @@ Multiple versions:
 steps:
 - uses: actions/checkout@v2
 - name: Setup dotnet
-  uses: actions/setup-dotnet@v1
+  uses: actions/setup-dotnet@v2
   with:
     dotnet-version: | 
       3.1.x
@@ -47,7 +47,7 @@ Preview version:
 ```yml
 steps:
 - uses: actions/checkout@v2
-- uses: actions/setup-dotnet@v1
+- uses: actions/setup-dotnet@v2
   with:
     dotnet-version: '6.0.x'
     include-prerelease: true
@@ -66,7 +66,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Setup dotnet
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v2
         with:
           dotnet-version: ${{ matrix.dotnet }}
       - run: dotnet build <my project>
@@ -81,11 +81,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Setup dotnet
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v2
         with:
           dotnet-version: '2.1.x'
       - name: Setup dotnet
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v2
         with:
           dotnet-version: '3.1.x'
       - run: dotnet build <my project>
@@ -97,7 +97,7 @@ Authentication for nuget feeds:
 steps:
 - uses: actions/checkout@v2
 # Authenticates packages to push to GPR
-- uses: actions/setup-dotnet@v1
+- uses: actions/setup-dotnet@v2
   with:
     dotnet-version: '3.1.x' # SDK Version to use.
     source-url: https://nuget.pkg.github.com/<owner>/index.json
@@ -110,7 +110,7 @@ steps:
   run: dotnet nuget push <my project>/bin/Release/*.nupkg
 
 # Authenticates packages to push to Azure Artifacts
-- uses: actions/setup-dotnet@v1
+- uses: actions/setup-dotnet@v2
   with:
     source-url: https://pkgs.dev.azure.com/<your-organization>/_packaging/<your-feed-name>/nuget/v3/index.json
   env:
@@ -120,7 +120,7 @@ steps:
 
 # Authenticates packages to push to nuget.org.
 # It's only the way to push a package to nuget.org feed for macOS/Linux machines due to API key config store limitations.
-- uses: actions/setup-dotnet@v1
+- uses: actions/setup-dotnet@v2
   with:
     dotnet-version: 3.1.x
 - name: Publish the package to nuget.org
@@ -145,7 +145,7 @@ build:
     DOTNET_NOLOGO: true
   steps:
     - uses: actions/checkout@main
-    - uses: actions/setup-dotnet@v1
+    - uses: actions/setup-dotnet@v2
       with:
         dotnet-version: '3.1.x' # SDK Version to use.
 ```
