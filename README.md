@@ -81,11 +81,9 @@ jobs:
       - name: Setup dotnet
         uses: actions/setup-dotnet@v2
         with:
-          dotnet-version: '2.1.x'
-      - name: Setup dotnet
-        uses: actions/setup-dotnet@v2
-        with:
-          dotnet-version: '3.1.x'
+          dotnet-version: |
+            2.1.x
+            3.1.x
       - run: dotnet build <my project>
       - run: dotnet test <my project>
 ```
