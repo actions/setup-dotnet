@@ -51,6 +51,16 @@ steps:
     include-prerelease: true
 - run: dotnet build <my project>
 ```
+global.json in a subdirectory:
+```yml
+steps:
+- uses: actions/checkout@v3
+- uses: actions/setup-dotnet@v2
+  with:
+    global-json-file: csharp/global.json
+- run: dotnet build <my project>
+  working-directory: csharp
+```
 
 Matrix Testing:
 ```yaml
