@@ -143,6 +143,10 @@ Some environment variables may be necessary for your particular case or to impro
 - DOTNET_CLI_TELEMETRY_OPTOUT - opt-out of telemetry being sent to Microsoft (default: false)
 - DOTNET_MULTILEVEL_LOOKUP - configures whether the global install location is used as a fall-back (default: true)
 
+**Note** Sets `DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION` and `TERM` to force color output by default (https://github.com/actions/setup-dotnet/issues/288).
+- DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION = true
+- TERM = xterm
+
 Example usage:
 ```yaml
 build:
