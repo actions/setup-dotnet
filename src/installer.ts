@@ -198,7 +198,10 @@ export class DotnetCoreInstaller {
   }
 
   static enableConsoleColorOutput() {
-    core.exportVariable('DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION', 'true');
+    core.exportVariable(
+      'DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION',
+      'true'
+    );
     core.exportVariable('TERM', 'xterm');
   }
 
