@@ -197,6 +197,11 @@ export class DotnetCoreInstaller {
     console.log(process.env['PATH']);
   }
 
+  static enableConsoleColorOutput() {
+    core.exportVariable('DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION', 'true');
+    core.exportVariable('TERM', 'xterm');
+  }
+
   // versionInfo - versionInfo of the SDK/Runtime
   async resolveVersion(versionInfo: DotNetVersionInfo): Promise<string> {
     if (versionInfo.isExactVersion()) {

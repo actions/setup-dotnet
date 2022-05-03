@@ -50,6 +50,7 @@ export async function run() {
         await dotnetInstaller.installDotnet();
       }
       installer.DotnetCoreInstaller.addToPath();
+      installer.DotnetCoreInstaller.enableConsoleColorOutput();
     }
 
     const sourceUrl: string = core.getInput('source-url');

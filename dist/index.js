@@ -339,6 +339,10 @@ class DotnetCoreInstaller {
         }
         console.log(process.env['PATH']);
     }
+    static enableConsoleColorOutput() {
+        core.exportVariable('DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION', 'true');
+        core.exportVariable('TERM', 'xterm');
+    }
     // versionInfo - versionInfo of the SDK/Runtime
     resolveVersion(versionInfo) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -486,6 +490,7 @@ function run() {
                     yield dotnetInstaller.installDotnet();
                 }
                 installer.DotnetCoreInstaller.addToPath();
+                installer.DotnetCoreInstaller.enableConsoleColorOutput();
             }
             const sourceUrl = core.getInput('source-url');
             const configFile = core.getInput('config-file');
