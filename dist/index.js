@@ -243,8 +243,9 @@ class DotNetVersionInfo {
 }
 exports.DotNetVersionInfo = DotNetVersionInfo;
 class DotnetCoreInstaller {
-    constructor(version, includePrerelease = false) {
+    constructor(version, architecture = '', includePrerelease = false) {
         this.version = version;
+        this.architecture = architecture;
         this.includePrerelease = includePrerelease;
     }
     installDotnet() {
@@ -273,6 +274,9 @@ class DotnetCoreInstaller {
                 // This is not currently an option
                 if (process.env['no_proxy'] != null) {
                     command += ` -ProxyBypassList ${process.env['no_proxy']}`;
+                }
+                if (this.architecture != '') {
+                    command += ` -Architecture ${this.architecture}`;
                 }
                 // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
                 const powershellPath = yield io.which('powershell', true);
@@ -304,6 +308,9 @@ class DotnetCoreInstaller {
                 let scriptArguments = [];
                 if (calculatedVersion) {
                     scriptArguments.push('--version', calculatedVersion);
+                }
+                if (this.architecture != '') {
+                    scriptArguments.push('--architecture', this.architecture);
                 }
                 // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
                 resultCode = yield exec.exec(`"${scriptPath}"`, scriptArguments, {
@@ -461,6 +468,10 @@ function run() {
             // Proxy, auth, (etc) are still set up, even if no version is identified
             //
             let versions = core.getMultilineInput('dotnet-version');
+            let architecture = core.getInput('architecture');
+            if (!architecture) {
+                architecture = '';
+            }
             const globalJsonFileInput = core.getInput('global-json-file');
             if (globalJsonFileInput) {
                 const globalJsonPath = path.join(process.cwd(), globalJsonFileInput);
@@ -482,7 +493,7 @@ function run() {
                     'true';
                 let dotnetInstaller;
                 for (const version of new Set(versions)) {
-                    dotnetInstaller = new installer.DotnetCoreInstaller(version, includePrerelease);
+                    dotnetInstaller = new installer.DotnetCoreInstaller(version, architecture, includePrerelease);
                     yield dotnetInstaller.installDotnet();
                 }
                 installer.DotnetCoreInstaller.addToPath();
