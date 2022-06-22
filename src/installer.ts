@@ -79,7 +79,11 @@ export class DotNetVersionInfo {
 }
 
 export class DotnetCoreInstaller {
-  constructor(version: string, architecture:string = '', includePrerelease: boolean = false) {
+  constructor(
+    version: string,
+    architecture: string = '',
+    includePrerelease: boolean = false
+  ) {
     this.version = version;
     this.architecture = architecture;
     this.includePrerelease = includePrerelease;
