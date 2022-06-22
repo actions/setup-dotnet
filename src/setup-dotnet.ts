@@ -16,6 +16,11 @@ export async function run() {
     // Proxy, auth, (etc) are still set up, even if no version is identified
     //
     let versions = core.getMultilineInput('dotnet-version');
+    let architecture = core.getInput('architecture');
+
+    if (!architecture){
+      architecture = '';
+    }
 
     const globalJsonFileInput = core.getInput('global-json-file');
     if (globalJsonFileInput) {
@@ -45,6 +50,7 @@ export async function run() {
       for (const version of new Set<string>(versions)) {
         dotnetInstaller = new installer.DotnetCoreInstaller(
           version,
+          architecture,
           includePrerelease
         );
         await dotnetInstaller.installDotnet();

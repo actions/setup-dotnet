@@ -79,8 +79,9 @@ export class DotNetVersionInfo {
 }
 
 export class DotnetCoreInstaller {
-  constructor(version: string, includePrerelease: boolean = false) {
+  constructor(version: string, architecture:string = '', includePrerelease: boolean = false) {
     this.version = version;
+    this.architecture = architecture;
     this.includePrerelease = includePrerelease;
   }
 
@@ -113,6 +114,10 @@ export class DotnetCoreInstaller {
       // This is not currently an option
       if (process.env['no_proxy'] != null) {
         command += ` -ProxyBypassList ${process.env['no_proxy']}`;
+      }
+
+      if (this.architecture != ''){
+        command += ` -Architecture ${this.architecture}`;
       }
 
       // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
@@ -152,6 +157,10 @@ export class DotnetCoreInstaller {
       let scriptArguments: string[] = [];
       if (calculatedVersion) {
         scriptArguments.push('--version', calculatedVersion);
+      }
+
+      if (this.architecture != '') {
+        scriptArguments.push('--architecture', this.architecture);
       }
 
       // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
@@ -296,6 +305,7 @@ export class DotnetCoreInstaller {
   }
 
   private version: string;
+  private architecture: string;
   private includePrerelease: boolean;
 }
 

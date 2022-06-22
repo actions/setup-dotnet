@@ -86,6 +86,26 @@ describe('installer tests', () => {
     expect(process.env.PATH?.startsWith(toolDir)).toBe(true);
   }, 600000); //This needs some time to download on "slower" internet connections
 
+
+  it('Acquires architecture-specific version of dotnet if no matching version is installed', async () => {
+    await getDotnet('3.1', 'x86');
+    var directory = fs
+      .readdirSync(path.join(toolDir, 'sdk'))
+      .filter(fn => fn.startsWith('3.1.'));
+    expect(directory.length > 0).toBe(true);
+    if (IS_WINDOWS) {
+      expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
+    } else {
+      expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
+    }
+
+    expect(process.env.DOTNET_ROOT).toBeDefined;
+    expect(process.env.PATH).toBeDefined;
+    expect(process.env.DOTNET_ROOT).toBe(toolDir);
+    expect(process.env.PATH?.startsWith(toolDir)).toBe(true);
+  }, 600000); //This needs some time to download on "slower" internet connections
+
+
   it('Throws if no location contains correct dotnet version', async () => {
     let thrown = false;
     try {
@@ -144,8 +164,8 @@ function normalizeFileContents(contents: string): string {
     .replace(new RegExp('\r', 'g'), '\n');
 }
 
-async function getDotnet(version: string): Promise<void> {
-  const dotnetInstaller = new installer.DotnetCoreInstaller(version);
+async function getDotnet(version: string, architecture: string = ''): Promise<void> {
+  const dotnetInstaller = new installer.DotnetCoreInstaller(version, architecture);
   await dotnetInstaller.installDotnet();
   installer.DotnetCoreInstaller.addToPath();
 }
