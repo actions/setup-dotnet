@@ -87,7 +87,7 @@ describe('installer tests', () => {
   }, 600000); //This needs some time to download on "slower" internet connections
 
   it('Acquires architecture-specific version of dotnet if no matching version is installed', async () => {
-    await getDotnet('3.1', 'x86');
+    await getDotnet('3.1', 'x64');
     var directory = fs
       .readdirSync(path.join(toolDir, 'sdk'))
       .filter(fn => fn.startsWith('3.1.'));
