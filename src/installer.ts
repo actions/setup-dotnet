@@ -116,7 +116,7 @@ export class DotnetCoreInstaller {
         command += ` -ProxyBypassList ${process.env['no_proxy']}`;
       }
 
-      if (this.architecture != ''){
+      if (this.architecture != '') {
         command += ` -Architecture ${this.architecture}`;
       }
 

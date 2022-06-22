@@ -18,7 +18,7 @@ export async function run() {
     let versions = core.getMultilineInput('dotnet-version');
     let architecture = core.getInput('architecture');
 
-    if (!architecture){
+    if (!architecture) {
       architecture = '';
     }
 
