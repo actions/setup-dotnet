@@ -18,6 +18,9 @@ inputs:
   include-prerelease:
     description: 'Whether prerelease versions should be matched with non-exact versions (for example 5.0.0-preview.6 being matched by 5, 5.0, 5.x or 5.0.x). Defaults to false if not provided.'
     required: False
+  architecture:
+    description: 'Optional architecture to use. If not provided, will default to the OS architecture.'
+    required: False
 runs:
   using: 'node16'
   main: 'dist/index.js'
