@@ -8,15 +8,9 @@
     "build": "tsc && ncc build",
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts",
+    "prepare": "husky install",
     "test": "jest",
     "update-installers": "nwget https://dot.net/v1/dotnet-install.ps1 -O externals/install-dotnet.ps1 && nwget https://dot.net/v1/dotnet-install.sh -O externals/install-dotnet.sh"
-  },
-  "husky": {
-    "hooks": {
-      "//": "Tests are not run at push time since they can take 2-4 minutes to complete",
-      "pre-commit": "npm run format",
-      "pre-push": "npm run format-check"
-    }
   },
   "repository": {
     "type": "git",
@@ -44,7 +38,7 @@
     "@types/node": "^16.11.25",
     "@types/semver": "^6.2.2",
     "@vercel/ncc": "^0.33.4",
-    "husky": "^7.0.2",
+    "husky": "^8.0.1",
     "jest": "^27.2.5",
     "jest-circus": "^27.2.5",
     "prettier": "^1.19.1",
