@@ -26,14 +26,14 @@ jobs:
       with:
         node-version: 16.x
         cache: npm
-    - run: npm ci
+    - run: npm ci --ignore-scripts
     - run: npm run build
     - run: npm run format-check
     - run: npm test
     - name: Verify no unstaged changes
       if: runner.os != 'windows'
       run: __tests__/verify-no-unstaged-changes.sh
-  
+
   test-setup-multiple-versions:
     runs-on: ${{ matrix.operating-system }}
     strategy:
@@ -50,9 +50,9 @@ jobs:
         uses: ./
         with:
           dotnet-version: |
-             2.2.402
-             3.1.404
-             3.0.x
+            2.2.402
+            3.1.404
+            3.0.x
       - name: Verify dotnet
         shell: pwsh
         run: __tests__/verify-dotnet.ps1 2.2.402 3.1.404 '3.0'
@@ -114,7 +114,7 @@ jobs:
       - name: Verify dotnet
         shell: pwsh
         run: __tests__/verify-dotnet.ps1 3.1 2.2
-  
+
   test-setup-latest-patch-version:
     runs-on: ${{ matrix.operating-system }}
     strategy:

@@ -15,7 +15,7 @@ jobs:
     name: Check licenses
     steps:
       - uses: actions/checkout@v3
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - name: Install licensed
         run: |
           cd $RUNNER_TEMP
