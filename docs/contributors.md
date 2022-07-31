@@ -75,6 +75,7 @@ Unit tests are in the `__tests__` folder, and end-to-end tests are in the `workf
 **Once you've filed the pull request:**
 
 - CI will start automatically with some checks. Wait until the end of the execution and make sure that all checks passed successfully. If some checks fail, you can open them one by one, try to find the reason for failing and make changes to your code to resolve the problem
+> Sometimes you may need to update the installers you can do this with the `npm run update-installers` command
 - Maintainers will review your pull request
 - If a maintainer requests changes, first of all, try to think about his request critically and only after that implement and request another review
 - If your PR gets accepted, it will soon be merged into the main branch. But your contribution will take effect only after the release of a new version of the action
