@@ -478,8 +478,7 @@ function run() {
                 }
             }
             if (versions.length) {
-                const includePrerelease = (core.getInput('include-prerelease') || 'false').toLowerCase() ===
-                    'true';
+                const includePrerelease = core.getBooleanInput('include-prerelease');
                 let dotnetInstaller;
                 for (const version of new Set(versions)) {
                     dotnetInstaller = new installer.DotnetCoreInstaller(version, includePrerelease);
