@@ -66,7 +66,7 @@ Pull requests are the easiest way to contribute changes to git repos at GitHub. 
 **Learn more about how to implement tests:**
 
 Adding or changing tests is an integral part of making a change to the code. 
-Unit tests are in the `__tests__` folder, and end-to-end tests are in the `workflows` folder (in the particular file [test-dotnet.yml](https://github.com/actions/setup-dotnet/blob/main/.github/workflows/test-dotnet.yml).
+Unit tests are in the `__tests__` folder, and end-to-end tests are in the `workflows` folder, particularly in the [workflow.yml](https://github.com/actions/setup-dotnet/blob/main/.github/workflows/workflow.yml).
 
 - The contributor can add various types of tests (like unit tests or end-to-end tests), which, in his opinion, will be necessary and sufficient for testing new or changed functionality
 - Tests should cover a successful execution, as well as some edge cases and possible errors
