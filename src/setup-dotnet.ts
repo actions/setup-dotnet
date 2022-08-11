@@ -38,15 +38,13 @@ export async function run() {
     }
 
     if (versions.length) {
-      const includePrerelease: boolean = core.getBooleanInput(
-        'include-prerelease'
-      );
+      const quality = new installer.DotnetQualityResolver(
+        core.getInput('dotnet-quality')
+      ).resolveQuality();
+
       let dotnetInstaller!: installer.DotnetCoreInstaller;
       for (const version of new Set<string>(versions)) {
-        dotnetInstaller = new installer.DotnetCoreInstaller(
-          version,
-          includePrerelease
-        );
+        dotnetInstaller = new installer.DotnetCoreInstaller(version, quality);
         await dotnetInstaller.installDotnet();
       }
       installer.DotnetCoreInstaller.addToPath();

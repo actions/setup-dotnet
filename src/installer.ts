@@ -6,91 +6,95 @@ import hc = require('@actions/http-client');
 import {chmodSync} from 'fs';
 import * as path from 'path';
 import {ExecOptions} from '@actions/exec/lib/interfaces';
-import * as semver from 'semver';
 
 const IS_WINDOWS = process.platform === 'win32';
+const IS_LINUX = process.platform === 'linux';
 
-/**
- * Represents the inputted version information
- */
-export class DotNetVersionInfo {
-  public inputVersion: string;
-  private fullversion: string;
-  private isExactVersionSet: boolean = false;
+export class DotnetQualityResolver {
+  private quality: string;
+  private qualityOptions: string[];
+  constructor(quality: string) {
+    this.quality = quality;
+    this.qualityOptions = ['daily', 'signed', 'validated', 'preview', 'GA'];
+  }
+
+  public resolveQuality() {
+    if (!this.qualityOptions.includes(this.quality)) {
+      throw new Error(
+        `${this.quality} is not a supported value for 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`
+      );
+    }
+    return this.quality;
+  }
+}
+export class DotnetVersionResolver {
+  private inputVersion: string;
+  private resolvedArgument: {type: string; value: string};
 
   constructor(version: string) {
-    this.inputVersion = version;
-
-    // Check for exact match
-    if (semver.valid(semver.clean(version) || '') != null) {
-      this.fullversion = semver.clean(version) as string;
-      this.isExactVersionSet = true;
-
-      return;
-    }
-
-    const parts: string[] = version.split('.');
-
-    if (parts.length < 2 || parts.length > 3) this.throwInvalidVersionFormat();
-
-    if (parts.length == 3 && parts[2] !== 'x' && parts[2] !== '*') {
-      this.throwInvalidVersionFormat();
-    }
-
-    const major = this.getVersionNumberOrThrow(parts[0]);
-    const minor = ['x', '*'].includes(parts[1])
-      ? parts[1]
-      : this.getVersionNumberOrThrow(parts[1]);
-
-    this.fullversion = major + '.' + minor;
+    this.inputVersion = version.trim();
+    this.resolvedArgument = {type: '', value: ''};
   }
 
-  private getVersionNumberOrThrow(input: string): number {
-    try {
-      if (!input || input.trim() === '') this.throwInvalidVersionFormat();
+  private resolveVersionInput(): void {
+    const RegExXY = /^\d+.\d+$/;
+    const RegExXYx = /^(\d+.\d+).[x/*]$/i;
+    const RegExXYZxx = /^(\d+.\d+.\d{1})[x*]{2}$/i;
 
-      let number = Number(input);
-
-      if (Number.isNaN(number) || number < 0) this.throwInvalidVersionFormat();
-
-      return number;
-    } catch {
-      this.throwInvalidVersionFormat();
-      return -1;
+    if (RegExXY.test(this.inputVersion)) {
+      this.resolvedArgument.type = 'channel';
+      this.resolvedArgument.value = this.inputVersion;
+    } else if (RegExXYx.test(this.inputVersion)) {
+      this.resolvedArgument.type = 'channel';
+      this.resolvedArgument.value = this.inputVersion.match(RegExXYx)?.[1]!;
+    } else if (RegExXYZxx.test(this.inputVersion)) {
+      this.resolvedArgument.type = 'channel';
+      this.resolvedArgument.value = this.inputVersion
+        .match(RegExXYZxx)?.[1]
+        .concat('xx')!;
+    } else {
+      this.resolvedArgument.type = 'version';
+      this.resolvedArgument.value = this.inputVersion;
     }
   }
 
-  private throwInvalidVersionFormat() {
-    throw new Error(
-      'Invalid version format! Supported: 1.2.3, 1.2, 1.2.x, 1.2.*'
-    );
-  }
-
-  /**
-   * If true exacatly one version should be resolved
-   */
-  public isExactVersion(): boolean {
-    return this.isExactVersionSet;
-  }
-
-  public version(): string {
-    return this.fullversion;
+  public createLineArgument(): {type: string; value: string} {
+    this.resolveVersionInput();
+    if (IS_WINDOWS) {
+      if (this.resolvedArgument.type === 'channel') {
+        this.resolvedArgument.type = '-Channel';
+      } else {
+        this.resolvedArgument.type = '-Version';
+      }
+    } else {
+      if (this.resolvedArgument.type === 'channel') {
+        this.resolvedArgument.type = '--channel';
+      } else {
+        this.resolvedArgument.type = '--version';
+      }
+    }
+    return this.resolvedArgument;
   }
 }
 
 export class DotnetCoreInstaller {
-  constructor(version: string, includePrerelease: boolean = false) {
+  private version: string;
+  private quality: string;
+
+  constructor(version: string, quality: string) {
     this.version = version;
-    this.includePrerelease = includePrerelease;
+    this.quality = quality;
   }
 
   public async installDotnet() {
     let output = '';
     let resultCode = 0;
+    const installationDirectoryWindows = 'C:\\Program` Files\\dotnet';
+    const installationDirectoryLinux = '/usr/share/dotnet';
 
-    let calculatedVersion = await this.resolveVersion(
-      new DotNetVersionInfo(this.version)
-    );
+    const versionObject = new DotnetVersionResolver(
+      this.version
+    ).createLineArgument();
 
     var envVariables: {[key: string]: string} = {};
     for (let key in process.env) {
@@ -104,9 +108,21 @@ export class DotnetCoreInstaller {
         .join(__dirname, '..', 'externals', 'install-dotnet.ps1')
         .replace(/'/g, "''");
       let command = `& '${escapedScript}'`;
-      if (calculatedVersion) {
-        command += ` -Version ${calculatedVersion}`;
+
+      if (versionObject) {
+        command += ` ${versionObject.type} ${versionObject.value}`;
       }
+
+      if (this.quality) {
+        if (versionObject.type == '-Channel') {
+          command += ` -Quality ${this.quality}`;
+        } else {
+          core.warning(
+            "Input 'dotnet-quality' can't be used with the specified exact version of .NET. 'dotnet-quality' input will be ignored."
+          );
+        }
+      }
+
       if (process.env['https_proxy'] != null) {
         command += ` -ProxyAddress ${process.env['https_proxy']}`;
       }
@@ -114,6 +130,8 @@ export class DotnetCoreInstaller {
       if (process.env['no_proxy'] != null) {
         command += ` -ProxyBypassList ${process.env['no_proxy']}`;
       }
+
+      command += ` -InstallDir ${installationDirectoryWindows}`;
 
       // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
       const powershellPath = await io.which('powershell', true);
@@ -150,8 +168,23 @@ export class DotnetCoreInstaller {
       const scriptPath = await io.which(escapedScript, true);
 
       let scriptArguments: string[] = [];
-      if (calculatedVersion) {
-        scriptArguments.push('--version', calculatedVersion);
+
+      if (versionObject) {
+        scriptArguments.push(versionObject.type, versionObject.value);
+      }
+
+      if (this.quality) {
+        if (versionObject.type == '--channel') {
+          scriptArguments.push('--quality', this.quality);
+        } else {
+          core.warning(
+            "Input 'dotnet-quality' can't be used with the specified exact version of .NET. 'dotnet-quality' input will be ignored."
+          );
+        }
+      }
+
+      if (IS_LINUX) {
+        scriptArguments.push('--install-dir', installationDirectoryLinux);
       }
 
       // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
@@ -196,108 +229,4 @@ export class DotnetCoreInstaller {
 
     console.log(process.env['PATH']);
   }
-
-  // versionInfo - versionInfo of the SDK/Runtime
-  async resolveVersion(versionInfo: DotNetVersionInfo): Promise<string> {
-    if (versionInfo.isExactVersion()) {
-      return versionInfo.version();
-    }
-
-    const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
-      allowRetries: true,
-      maxRetries: 3
-    });
-
-    const releasesJsonUrl: string = await this.getReleasesJsonUrl(
-      httpClient,
-      versionInfo.version().split('.')
-    );
-
-    const releasesResponse = await httpClient.getJson<any>(releasesJsonUrl);
-    const releasesResult = releasesResponse.result || {};
-    let releasesInfo: any[] = releasesResult['releases'];
-    releasesInfo = releasesInfo.filter((releaseInfo: any) => {
-      return (
-        semver.satisfies(releaseInfo['sdk']['version'], versionInfo.version(), {
-          includePrerelease: this.includePrerelease
-        }) ||
-        semver.satisfies(
-          releaseInfo['sdk']['version-display'],
-          versionInfo.version(),
-          {
-            includePrerelease: this.includePrerelease
-          }
-        )
-      );
-    });
-
-    // Exclude versions that are newer than the latest if using not exact
-    let latestSdk: string = releasesResult['latest-sdk'];
-
-    releasesInfo = releasesInfo.filter((releaseInfo: any) =>
-      semver.lte(releaseInfo['sdk']['version'], latestSdk, {
-        includePrerelease: this.includePrerelease
-      })
-    );
-
-    // Sort for latest version
-    releasesInfo = releasesInfo.sort((a, b) =>
-      semver.rcompare(a['sdk']['version'], b['sdk']['version'], {
-        includePrerelease: this.includePrerelease
-      })
-    );
-
-    if (releasesInfo.length == 0) {
-      throw new Error(
-        `Could not find dotnet core version. Please ensure that specified version ${versionInfo.inputVersion} is valid.`
-      );
-    }
-
-    let release = releasesInfo[0];
-    return release['sdk']['version'];
-  }
-
-  private async getReleasesJsonUrl(
-    httpClient: hc.HttpClient,
-    versionParts: string[]
-  ): Promise<string> {
-    const response = await httpClient.getJson<any>(DotNetCoreIndexUrl);
-    const result = response.result || {};
-    let releasesInfo: any[] = result['releases-index'];
-
-    releasesInfo = releasesInfo.filter((info: any) => {
-      // channel-version is the first 2 elements of the version (e.g. 2.1), filter out versions that don't match 2.1.x.
-      const sdkParts: string[] = info['channel-version'].split('.');
-      if (
-        versionParts.length >= 2 &&
-        !(versionParts[1] == 'x' || versionParts[1] == '*')
-      ) {
-        return versionParts[0] == sdkParts[0] && versionParts[1] == sdkParts[1];
-      }
-      return versionParts[0] == sdkParts[0];
-    });
-
-    if (releasesInfo.length === 0) {
-      throw new Error(
-        `Could not find info for version ${versionParts.join(
-          '.'
-        )} at ${DotNetCoreIndexUrl}`
-      );
-    }
-
-    const releaseInfo = releasesInfo[0];
-    if (releaseInfo['support-phase'] === 'eol') {
-      core.warning(
-        `${releaseInfo['product']} ${releaseInfo['channel-version']} is no longer supported and will not receive security updates in the future. Please refer to https://aka.ms/dotnet-core-support for more information about the .NET support policy.`
-      );
-    }
-
-    return releaseInfo['releases.json'];
-  }
-
-  private version: string;
-  private includePrerelease: boolean;
 }
-
-const DotNetCoreIndexUrl: string =
-  'https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/releases-index.json';
