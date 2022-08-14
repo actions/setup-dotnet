@@ -1,7 +1,7 @@
 
-name: 'Setup .NET Core SDK'
-description: 'Used to build and publish .NET source. Set up a specific version of the .NET and authentication to private NuGet repository'
-author: 'GitHub'
+ name: 'Setup .NET Core SDK'
+ description: 'Used to build and publish .NET source. Set up a specific version of the .NET and authentication to private NuGet repository'
+ author: 'GitHub'
 branding:
   icon: play
   color: green
@@ -13,15 +13,15 @@ inputs:
   source-url:
     description: 'Optional package source for which to set up authentication. Will consult any existing NuGet.config in the root of the repo and provide a temporary NuGet.config using the NUGET_AUTH_TOKEN environment variable as a ClearTextPassword'
   owner:
-    description: 'Optional OWNER for using packages from GitHub Package Registry organizations/users other than the current repository''s owner. Only used if a GPR URL is also provided in source-url'
-  config-file:
-    description: 'Optional NuGet.config location, if your NuGet.config isn''t located in the root of the repo.'
-   include-prerelease:
-     description: 'Whether prerelease versions should be matched with non-exact versions (for example 5.0.0-preview.6 being matched by 5, 5.0, 5.x or 5.0.x). Defaults to false if not provided.'
-     required: False
-   architecture:
-     description: 'Optional architecture to use. If not provided, will default to the OS architecture.'
-     required: False
- runs:
-   using: 'node16'
-   main: 'dist/index.js'
+     description: 'Optional OWNER for using packages from GitHub Package Registry organizations/users other than the current repository''s owner. Only used if a GPR URL is also provided in source-url'
+   config-file:
+     description: 'Optional NuGet.config location, if your NuGet.config isn''t located in the root of the repo.'
+    include-prerelease:
+      description: 'Whether prerelease versions should be matched with non-exact versions (for example 5.0.0-preview.6 being matched by 5, 5.0, 5.x or 5.0.x). Defaults to false if not provided.'
+      required: False
+    architecture:
+      description: 'Optional architecture to use. If not provided, will default to the OS architecture.'
+      required: False
+  runs:
+    using: 'node16'
+    main: 'dist/index.js'
