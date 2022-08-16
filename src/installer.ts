@@ -5,20 +5,23 @@ import * as io from '@actions/io';
 import hc = require('@actions/http-client');
 import {chmodSync} from 'fs';
 import * as path from 'path';
+import semver from 'semver';
 import {ExecOptions} from '@actions/exec/lib/interfaces';
+import {timingSafeEqual} from 'crypto';
 
 const IS_WINDOWS = process.platform === 'win32';
 const IS_LINUX = process.platform === 'linux';
 
-export class DotnetQualityResolver {
+export class DotnetQualityValidator {
   private quality: string;
   private qualityOptions: string[];
+
   constructor(quality: string) {
     this.quality = quality;
     this.qualityOptions = ['daily', 'signed', 'validated', 'preview', 'GA'];
   }
 
-  public resolveQuality() {
+  public validateQuality() {
     if (!this.qualityOptions.includes(this.quality)) {
       throw new Error(
         `${this.quality} is not a supported value for 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`
@@ -27,6 +30,7 @@ export class DotnetQualityResolver {
     return this.quality;
   }
 }
+
 export class DotnetVersionResolver {
   private inputVersion: string;
   private resolvedArgument: {type: string; value: string};
@@ -37,24 +41,25 @@ export class DotnetVersionResolver {
   }
 
   private resolveVersionInput(): void {
-    const RegExXY = /^\d+.\d+$/;
-    const RegExXYx = /^(\d+.\d+).[x/*]$/i;
-    const RegExXYZxx = /^(\d+.\d+.\d{1})[x*]{2}$/i;
-
-    if (RegExXY.test(this.inputVersion)) {
-      this.resolvedArgument.type = 'channel';
-      this.resolvedArgument.value = this.inputVersion;
-    } else if (RegExXYx.test(this.inputVersion)) {
-      this.resolvedArgument.type = 'channel';
-      this.resolvedArgument.value = this.inputVersion.match(RegExXYx)?.[1]!;
-    } else if (RegExXYZxx.test(this.inputVersion)) {
-      this.resolvedArgument.type = 'channel';
-      this.resolvedArgument.value = this.inputVersion
-        .match(RegExXYZxx)?.[1]
-        .concat('xx')!;
-    } else {
+    const ValidatingRegEx = /^\d+.\d+/i;
+    const ReplacingRegEx = /^(\d+.\d+).[x/*]$/i;
+    if (!ValidatingRegEx.test(this.inputVersion)) {
+      throw new Error(
+        'Invalid version format! Supported: A.B.C, A.B.C-D, A.B, A.B.x, A.B.X, A.B.*'
+      );
+    }
+    if (semver.valid(this.inputVersion)) {
       this.resolvedArgument.type = 'version';
       this.resolvedArgument.value = this.inputVersion;
+    } else {
+      this.resolvedArgument.type = 'channel';
+      if (ReplacingRegEx.test(this.inputVersion)) {
+        this.resolvedArgument.value = this.inputVersion.match(
+          ReplacingRegEx
+        )?.[1]!;
+      } else {
+        this.resolvedArgument.value = this.inputVersion;
+      }
     }
   }
 
@@ -92,9 +97,8 @@ export class DotnetCoreInstaller {
     const installationDirectoryWindows = 'C:\\Program` Files\\dotnet';
     const installationDirectoryLinux = '/usr/share/dotnet';
 
-    const versionObject = new DotnetVersionResolver(
-      this.version
-    ).createLineArgument();
+    const versionResolver = new DotnetVersionResolver(this.version);
+    const versionObject = versionResolver.createLineArgument();
 
     var envVariables: {[key: string]: string} = {};
     for (let key in process.env) {
@@ -109,18 +113,12 @@ export class DotnetCoreInstaller {
         .replace(/'/g, "''");
       let command = `& '${escapedScript}'`;
 
-      if (versionObject) {
-        command += ` ${versionObject.type} ${versionObject.value}`;
-      }
+      command += ` ${versionObject.type} ${versionObject.value}`;
 
       if (this.quality) {
-        if (versionObject.type == '-Channel') {
-          command += ` -Quality ${this.quality}`;
-        } else {
-          core.warning(
-            "Input 'dotnet-quality' can't be used with the specified exact version of .NET. 'dotnet-quality' input will be ignored."
-          );
-        }
+        command += `${this.resolveQuality(versionObject).type} ${
+          this.resolveQuality(versionObject).value
+        }`;
       }
 
       if (process.env['https_proxy'] != null) {
@@ -169,18 +167,13 @@ export class DotnetCoreInstaller {
 
       let scriptArguments: string[] = [];
 
-      if (versionObject) {
-        scriptArguments.push(versionObject.type, versionObject.value);
-      }
+      scriptArguments.push(versionObject.type, versionObject.value);
 
       if (this.quality) {
-        if (versionObject.type == '--channel') {
-          scriptArguments.push('--quality', this.quality);
-        } else {
-          core.warning(
-            "Input 'dotnet-quality' can't be used with the specified exact version of .NET. 'dotnet-quality' input will be ignored."
-          );
-        }
+        scriptArguments.push(
+          this.resolveQuality(versionObject).type,
+          this.resolveQuality(versionObject).value
+        );
       }
 
       if (IS_LINUX) {
@@ -201,6 +194,23 @@ export class DotnetCoreInstaller {
     if (resultCode != 0) {
       throw new Error(`Failed to install dotnet ${resultCode}. ${output}`);
     }
+  }
+
+  private resolveQuality(versionObject: {
+    type: string;
+    value: string;
+  }): {type: string; value: string} {
+    let resolvedArgument: {type: string; value: string} = {type: '', value: ''};
+    if (versionObject.type == '-Channel') {
+      resolvedArgument = {type: '-Quality', value: `${this.quality}`};
+    } else if (versionObject.type == '--channel') {
+      resolvedArgument = {type: '--quality', value: `${this.quality}`};
+    } else {
+      core.warning(
+        "Input 'dotnet-quality' can't be used with the specified exact version of .NET. 'dotnet-quality' input will be ignored."
+      );
+    }
+    return resolvedArgument;
   }
 
   static addToPath() {

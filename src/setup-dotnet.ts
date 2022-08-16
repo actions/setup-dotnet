@@ -38,9 +38,10 @@ export async function run() {
     }
 
     if (versions.length) {
-      const quality = new installer.DotnetQualityResolver(
+      const qualityValidator = new installer.DotnetQualityValidator(
         core.getInput('dotnet-quality')
-      ).resolveQuality();
+      );
+      const quality = qualityValidator.validateQuality();
 
       let dotnetInstaller!: installer.DotnetCoreInstaller;
       for (const version of new Set<string>(versions)) {
