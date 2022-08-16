@@ -22,7 +22,7 @@ export class DotnetQualityValidator {
   }
 
   public validateQuality() {
-    if (!this.qualityOptions.includes(this.quality)) {
+    if (this.quality && !this.qualityOptions.includes(this.quality)) {
       throw new Error(
         `${this.quality} is not a supported value for 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`
       );
