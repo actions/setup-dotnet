@@ -45,7 +45,7 @@ export class DotnetVersionResolver {
     const ReplacingRegEx = /^(\d+.\d+).[x/*]$/i;
     if (!ValidatingRegEx.test(this.inputVersion)) {
       throw new Error(
-        'Invalid version format! Supported: A.B.C, A.B.C-D, A.B, A.B.x, A.B.X, A.B.*'
+        `dotnet-version was supplied in invalid format: ${this.inputVersion}! Supported: A.B.C, A.B.C-D, A.B, A.B.x, A.B.X, A.B.*`
       );
     }
     if (semver.valid(this.inputVersion)) {
