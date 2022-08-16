@@ -116,7 +116,7 @@ export class DotnetCoreInstaller {
       command += ` ${versionObject.type} ${versionObject.value}`;
 
       if (this.quality) {
-        command += `${this.resolveQuality(versionObject).type} ${
+        command += ` ${this.resolveQuality(versionObject).type} ${
           this.resolveQuality(versionObject).value
         }`;
       }
@@ -209,6 +209,7 @@ export class DotnetCoreInstaller {
       core.warning(
         "Input 'dotnet-quality' can't be used with the specified exact version of .NET. 'dotnet-quality' input will be ignored."
       );
+      this.quality = "";
     }
     return resolvedArgument;
   }

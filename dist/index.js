@@ -280,7 +280,7 @@ class DotnetCoreInstaller {
                 let command = `& '${escapedScript}'`;
                 command += ` ${versionObject.type} ${versionObject.value}`;
                 if (this.quality) {
-                    command += `${this.resolveQuality(versionObject).type} ${this.resolveQuality(versionObject).value}`;
+                    command += ` ${this.resolveQuality(versionObject).type} ${this.resolveQuality(versionObject).value}`;
                 }
                 if (process.env['https_proxy'] != null) {
                     command += ` -ProxyAddress ${process.env['https_proxy']}`;
@@ -350,6 +350,7 @@ class DotnetCoreInstaller {
         }
         else {
             core.warning("Input 'dotnet-quality' can't be used with the specified exact version of .NET. 'dotnet-quality' input will be ignored.");
+            this.quality = "";
         }
         return resolvedArgument;
     }
