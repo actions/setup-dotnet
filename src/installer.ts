@@ -18,7 +18,7 @@ export class DotnetQualityValidator {
 
   constructor(quality: string) {
     this.quality = quality;
-    this.qualityOptions = ['daily', 'signed', 'validated', 'preview', 'GA'];
+    this.qualityOptions = ['daily', 'signed', 'validated', 'preview', 'ga'];
   }
 
   public validateQuality() {

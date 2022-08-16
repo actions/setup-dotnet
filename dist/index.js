@@ -195,7 +195,7 @@ const IS_LINUX = process.platform === 'linux';
 class DotnetQualityValidator {
     constructor(quality) {
         this.quality = quality;
-        this.qualityOptions = ['daily', 'signed', 'validated', 'preview', 'GA'];
+        this.qualityOptions = ['daily', 'signed', 'validated', 'preview', 'ga'];
     }
     validateQuality() {
         if (this.quality && !this.qualityOptions.includes(this.quality)) {
