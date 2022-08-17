@@ -78,7 +78,7 @@ jobs:
         uses: ./
         with:
           dotnet-version: 3.1.201
-          # We are including this veriable to force the generation of the nuget config file to verify that it is created in the correct place
+          # We are including this variable to force the generation of the nuget config file to verify that it is created in the correct place
           source-url: https://api.nuget.org/v3/index.json
         env:
           NUGET_AUTH_TOKEN: NOTATOKEN
@@ -115,6 +115,26 @@ jobs:
         shell: pwsh
         run: __tests__/verify-dotnet.ps1 3.1 2.2
 
+  test-setup-prerelease-version:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+      - name: Setup dotnet '7.0.100-preview.7.22377.5'
+        uses: ./
+        with:
+          dotnet-version: '7.0.100-preview.7.22377.5'
+      - name: Verify dotnet
+        shell: pwsh
+        run: __tests__/verify-dotnet.ps1 7.0.100-preview.7.22377.5
+
   test-setup-latest-patch-version:
     runs-on: ${{ matrix.operating-system }}
     strategy:
@@ -134,10 +154,14 @@ jobs:
       - name: Setup dotnet 2.2.x
         uses: ./
         with:
-          dotnet-version: 2.2.x
+          dotnet-version: 2.2.X
+      - name: Setup dotnet 2.2.x
+        uses: ./
+        with:
+          dotnet-version: 5.0.*
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 3.1 2.2
+        run: __tests__/verify-dotnet.ps1 3.1 2.2 5.0
 
   test-setup-with-wildcard:
     runs-on: ${{ matrix.operating-system }}
