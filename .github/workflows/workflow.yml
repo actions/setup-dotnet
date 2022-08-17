@@ -8,6 +8,7 @@ on:
     branches:
       - main
       - releases/*
+      - ADRdotnet
     paths-ignore:
       - '**.md'
 
@@ -233,10 +234,10 @@ jobs:
         - name: Verify preview version
           shell: pwsh
           run: |
-          $version = & dotnet --version
-          Write-Host "Installed version: $version"
-          if (-not $version.Contains("preview")) { throw "Unexpected version" }
-          __tests__/verify-dotnet.ps1 $version
+            $version = & dotnet --version
+            Write-Host "Installed version: $version"
+            if (-not $version.Contains("preview")) { throw "Unexpected version" }
+            __tests__/verify-dotnet.ps1 $version
 
   test-proxy:
     runs-on: ubuntu-latest
