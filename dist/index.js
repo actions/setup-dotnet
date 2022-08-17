@@ -182,7 +182,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.DotnetCoreInstaller = exports.DotnetVersionResolver = exports.DotnetQualityValidator = void 0;
+exports.logWarning = exports.DotnetCoreInstaller = exports.DotnetVersionResolver = exports.DotnetQualityValidator = void 0;
 // Load tempDirectory before it gets wiped by tool-cache
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
@@ -215,7 +215,7 @@ class DotnetVersionResolver {
         const ValidatingRegEx = /^\d+.\d+/i;
         const ReplacingRegEx = /^(\d+.\d+).[x/*]$/i;
         if (!ValidatingRegEx.test(this.inputVersion)) {
-            throw new Error(`dotnet-version was supplied in invalid format: ${this.inputVersion}! Supported: A.B.C, A.B.C-D, A.B, A.B.x, A.B.X, A.B.*`);
+            throw new Error(`'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B.C-D, A.B, A.B.x, A.B.X, A.B.*`);
         }
         if (semver_1.default.valid(this.inputVersion)) {
             this.resolvedArgument.type = 'version';
@@ -224,31 +224,20 @@ class DotnetVersionResolver {
         else {
             this.resolvedArgument.type = 'channel';
             this.resolvedArgument.qualityFlag = true;
-            if (ReplacingRegEx.test(this.inputVersion)) {
-                this.resolvedArgument.value = (_a = this.inputVersion.match(ReplacingRegEx)) === null || _a === void 0 ? void 0 : _a[1];
-            }
-            else {
-                this.resolvedArgument.value = this.inputVersion;
-            }
+            this.resolvedArgument.value = ReplacingRegEx.test(this.inputVersion)
+                ? (_a = this.inputVersion.match(ReplacingRegEx)) === null || _a === void 0 ? void 0 : _a[1]
+                : this.inputVersion;
         }
     }
     createVersionObject() {
         this.resolveVersionInput();
         if (IS_WINDOWS) {
-            if (this.resolvedArgument.type === 'channel') {
-                this.resolvedArgument.type = '-Channel';
-            }
-            else {
-                this.resolvedArgument.type = '-Version';
-            }
+            this.resolvedArgument.type =
+                this.resolvedArgument.type === 'channel' ? '-Channel' : '-Version';
         }
         else {
-            if (this.resolvedArgument.type === 'channel') {
-                this.resolvedArgument.type = '--channel';
-            }
-            else {
-                this.resolvedArgument.type = '--version';
-            }
+            this.resolvedArgument.type =
+                this.resolvedArgument.type === 'channel' ? '--channel' : '--version';
         }
         return this.resolvedArgument;
     }
@@ -285,7 +274,7 @@ class DotnetCoreInstaller {
                         command += ` -Quality ${this.quality}`;
                     }
                     else {
-                        core.warning(`'dotnet-quality' input can't be used with exact version: ${versionObject.value} of .NET. 'dotnet-quality' input is ignored.`);
+                        logWarning(`'dotnet-quality' input can't be used with exact version: ${versionObject.value} of .NET. 'dotnet-quality' input is ignored.`);
                     }
                 }
                 if (process.env['https_proxy'] != null) {
@@ -327,10 +316,10 @@ class DotnetCoreInstaller {
                 scriptArguments.push(versionObject.type, versionObject.value);
                 if (this.quality) {
                     if (versionObject.qualityFlag) {
-                        scriptArguments.push("--quality", this.quality);
+                        scriptArguments.push('--quality', this.quality);
                     }
                     else {
-                        core.warning(`'dotnet-quality' input can't be used with exact version: ${versionObject.value} of .NET. 'dotnet-quality' input is ignored.`);
+                        logWarning(`'dotnet-quality' input can't be used with exact version: ${versionObject.value} of .NET. 'dotnet-quality' input is ignored.`);
                     }
                 }
                 if (IS_LINUX) {
@@ -372,6 +361,11 @@ class DotnetCoreInstaller {
     }
 }
 exports.DotnetCoreInstaller = DotnetCoreInstaller;
+function logWarning(message) {
+    const warningPrefix = '[warning]';
+    core.info(`${warningPrefix}${message}`);
+}
+exports.logWarning = logWarning;
 
 
 /***/ }),

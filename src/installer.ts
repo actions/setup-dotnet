@@ -7,7 +7,6 @@ import {chmodSync} from 'fs';
 import * as path from 'path';
 import semver from 'semver';
 import {ExecOptions} from '@actions/exec/lib/interfaces';
-import {timingSafeEqual} from 'crypto';
 
 const IS_WINDOWS = process.platform === 'win32';
 const IS_LINUX = process.platform === 'linux';
@@ -33,7 +32,7 @@ export class DotnetQualityValidator {
 
 export class DotnetVersionResolver {
   private inputVersion: string;
-  private resolvedArgument: {type: string; value: string, qualityFlag: boolean};
+  private resolvedArgument: {type: string; value: string; qualityFlag: boolean};
 
   constructor(version: string) {
     this.inputVersion = version.trim();
@@ -45,7 +44,7 @@ export class DotnetVersionResolver {
     const ReplacingRegEx = /^(\d+.\d+).[x/*]$/i;
     if (!ValidatingRegEx.test(this.inputVersion)) {
       throw new Error(
-        `dotnet-version was supplied in invalid format: ${this.inputVersion}! Supported: A.B.C, A.B.C-D, A.B, A.B.x, A.B.X, A.B.*`
+        `'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B.C-D, A.B, A.B.x, A.B.X, A.B.*`
       );
     }
     if (semver.valid(this.inputVersion)) {
@@ -54,30 +53,24 @@ export class DotnetVersionResolver {
     } else {
       this.resolvedArgument.type = 'channel';
       this.resolvedArgument.qualityFlag = true;
-      if (ReplacingRegEx.test(this.inputVersion)) {
-        this.resolvedArgument.value = this.inputVersion.match(
-          ReplacingRegEx
-        )?.[1]!;
-      } else {
-        this.resolvedArgument.value = this.inputVersion;
-      }
+      this.resolvedArgument.value = ReplacingRegEx.test(this.inputVersion)
+        ? this.inputVersion.match(ReplacingRegEx)?.[1]!
+        : this.inputVersion;
     }
   }
 
-  public createVersionObject(): {type: string; value: string, qualityFlag: boolean} {
+  public createVersionObject(): {
+    type: string;
+    value: string;
+    qualityFlag: boolean;
+  } {
     this.resolveVersionInput();
     if (IS_WINDOWS) {
-      if (this.resolvedArgument.type === 'channel') {
-        this.resolvedArgument.type = '-Channel';
-      } else {
-        this.resolvedArgument.type = '-Version';
-      }
+      this.resolvedArgument.type =
+        this.resolvedArgument.type === 'channel' ? '-Channel' : '-Version';
     } else {
-      if (this.resolvedArgument.type === 'channel') {
-        this.resolvedArgument.type = '--channel';
-      } else {
-        this.resolvedArgument.type = '--version';
-      }
+      this.resolvedArgument.type =
+        this.resolvedArgument.type === 'channel' ? '--channel' : '--version';
     }
     return this.resolvedArgument;
   }
@@ -120,10 +113,12 @@ export class DotnetCoreInstaller {
         if (versionObject.qualityFlag) {
           command += ` -Quality ${this.quality}`;
         } else {
-          core.warning(`'dotnet-quality' input can't be used with exact version: ${versionObject.value} of .NET. 'dotnet-quality' input is ignored.`);
+          logWarning(
+            `'dotnet-quality' input can't be used with exact version: ${versionObject.value} of .NET. 'dotnet-quality' input is ignored.`
+          );
         }
       }
-        
+
       if (process.env['https_proxy'] != null) {
         command += ` -ProxyAddress ${process.env['https_proxy']}`;
       }
@@ -173,13 +168,15 @@ export class DotnetCoreInstaller {
       scriptArguments.push(versionObject.type, versionObject.value);
 
       if (this.quality) {
-        if (versionObject.qualityFlag){
-          scriptArguments.push("--quality", this.quality);
+        if (versionObject.qualityFlag) {
+          scriptArguments.push('--quality', this.quality);
         } else {
-          core.warning(`'dotnet-quality' input can't be used with exact version: ${versionObject.value} of .NET. 'dotnet-quality' input is ignored.`);
+          logWarning(
+            `'dotnet-quality' input can't be used with exact version: ${versionObject.value} of .NET. 'dotnet-quality' input is ignored.`
+          );
         }
       }
-      
+
       if (IS_LINUX) {
         scriptArguments.push('--install-dir', installationDirectoryLinux);
       }
@@ -226,4 +223,9 @@ export class DotnetCoreInstaller {
 
     console.log(process.env['PATH']);
   }
+}
+
+export function logWarning(message: string): void {
+  const warningPrefix = '[warning]';
+  core.info(`${warningPrefix}${message}`);
 }
