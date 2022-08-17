@@ -116,10 +116,14 @@ export class DotnetCoreInstaller {
 
       command += ` ${versionObject.type} ${versionObject.value}`;
 
-      if (this.quality && versionObject.qualityFlag) {
-        command += ` -Quality ${this.quality}`;
+      if (this.quality) {
+        if (versionObject.qualityFlag) {
+          command += ` -Quality ${this.quality}`;
+        } else {
+          core.warning("'dotnet-quality' input can't be used with exact version of .NET. 'dotnet-quality' input is ignored.");
+        }
       }
-
+        
       if (process.env['https_proxy'] != null) {
         command += ` -ProxyAddress ${process.env['https_proxy']}`;
       }
@@ -168,8 +172,12 @@ export class DotnetCoreInstaller {
 
       scriptArguments.push(versionObject.type, versionObject.value);
 
-      if (this.quality && versionObject.qualityFlag) {
-        scriptArguments.push("--quality", this.quality);
+      if (this.quality) {
+        if (versionObject.qualityFlag){
+          scriptArguments.push("--quality", this.quality);
+        } else {
+          core.warning("'dotnet-quality' input can't be used with exact version of .NET. 'dotnet-quality' input is ignored.");
+        }
       }
       
       if (IS_LINUX) {
