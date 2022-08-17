@@ -40,11 +40,12 @@ export class DotnetVersionResolver {
   }
 
   private resolveVersionInput(): void {
-    const ValidatingRegEx = /^\d+.\d+/i;
-    const ReplacingRegEx = /^(\d+.\d+).[x/*]$/i;
-    if (!ValidatingRegEx.test(this.inputVersion)) {
+    if (
+      !semver.valid(this.inputVersion) &&
+      !semver.validRange(this.inputVersion)
+    ) {
       throw new Error(
-        `'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B.C-D, A.B, A.B.x, A.B.X, A.B.*`
+        `'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B.C-D, A.B.x, A.B.X, A.B.*`
       );
     }
     if (semver.valid(this.inputVersion)) {
@@ -53,8 +54,11 @@ export class DotnetVersionResolver {
     } else {
       this.resolvedArgument.type = 'channel';
       this.resolvedArgument.qualityFlag = true;
-      this.resolvedArgument.value = ReplacingRegEx.test(this.inputVersion)
-        ? this.inputVersion.match(ReplacingRegEx)?.[1]!
+      this.resolvedArgument.value = semver.validRange(this.inputVersion)
+        ? this.inputVersion
+            .split('.')
+            .slice(0, 2)
+            .join('.')
         : this.inputVersion;
     }
   }
@@ -105,9 +109,7 @@ export class DotnetCoreInstaller {
       let escapedScript = path
         .join(__dirname, '..', 'externals', 'install-dotnet.ps1')
         .replace(/'/g, "''");
-      let command = `& '${escapedScript}'`;
-
-      command += ` ${versionObject.type} ${versionObject.value}`;
+      let command = `& '${escapedScript}' ${versionObject.type} ${versionObject.value}`;
 
       if (this.quality) {
         if (versionObject.qualityFlag) {
@@ -163,9 +165,7 @@ export class DotnetCoreInstaller {
 
       const scriptPath = await io.which(escapedScript, true);
 
-      let scriptArguments: string[] = [];
-
-      scriptArguments.push(versionObject.type, versionObject.value);
+      let scriptArguments: string[] = [versionObject.type, versionObject.value];
 
       if (this.quality) {
         if (versionObject.qualityFlag) {

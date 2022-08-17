@@ -211,11 +211,9 @@ class DotnetVersionResolver {
         this.resolvedArgument = { type: '', value: '', qualityFlag: false };
     }
     resolveVersionInput() {
-        var _a;
-        const ValidatingRegEx = /^\d+.\d+/i;
-        const ReplacingRegEx = /^(\d+.\d+).[x/*]$/i;
-        if (!ValidatingRegEx.test(this.inputVersion)) {
-            throw new Error(`'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B.C-D, A.B, A.B.x, A.B.X, A.B.*`);
+        if (!semver_1.default.valid(this.inputVersion) &&
+            !semver_1.default.validRange(this.inputVersion)) {
+            throw new Error(`'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B.C-D, A.B.x, A.B.X, A.B.*`);
         }
         if (semver_1.default.valid(this.inputVersion)) {
             this.resolvedArgument.type = 'version';
@@ -224,8 +222,11 @@ class DotnetVersionResolver {
         else {
             this.resolvedArgument.type = 'channel';
             this.resolvedArgument.qualityFlag = true;
-            this.resolvedArgument.value = ReplacingRegEx.test(this.inputVersion)
-                ? (_a = this.inputVersion.match(ReplacingRegEx)) === null || _a === void 0 ? void 0 : _a[1]
+            this.resolvedArgument.value = semver_1.default.validRange(this.inputVersion)
+                ? this.inputVersion
+                    .split('.')
+                    .slice(0, 2)
+                    .join('.')
                 : this.inputVersion;
         }
     }
@@ -267,8 +268,7 @@ class DotnetCoreInstaller {
                 let escapedScript = path
                     .join(__dirname, '..', 'externals', 'install-dotnet.ps1')
                     .replace(/'/g, "''");
-                let command = `& '${escapedScript}'`;
-                command += ` ${versionObject.type} ${versionObject.value}`;
+                let command = `& '${escapedScript}' ${versionObject.type} ${versionObject.value}`;
                 if (this.quality) {
                     if (versionObject.qualityFlag) {
                         command += ` -Quality ${this.quality}`;
@@ -312,8 +312,7 @@ class DotnetCoreInstaller {
                     .replace(/'/g, "''");
                 fs_1.chmodSync(escapedScript, '777');
                 const scriptPath = yield io.which(escapedScript, true);
-                let scriptArguments = [];
-                scriptArguments.push(versionObject.type, versionObject.value);
+                let scriptArguments = [versionObject.type, versionObject.value];
                 if (this.quality) {
                     if (versionObject.qualityFlag) {
                         scriptArguments.push('--quality', this.quality);
