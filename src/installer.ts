@@ -120,7 +120,7 @@ export class DotnetCoreInstaller {
         if (versionObject.qualityFlag) {
           command += ` -Quality ${this.quality}`;
         } else {
-          core.warning("'dotnet-quality' input can't be used with exact version of .NET. 'dotnet-quality' input is ignored.");
+          core.warning(`'dotnet-quality' input can't be used with exact version: ${versionObject.value} of .NET. 'dotnet-quality' input is ignored.`);
         }
       }
         
@@ -176,7 +176,7 @@ export class DotnetCoreInstaller {
         if (versionObject.qualityFlag){
           scriptArguments.push("--quality", this.quality);
         } else {
-          core.warning("'dotnet-quality' input can't be used with exact version of .NET. 'dotnet-quality' input is ignored.");
+          core.warning(`'dotnet-quality' input can't be used with exact version: ${versionObject.value} of .NET. 'dotnet-quality' input is ignored.`);
         }
       }
       

@@ -285,7 +285,7 @@ class DotnetCoreInstaller {
                         command += ` -Quality ${this.quality}`;
                     }
                     else {
-                        core.warning("'dotnet-quality' input can't be used with exact version of .NET. 'dotnet-quality' input is ignored.");
+                        core.warning(`'dotnet-quality' input can't be used with exact version: ${versionObject.value} of .NET. 'dotnet-quality' input is ignored.`);
                     }
                 }
                 if (process.env['https_proxy'] != null) {
@@ -330,7 +330,7 @@ class DotnetCoreInstaller {
                         scriptArguments.push("--quality", this.quality);
                     }
                     else {
-                        core.warning("'dotnet-quality' input can't be used with exact version of .NET. 'dotnet-quality' input is ignored.");
+                        core.warning(`'dotnet-quality' input can't be used with exact version: ${versionObject.value} of .NET. 'dotnet-quality' input is ignored.`);
                     }
                 }
                 if (IS_LINUX) {
