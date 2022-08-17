@@ -33,11 +33,11 @@ export class DotnetQualityValidator {
 
 export class DotnetVersionResolver {
   private inputVersion: string;
-  private resolvedArgument: {type: string; value: string};
+  private resolvedArgument: {type: string; value: string, qualityFlag: boolean};
 
   constructor(version: string) {
     this.inputVersion = version.trim();
-    this.resolvedArgument = {type: '', value: ''};
+    this.resolvedArgument = {type: '', value: '', qualityFlag: false};
   }
 
   private resolveVersionInput(): void {
@@ -53,6 +53,7 @@ export class DotnetVersionResolver {
       this.resolvedArgument.value = this.inputVersion;
     } else {
       this.resolvedArgument.type = 'channel';
+      this.resolvedArgument.qualityFlag = true;
       if (ReplacingRegEx.test(this.inputVersion)) {
         this.resolvedArgument.value = this.inputVersion.match(
           ReplacingRegEx
@@ -63,7 +64,7 @@ export class DotnetVersionResolver {
     }
   }
 
-  public createLineArgument(): {type: string; value: string} {
+  public createVersionObject(): {type: string; value: string, qualityFlag: boolean} {
     this.resolveVersionInput();
     if (IS_WINDOWS) {
       if (this.resolvedArgument.type === 'channel') {
@@ -98,7 +99,7 @@ export class DotnetCoreInstaller {
     const installationDirectoryLinux = '/usr/share/dotnet';
 
     const versionResolver = new DotnetVersionResolver(this.version);
-    const versionObject = versionResolver.createLineArgument();
+    const versionObject = versionResolver.createVersionObject();
 
     var envVariables: {[key: string]: string} = {};
     for (let key in process.env) {
@@ -115,10 +116,8 @@ export class DotnetCoreInstaller {
 
       command += ` ${versionObject.type} ${versionObject.value}`;
 
-      if (this.quality) {
-        command += ` ${this.resolveQuality(versionObject).type} ${
-          this.resolveQuality(versionObject).value
-        }`;
+      if (this.quality && versionObject.qualityFlag) {
+        command += ` -Quality ${this.quality}`;
       }
 
       if (process.env['https_proxy'] != null) {
@@ -169,13 +168,10 @@ export class DotnetCoreInstaller {
 
       scriptArguments.push(versionObject.type, versionObject.value);
 
-      if (this.quality) {
-        scriptArguments.push(
-          this.resolveQuality(versionObject).type,
-          this.resolveQuality(versionObject).value
-        );
+      if (this.quality && versionObject.qualityFlag) {
+        scriptArguments.push("--quality", this.quality);
       }
-
+      
       if (IS_LINUX) {
         scriptArguments.push('--install-dir', installationDirectoryLinux);
       }
@@ -194,24 +190,6 @@ export class DotnetCoreInstaller {
     if (resultCode != 0) {
       throw new Error(`Failed to install dotnet ${resultCode}. ${output}`);
     }
-  }
-
-  private resolveQuality(versionObject: {
-    type: string;
-    value: string;
-  }): {type: string; value: string} {
-    let resolvedArgument: {type: string; value: string} = {type: '', value: ''};
-    if (versionObject.type == '-Channel') {
-      resolvedArgument = {type: '-Quality', value: `${this.quality}`};
-    } else if (versionObject.type == '--channel') {
-      resolvedArgument = {type: '--quality', value: `${this.quality}`};
-    } else {
-      core.warning(
-        "Input 'dotnet-quality' can't be used with the specified exact version of .NET. 'dotnet-quality' input will be ignored."
-      );
-      this.quality = "";
-    }
-    return resolvedArgument;
   }
 
   static addToPath() {

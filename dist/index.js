@@ -208,7 +208,7 @@ exports.DotnetQualityValidator = DotnetQualityValidator;
 class DotnetVersionResolver {
     constructor(version) {
         this.inputVersion = version.trim();
-        this.resolvedArgument = { type: '', value: '' };
+        this.resolvedArgument = { type: '', value: '', qualityFlag: false };
     }
     resolveVersionInput() {
         var _a;
@@ -223,6 +223,7 @@ class DotnetVersionResolver {
         }
         else {
             this.resolvedArgument.type = 'channel';
+            this.resolvedArgument.qualityFlag = true;
             if (ReplacingRegEx.test(this.inputVersion)) {
                 this.resolvedArgument.value = (_a = this.inputVersion.match(ReplacingRegEx)) === null || _a === void 0 ? void 0 : _a[1];
             }
@@ -231,7 +232,7 @@ class DotnetVersionResolver {
             }
         }
     }
-    createLineArgument() {
+    createVersionObject() {
         this.resolveVersionInput();
         if (IS_WINDOWS) {
             if (this.resolvedArgument.type === 'channel') {
@@ -265,7 +266,7 @@ class DotnetCoreInstaller {
             const installationDirectoryWindows = 'C:\\Program` Files\\dotnet';
             const installationDirectoryLinux = '/usr/share/dotnet';
             const versionResolver = new DotnetVersionResolver(this.version);
-            const versionObject = versionResolver.createLineArgument();
+            const versionObject = versionResolver.createVersionObject();
             var envVariables = {};
             for (let key in process.env) {
                 if (process.env[key]) {
@@ -279,8 +280,8 @@ class DotnetCoreInstaller {
                     .replace(/'/g, "''");
                 let command = `& '${escapedScript}'`;
                 command += ` ${versionObject.type} ${versionObject.value}`;
-                if (this.quality) {
-                    command += ` ${this.resolveQuality(versionObject).type} ${this.resolveQuality(versionObject).value}`;
+                if (this.quality && versionObject.qualityFlag) {
+                    command += ` -Quality ${this.quality}`;
                 }
                 if (process.env['https_proxy'] != null) {
                     command += ` -ProxyAddress ${process.env['https_proxy']}`;
@@ -319,8 +320,8 @@ class DotnetCoreInstaller {
                 const scriptPath = yield io.which(escapedScript, true);
                 let scriptArguments = [];
                 scriptArguments.push(versionObject.type, versionObject.value);
-                if (this.quality) {
-                    scriptArguments.push(this.resolveQuality(versionObject).type, this.resolveQuality(versionObject).value);
+                if (this.quality && versionObject.qualityFlag) {
+                    scriptArguments.push("--quality", this.quality);
                 }
                 if (IS_LINUX) {
                     scriptArguments.push('--install-dir', installationDirectoryLinux);
@@ -339,20 +340,6 @@ class DotnetCoreInstaller {
                 throw new Error(`Failed to install dotnet ${resultCode}. ${output}`);
             }
         });
-    }
-    resolveQuality(versionObject) {
-        let resolvedArgument = { type: '', value: '' };
-        if (versionObject.type == '-Channel') {
-            resolvedArgument = { type: '-Quality', value: `${this.quality}` };
-        }
-        else if (versionObject.type == '--channel') {
-            resolvedArgument = { type: '--quality', value: `${this.quality}` };
-        }
-        else {
-            core.warning("Input 'dotnet-quality' can't be used with the specified exact version of .NET. 'dotnet-quality' input will be ignored.");
-            this.quality = "";
-        }
-        return resolvedArgument;
     }
     static addToPath() {
         if (process.env['DOTNET_INSTALL_DIR']) {
