@@ -253,8 +253,6 @@ class DotnetCoreInstaller {
         return __awaiter(this, void 0, void 0, function* () {
             let output = '';
             let resultCode = 0;
-            const installationDirectoryWindows = 'C:\\Program` Files\\dotnet';
-            const installationDirectoryLinux = '/usr/share/dotnet';
             const versionResolver = new DotnetVersionResolver(this.version);
             const versionObject = versionResolver.createVersionObject();
             var envVariables = {};
@@ -284,7 +282,7 @@ class DotnetCoreInstaller {
                 if (process.env['no_proxy'] != null) {
                     command += ` -ProxyBypassList ${process.env['no_proxy']}`;
                 }
-                command += ` -InstallDir ${installationDirectoryWindows}`;
+                command += ` -InstallDir ${DotnetCoreInstaller.installationDirectoryWindows}`;
                 // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
                 const powershellPath = yield io.which('powershell', true);
                 var options = {
@@ -322,7 +320,7 @@ class DotnetCoreInstaller {
                     }
                 }
                 if (IS_LINUX) {
-                    scriptArguments.push('--install-dir', installationDirectoryLinux);
+                    scriptArguments.push('--install-dir', DotnetCoreInstaller.installationDirectoryLinux);
                 }
                 // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
                 resultCode = yield exec.exec(`"${scriptPath}"`, scriptArguments, {
@@ -347,7 +345,7 @@ class DotnetCoreInstaller {
         else {
             if (IS_WINDOWS) {
                 // This is the default set in install-dotnet.ps1
-                core.exportVariable('DOTNET_ROOT', "C:\Program Files\dotnet");
+                core.exportVariable('DOTNET_ROOT', DotnetCoreInstaller.installationDirectoryWindows);
             }
             else {
                 // This is the default set in install-dotnet.sh
@@ -359,6 +357,8 @@ class DotnetCoreInstaller {
     }
 }
 exports.DotnetCoreInstaller = DotnetCoreInstaller;
+DotnetCoreInstaller.installationDirectoryWindows = 'C:\\Program` Files\\dotnet';
+DotnetCoreInstaller.installationDirectoryLinux = '/usr/share/dotnet';
 function logWarning(message) {
     const warningPrefix = '[warning]';
     core.info(`${warningPrefix}${message}`);

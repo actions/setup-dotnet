@@ -83,6 +83,8 @@ export class DotnetVersionResolver {
 export class DotnetCoreInstaller {
   private version: string;
   private quality: string;
+  static installationDirectoryWindows = 'C:\\Program` Files\\dotnet';
+  static installationDirectoryLinux = '/usr/share/dotnet';
 
   constructor(version: string, quality: string) {
     this.version = version;
@@ -92,8 +94,7 @@ export class DotnetCoreInstaller {
   public async installDotnet() {
     let output = '';
     let resultCode = 0;
-    const installationDirectoryWindows = 'C:\\Program` Files\\dotnet';
-    const installationDirectoryLinux = '/usr/share/dotnet';
+    
 
     const versionResolver = new DotnetVersionResolver(this.version);
     const versionObject = versionResolver.createVersionObject();
@@ -129,7 +130,7 @@ export class DotnetCoreInstaller {
         command += ` -ProxyBypassList ${process.env['no_proxy']}`;
       }
 
-      command += ` -InstallDir ${installationDirectoryWindows}`;
+      command += ` -InstallDir ${DotnetCoreInstaller.installationDirectoryWindows}`;
 
       // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
       const powershellPath = await io.which('powershell', true);
@@ -178,7 +179,7 @@ export class DotnetCoreInstaller {
       }
 
       if (IS_LINUX) {
-        scriptArguments.push('--install-dir', installationDirectoryLinux);
+        scriptArguments.push('--install-dir', DotnetCoreInstaller.installationDirectoryLinux);
       }
 
       // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
@@ -206,7 +207,7 @@ export class DotnetCoreInstaller {
         // This is the default set in install-dotnet.ps1
         core.exportVariable(
           'DOTNET_ROOT',
-          "C:\Program Files\dotnet"
+          DotnetCoreInstaller.installationDirectoryWindows
         );
       } else {
         // This is the default set in install-dotnet.sh
