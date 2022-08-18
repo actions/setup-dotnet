@@ -282,7 +282,7 @@ class DotnetCoreInstaller {
                 if (process.env['no_proxy'] != null) {
                     command += ` -ProxyBypassList ${process.env['no_proxy']}`;
                 }
-                command += ` -InstallDir ${DotnetCoreInstaller.installationDirectoryWindows}`;
+                command += ` -InstallDir '${DotnetCoreInstaller.installationDirectoryWindows}'`;
                 // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
                 const powershellPath = yield io.which('powershell', true);
                 var options = {
@@ -357,7 +357,7 @@ class DotnetCoreInstaller {
     }
 }
 exports.DotnetCoreInstaller = DotnetCoreInstaller;
-DotnetCoreInstaller.installationDirectoryWindows = `'${path.join(process.env['PROGRAMFILES'] + '', "dotnet")}'`;
+DotnetCoreInstaller.installationDirectoryWindows = path.join(process.env['PROGRAMFILES'] + '', "dotnet");
 DotnetCoreInstaller.installationDirectoryLinux = '/usr/share/dotnet';
 function logWarning(message) {
     const warningPrefix = '[warning]';

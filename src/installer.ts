@@ -83,7 +83,7 @@ export class DotnetVersionResolver {
 export class DotnetCoreInstaller {
   private version: string;
   private quality: string;
-  static installationDirectoryWindows = `'${path.join(process.env['PROGRAMFILES'] + '', "dotnet")}'`;
+  static installationDirectoryWindows = path.join(process.env['PROGRAMFILES'] + '', "dotnet");
   static installationDirectoryLinux = '/usr/share/dotnet';
 
   constructor(version: string, quality: string) {
@@ -130,7 +130,7 @@ export class DotnetCoreInstaller {
         command += ` -ProxyBypassList ${process.env['no_proxy']}`;
       }
 
-      command += ` -InstallDir ${DotnetCoreInstaller.installationDirectoryWindows}`;
+      command += ` -InstallDir '${DotnetCoreInstaller.installationDirectoryWindows}'`;
 
       // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
       const powershellPath = await io.which('powershell', true);
