@@ -348,6 +348,7 @@ class DotnetCoreInstaller {
             }
             else if (IS_LINUX) {
                 core.exportVariable('DOTNET_ROOT', DotnetCoreInstaller.installationDirectoryLinux);
+                core.addPath(DotnetCoreInstaller.installationDirectoryLinux);
             }
             else {
                 // This is the default set in install-dotnet.sh

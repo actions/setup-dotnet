@@ -214,6 +214,7 @@ export class DotnetCoreInstaller {
           'DOTNET_ROOT',
           DotnetCoreInstaller.installationDirectoryLinux
         );
+        core.addPath(DotnetCoreInstaller.installationDirectoryLinux);
       } else {
         // This is the default set in install-dotnet.sh
         core.addPath(path.join(process.env['HOME'] + '', '.dotnet'));
