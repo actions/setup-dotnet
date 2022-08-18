@@ -344,8 +344,10 @@ class DotnetCoreInstaller {
         }
         else {
             if (IS_WINDOWS) {
-                // This is the default set in install-dotnet.ps1
                 core.exportVariable('DOTNET_ROOT', DotnetCoreInstaller.installationDirectoryWindows);
+            }
+            else if (IS_LINUX) {
+                core.exportVariable('DOTNET_ROOT', DotnetCoreInstaller.installationDirectoryLinux);
             }
             else {
                 // This is the default set in install-dotnet.sh
