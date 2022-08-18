@@ -83,7 +83,7 @@ export class DotnetVersionResolver {
 export class DotnetCoreInstaller {
   private version: string;
   private quality: string;
-  static installationDirectoryWindows = path.join(process.env['PROGRAMFILES'] + '', "dotnet");
+  static installationDirectoryWindows = `'${path.join(process.env['PROGRAMFILES'] + '', "dotnet")}'`;
   static installationDirectoryLinux = '/usr/share/dotnet';
 
   constructor(version: string, quality: string) {

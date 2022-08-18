@@ -357,7 +357,7 @@ class DotnetCoreInstaller {
     }
 }
 exports.DotnetCoreInstaller = DotnetCoreInstaller;
-DotnetCoreInstaller.installationDirectoryWindows = path.join(process.env['PROGRAMFILES'] + '', "dotnet");
+DotnetCoreInstaller.installationDirectoryWindows = `'${path.join(process.env['PROGRAMFILES'] + '', "dotnet")}'`;
 DotnetCoreInstaller.installationDirectoryLinux = '/usr/share/dotnet';
 function logWarning(message) {
     const warningPrefix = '[warning]';
