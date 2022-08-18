@@ -45,7 +45,7 @@ export class DotnetVersionResolver {
       !semver.validRange(this.inputVersion)
     ) {
       throw new Error(
-        `'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B.C-D, A.B.x, A.B.X, A.B.*`
+        `'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B, A.B.C, A.B.C-D, A.B.x, A.B.X, A.B.*`
       );
     }
     if (semver.valid(this.inputVersion)) {
@@ -54,12 +54,12 @@ export class DotnetVersionResolver {
     } else {
       this.resolvedArgument.type = 'channel';
       this.resolvedArgument.qualityFlag = true;
-      this.resolvedArgument.value = semver.validRange(this.inputVersion)
-        ? this.inputVersion
-            .split('.')
-            .slice(0, 2)
-            .join('.')
-        : this.inputVersion;
+      if (semver.validRange(this.inputVersion)) {
+        let coercedVersion = semver.coerce(this.inputVersion);
+        this.resolvedArgument.value = coercedVersion?.major + "." + coercedVersion?.minor;
+      } else {
+        this.resolvedArgument.value = this.inputVersion;
+      }
     }
   }
 
@@ -83,8 +83,8 @@ export class DotnetVersionResolver {
 export class DotnetCoreInstaller {
   private version: string;
   private quality: string;
-  static installationDirectoryWindows = path.join(process.env['PROGRAMFILES'] + '', "dotnet");
-  static installationDirectoryLinux = '/usr/share/dotnet';
+  static readonly installationDirectoryWindows = path.join(process.env['PROGRAMFILES'] + '', "dotnet");
+  static readonly installationDirectoryLinux = '/usr/share/dotnet';
 
   constructor(version: string, quality: string) {
     this.version = version;
@@ -204,17 +204,18 @@ export class DotnetCoreInstaller {
       core.exportVariable('DOTNET_ROOT', process.env['DOTNET_INSTALL_DIR']);
     } else {
       if (IS_WINDOWS) {
+        core.addPath(DotnetCoreInstaller.installationDirectoryWindows);
         core.exportVariable(
           'DOTNET_ROOT',
           DotnetCoreInstaller.installationDirectoryWindows
         );
       }
       else if (IS_LINUX) {
+        core.addPath(DotnetCoreInstaller.installationDirectoryLinux);
         core.exportVariable(
           'DOTNET_ROOT',
           DotnetCoreInstaller.installationDirectoryLinux
-        );
-        core.addPath(DotnetCoreInstaller.installationDirectoryLinux);
+        );        
       } else {
         // This is the default set in install-dotnet.sh
         core.addPath(path.join(process.env['HOME'] + '', '.dotnet'));

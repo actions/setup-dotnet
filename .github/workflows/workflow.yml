@@ -160,13 +160,9 @@ jobs:
         uses: ./
         with:
           dotnet-version: 2.2.X
-      - name: Setup dotnet 3.0.*
-        uses: ./
-        with:
-          dotnet-version: 3.0.*
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 '2.2' '3.0' '3.1'
+        run: __tests__/verify-dotnet.ps1 '2.2' '3.1'
 
   test-setup-with-wildcard:
     runs-on: ${{ matrix.operating-system }}
