@@ -156,11 +156,11 @@ jobs:
         uses: ./
         with:
           dotnet-version: 3.1.x
-      - name: Setup dotnet 2.2.x
+      - name: Setup dotnet 2.2.X
         uses: ./
         with:
           dotnet-version: 2.2.X
-      - name: Setup dotnet 2.2.x
+      - name: Setup dotnet 3.0.*
         uses: ./
         with:
           dotnet-version: 3.0.*
@@ -230,6 +230,16 @@ jobs:
         - name: Clear toolcache
           shell: pwsh
           run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+        - name: Setup dotnet '2.2'
+          uses: ./
+          with:
+            dotnet-version: '2.2'
+            
+        - name: Setup dotnet '3.1'
+          uses: ./
+          with:
+            dotnet-version: '3.1'
+               
         - name: Setup dotnet 7.0 with preview quality
           uses: ./
           with:
