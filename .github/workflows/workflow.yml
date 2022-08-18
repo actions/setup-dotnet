@@ -128,6 +128,10 @@ jobs:
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+      - name: Setup dotnet '2.2'
+        uses: ./
+        with:
+          dotnet-version: '2.2'
       - name: Setup dotnet '3.1.100-preview1-014459'
         uses: ./
         with:
