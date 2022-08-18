@@ -224,7 +224,8 @@ class DotnetVersionResolver {
             this.resolvedArgument.qualityFlag = true;
             if (semver_1.default.validRange(this.inputVersion)) {
                 let coercedVersion = semver_1.default.coerce(this.inputVersion);
-                this.resolvedArgument.value = (coercedVersion === null || coercedVersion === void 0 ? void 0 : coercedVersion.major) + "." + (coercedVersion === null || coercedVersion === void 0 ? void 0 : coercedVersion.minor);
+                this.resolvedArgument.value =
+                    (coercedVersion === null || coercedVersion === void 0 ? void 0 : coercedVersion.major) + '.' + (coercedVersion === null || coercedVersion === void 0 ? void 0 : coercedVersion.minor);
             }
             else {
                 this.resolvedArgument.value = this.inputVersion;
@@ -362,7 +363,7 @@ class DotnetCoreInstaller {
     }
 }
 exports.DotnetCoreInstaller = DotnetCoreInstaller;
-DotnetCoreInstaller.installationDirectoryWindows = path.join(process.env['PROGRAMFILES'] + '', "dotnet");
+DotnetCoreInstaller.installationDirectoryWindows = path.join(process.env['PROGRAMFILES'] + '', 'dotnet');
 DotnetCoreInstaller.installationDirectoryLinux = '/usr/share/dotnet';
 function logWarning(message) {
     const warningPrefix = '[warning]';

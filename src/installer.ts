@@ -56,7 +56,8 @@ export class DotnetVersionResolver {
       this.resolvedArgument.qualityFlag = true;
       if (semver.validRange(this.inputVersion)) {
         let coercedVersion = semver.coerce(this.inputVersion);
-        this.resolvedArgument.value = coercedVersion?.major + "." + coercedVersion?.minor;
+        this.resolvedArgument.value =
+          coercedVersion?.major + '.' + coercedVersion?.minor;
       } else {
         this.resolvedArgument.value = this.inputVersion;
       }
@@ -83,7 +84,10 @@ export class DotnetVersionResolver {
 export class DotnetCoreInstaller {
   private version: string;
   private quality: string;
-  static readonly installationDirectoryWindows = path.join(process.env['PROGRAMFILES'] + '', "dotnet");
+  static readonly installationDirectoryWindows = path.join(
+    process.env['PROGRAMFILES'] + '',
+    'dotnet'
+  );
   static readonly installationDirectoryLinux = '/usr/share/dotnet';
 
   constructor(version: string, quality: string) {
@@ -94,7 +98,6 @@ export class DotnetCoreInstaller {
   public async installDotnet() {
     let output = '';
     let resultCode = 0;
-    
 
     const versionResolver = new DotnetVersionResolver(this.version);
     const versionObject = versionResolver.createVersionObject();
@@ -179,7 +182,10 @@ export class DotnetCoreInstaller {
       }
 
       if (IS_LINUX) {
-        scriptArguments.push('--install-dir', DotnetCoreInstaller.installationDirectoryLinux);
+        scriptArguments.push(
+          '--install-dir',
+          DotnetCoreInstaller.installationDirectoryLinux
+        );
       }
 
       // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
@@ -209,13 +215,12 @@ export class DotnetCoreInstaller {
           'DOTNET_ROOT',
           DotnetCoreInstaller.installationDirectoryWindows
         );
-      }
-      else if (IS_LINUX) {
+      } else if (IS_LINUX) {
         core.addPath(DotnetCoreInstaller.installationDirectoryLinux);
         core.exportVariable(
           'DOTNET_ROOT',
           DotnetCoreInstaller.installationDirectoryLinux
-        );        
+        );
       } else {
         // This is the default set in install-dotnet.sh
         core.addPath(path.join(process.env['HOME'] + '', '.dotnet'));
