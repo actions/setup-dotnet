@@ -1,5 +1,3 @@
-import fs = require('fs');
-
 describe('csc tests', () => {
   it('Valid regular expression', async () => {
     var cscFile = require('../.github/csc.json');

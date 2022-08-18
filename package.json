@@ -27,7 +27,6 @@
     "@actions/core": "^1.6.0",
     "@actions/exec": "^1.0.4",
     "@actions/github": "^1.1.0",
-    "@actions/http-client": "^1.0.8",
     "@actions/io": "^1.0.2",
     "fast-xml-parser": "^3.15.1",
     "semver": "^6.3.0",

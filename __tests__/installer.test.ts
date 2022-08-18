@@ -1,8 +1,7 @@
-import io = require('@actions/io');
-import fs = require('fs');
-import os = require('os');
-import path = require('path');
-import hc = require('@actions/http-client');
+import * as io from '@actions/io';
+import fs from 'fs';
+import path from 'path';
+import * as hc from '@actions/core/node_modules/@actions/http-client';
 
 const toolDir = path.join(__dirname, 'runner', 'tools');
 const tempDir = path.join(__dirname, 'runner', 'temp');
@@ -145,7 +144,7 @@ function normalizeFileContents(contents: string): string {
 }
 
 async function getDotnet(version: string): Promise<void> {
-  const dotnetInstaller = new installer.DotnetCoreInstaller(version);
+  const dotnetInstaller = new installer.DotnetCoreInstaller(version, 'ga');
   await dotnetInstaller.installDotnet();
   installer.DotnetCoreInstaller.addToPath();
 }

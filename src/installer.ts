@@ -2,22 +2,23 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as io from '@actions/io';
-import hc = require('@actions/http-client');
 import {chmodSync} from 'fs';
-import * as path from 'path';
+import path from 'path';
 import semver from 'semver';
-import {ExecOptions} from '@actions/exec/lib/interfaces';
+import {IS_LINUX, IS_WINDOWS, logWarning} from './utils';
 
-const IS_WINDOWS = process.platform === 'win32';
-const IS_LINUX = process.platform === 'linux';
+interface IDotNetVersion {
+  type: string;
+  value: string;
+  qualityFlag: boolean;
+}
 
 export class DotnetQualityValidator {
   private quality: string;
-  private qualityOptions: string[];
+  private qualityOptions = ['daily', 'signed', 'validated', 'preview', 'ga'];
 
   constructor(quality: string) {
     this.quality = quality;
-    this.qualityOptions = ['daily', 'signed', 'validated', 'preview', 'ga'];
   }
 
   public validateQuality() {
@@ -30,9 +31,9 @@ export class DotnetQualityValidator {
   }
 }
 
-export class DotnetVersionResolver {
+class DotnetVersionResolver {
   private inputVersion: string;
-  private resolvedArgument: {type: string; value: string; qualityFlag: boolean};
+  private resolvedArgument: IDotNetVersion;
 
   constructor(version: string) {
     this.inputVersion = version.trim();
@@ -54,17 +55,12 @@ export class DotnetVersionResolver {
     } else {
       this.resolvedArgument.type = 'channel';
       this.resolvedArgument.qualityFlag = true;
-      if (semver.validRange(this.inputVersion)) {
-        let coercedVersion = semver.coerce(this.inputVersion);
-        this.resolvedArgument.value =
-          coercedVersion?.major + '.' + coercedVersion?.minor;
-      } else {
-        this.resolvedArgument.value = this.inputVersion;
-      }
+      const coercedVersion = semver.coerce(this.inputVersion);
+      this.resolvedArgument.value = `${coercedVersion?.major}.${coercedVersion?.minor}`;
     }
   }
 
-  public createVersionObject(): {
+  public createDotNetVersion(): {
     type: string;
     value: string;
     qualityFlag: boolean;
@@ -84,125 +80,11 @@ export class DotnetVersionResolver {
 export class DotnetCoreInstaller {
   private version: string;
   private quality: string;
-  static readonly installationDirectoryWindows = path.join(
+  private static readonly installationDirectoryWindows = path.join(
     process.env['PROGRAMFILES'] + '',
     'dotnet'
   );
-  static readonly installationDirectoryLinux = '/usr/share/dotnet';
-
-  constructor(version: string, quality: string) {
-    this.version = version;
-    this.quality = quality;
-  }
-
-  public async installDotnet() {
-    let output = '';
-    let resultCode = 0;
-
-    const versionResolver = new DotnetVersionResolver(this.version);
-    const versionObject = versionResolver.createVersionObject();
-
-    var envVariables: {[key: string]: string} = {};
-    for (let key in process.env) {
-      if (process.env[key]) {
-        let value: any = process.env[key];
-        envVariables[key] = value;
-      }
-    }
-    if (IS_WINDOWS) {
-      let escapedScript = path
-        .join(__dirname, '..', 'externals', 'install-dotnet.ps1')
-        .replace(/'/g, "''");
-      let command = `& '${escapedScript}' ${versionObject.type} ${versionObject.value}`;
-
-      if (this.quality) {
-        if (versionObject.qualityFlag) {
-          command += ` -Quality ${this.quality}`;
-        } else {
-          logWarning(
-            `'dotnet-quality' input can't be used with exact version: ${versionObject.value} of .NET. 'dotnet-quality' input is ignored.`
-          );
-        }
-      }
-
-      if (process.env['https_proxy'] != null) {
-        command += ` -ProxyAddress ${process.env['https_proxy']}`;
-      }
-      // This is not currently an option
-      if (process.env['no_proxy'] != null) {
-        command += ` -ProxyBypassList ${process.env['no_proxy']}`;
-      }
-
-      command += ` -InstallDir '${DotnetCoreInstaller.installationDirectoryWindows}'`;
-
-      // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
-      const powershellPath = await io.which('powershell', true);
-
-      var options: ExecOptions = {
-        listeners: {
-          stdout: (data: Buffer) => {
-            output += data.toString();
-          }
-        },
-        env: envVariables
-      };
-
-      resultCode = await exec.exec(
-        `"${powershellPath}"`,
-        [
-          '-NoLogo',
-          '-Sta',
-          '-NoProfile',
-          '-NonInteractive',
-          '-ExecutionPolicy',
-          'Unrestricted',
-          '-Command',
-          command
-        ],
-        options
-      );
-    } else {
-      let escapedScript = path
-        .join(__dirname, '..', 'externals', 'install-dotnet.sh')
-        .replace(/'/g, "''");
-      chmodSync(escapedScript, '777');
-
-      const scriptPath = await io.which(escapedScript, true);
-
-      let scriptArguments: string[] = [versionObject.type, versionObject.value];
-
-      if (this.quality) {
-        if (versionObject.qualityFlag) {
-          scriptArguments.push('--quality', this.quality);
-        } else {
-          logWarning(
-            `'dotnet-quality' input can't be used with exact version: ${versionObject.value} of .NET. 'dotnet-quality' input is ignored.`
-          );
-        }
-      }
-
-      if (IS_LINUX) {
-        scriptArguments.push(
-          '--install-dir',
-          DotnetCoreInstaller.installationDirectoryLinux
-        );
-      }
-
-      // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
-      resultCode = await exec.exec(`"${scriptPath}"`, scriptArguments, {
-        listeners: {
-          stdout: (data: Buffer) => {
-            output += data.toString();
-          }
-        },
-        env: envVariables
-      });
-    }
-
-    if (resultCode != 0) {
-      throw new Error(`Failed to install dotnet ${resultCode}. ${output}`);
-    }
-  }
+  private static readonly installationDirectoryLinux = '/usr/share/dotnet';
 
   static addToPath() {
     if (process.env['DOTNET_INSTALL_DIR']) {
@@ -230,12 +112,103 @@ export class DotnetCoreInstaller {
         );
       }
     }
-
-    console.log(process.env['PATH']);
   }
-}
 
-export function logWarning(message: string): void {
-  const warningPrefix = '[warning]';
-  core.info(`${warningPrefix}${message}`);
+  constructor(version: string, quality: string) {
+    this.version = version;
+    this.quality = quality;
+  }
+
+  private setQuality(
+    dotnetVersion: IDotNetVersion,
+    scriptArguments: string[]
+  ): void {
+    const option = IS_WINDOWS ? '-Quality' : '--quality';
+    if (dotnetVersion.qualityFlag) {
+      scriptArguments.push(option, this.quality);
+    } else {
+      logWarning(
+        `'dotnet-quality' input can't be used with exact version: ${dotnetVersion.value} of .NET. 'dotnet-quality' input is ignored.`
+      );
+    }
+  }
+
+  public async installDotnet() {
+    const windowsDefaultOptions = [
+      '-NoLogo',
+      '-Sta',
+      '-NoProfile',
+      '-NonInteractive',
+      '-ExecutionPolicy',
+      'Unrestricted',
+      '-Command'
+    ];
+    const scriptName = IS_WINDOWS ? 'install-dotnet.ps1' : 'install-dotnet.sh';
+    const escapedScript = path
+      .join(__dirname, '..', 'externals', scriptName)
+      .replace(/'/g, "''");
+    let scriptArguments: string[];
+    let scriptPath = '';
+
+    const versionResolver = new DotnetVersionResolver(this.version);
+    const dotnetVersion = versionResolver.createDotNetVersion();
+
+    const envVariables: {[key: string]: string} = {};
+    for (let key in process.env) {
+      if (process.env[key]) {
+        let value: any = process.env[key];
+        envVariables[key] = value;
+      }
+    }
+    if (IS_WINDOWS) {
+      scriptArguments = [
+        '&',
+        `'${escapedScript}'`,
+        dotnetVersion.type,
+        dotnetVersion.value
+      ];
+
+      if (this.quality) {
+        this.setQuality(dotnetVersion, scriptArguments);
+      }
+
+      if (process.env['https_proxy'] != null) {
+        scriptArguments.push(`-ProxyAddress ${process.env['https_proxy']}`);
+      }
+      // This is not currently an option
+      if (process.env['no_proxy'] != null) {
+        scriptArguments.push(`-ProxyBypassList ${process.env['no_proxy']}`);
+      }
+
+      scriptArguments.push(
+        `-InstallDir '${DotnetCoreInstaller.installationDirectoryWindows}'`
+      );
+      // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
+      scriptPath = await io.which('powershell', true);
+      scriptArguments = [...windowsDefaultOptions, scriptArguments.join(' ')];
+    } else {
+      chmodSync(escapedScript, '777');
+      scriptPath = await io.which(escapedScript, true);
+      scriptArguments = [dotnetVersion.type, dotnetVersion.value];
+
+      if (this.quality) {
+        this.setQuality(dotnetVersion, scriptArguments);
+      }
+
+      if (IS_LINUX) {
+        scriptArguments.push(
+          '--install-dir',
+          DotnetCoreInstaller.installationDirectoryLinux
+        );
+      }
+    }
+    const {exitCode, stdout} = await exec.getExecOutput(
+      `"${scriptPath}"`,
+      scriptArguments,
+      {env: envVariables}
+    );
+    if (exitCode) {
+      throw new Error(`Failed to install dotnet ${exitCode}. ${stdout}`);
+    }
+  }
 }
