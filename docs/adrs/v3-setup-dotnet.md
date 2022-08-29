@@ -1,6 +1,6 @@
 # V3 setup-dotnet
 
-Date: 2021-06-30  
+Date: 2022-08-25  
 Status: Proposed
 
 # Context
