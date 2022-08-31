@@ -77,18 +77,22 @@ function writeFeedToFile(
       const packageSources = json.configuration.packageSources.add;
 
       if (Array.isArray(packageSources)) {
-        packageSources.forEach((source) => {
-          const value = source["@_value"];
+        packageSources.forEach(source => {
+          const value = source['@_value'];
           core.debug(`source '${value}'`);
           if (value.toLowerCase().includes(feedUrl.toLowerCase())) {
-            const key = source["@_key"];
+            const key = source['@_key'];
             sourceKeys.push(key);
             core.debug(`Found a URL with key ${key}`);
           }
         });
       } else {
-        if (packageSources["@_value"].toLowerCase().includes(feedUrl.toLowerCase())) {
-          const key = packageSources["@_key"];
+        if (
+          packageSources['@_value']
+            .toLowerCase()
+            .includes(feedUrl.toLowerCase())
+        ) {
+          const key = packageSources['@_key'];
           sourceKeys.push(key);
           core.debug(`Found a URL with key ${key}`);
         }
