@@ -55,6 +55,7 @@ function getExistingNugetConfig(processRoot) {
     return defaultConfigName;
 }
 function writeFeedToFile(feedUrl, existingFileLocation, tempFileLocation) {
+    var _a, _b;
     console.log(`dotnet-auth: Finding any source references in ${existingFileLocation}, writing a new temporary configuration file with credentials to ${tempFileLocation}`);
     let xml;
     let sourceKeys = [];
@@ -69,35 +70,30 @@ function writeFeedToFile(feedUrl, existingFileLocation, tempFileLocation) {
     if (fs.existsSync(existingFileLocation)) {
         // get key from existing NuGet.config so NuGet/dotnet can match credentials
         const curContents = fs.readFileSync(existingFileLocation, 'utf8');
-        var json = xmlParser.parse(curContents, { ignoreAttributes: false });
-        if (typeof json.configuration == 'undefined') {
+        const json = xmlParser.parse(curContents, { ignoreAttributes: false });
+        if (typeof json.configuration === 'undefined') {
             throw new Error(`The provided NuGet.config seems invalid.`);
         }
-        if (typeof json.configuration.packageSources != 'undefined') {
-            if (typeof json.configuration.packageSources.add != 'undefined') {
-                // file has at least one <add>
-                if (typeof json.configuration.packageSources.add[0] == 'undefined') {
-                    // file has only one <add>
-                    if (json.configuration.packageSources.add['@_value']
-                        .toLowerCase()
-                        .includes(feedUrl.toLowerCase())) {
-                        let key = json.configuration.packageSources.add['@_key'];
+        if ((_b = (_a = json.configuration) === null || _a === void 0 ? void 0 : _a.packageSources) === null || _b === void 0 ? void 0 : _b.add) {
+            const packageSources = json.configuration.packageSources.add;
+            if (Array.isArray(packageSources)) {
+                packageSources.forEach(source => {
+                    const value = source['@_value'];
+                    core.debug(`source '${value}'`);
+                    if (value.toLowerCase().includes(feedUrl.toLowerCase())) {
+                        const key = source['@_key'];
                         sourceKeys.push(key);
                         core.debug(`Found a URL with key ${key}`);
                     }
-                }
-                else {
-                    // file has 2+ <add>
-                    for (let i = 0; i < json.configuration.packageSources.add.length; i++) {
-                        const source = json.configuration.packageSources.add[i];
-                        const value = source['@_value'];
-                        core.debug(`source '${value}'`);
-                        if (value.toLowerCase().includes(feedUrl.toLowerCase())) {
-                            let key = source['@_key'];
-                            sourceKeys.push(key);
-                            core.debug(`Found a URL with key ${key}`);
-                        }
-                    }
+                });
+            }
+            else {
+                if (packageSources['@_value']
+                    .toLowerCase()
+                    .includes(feedUrl.toLowerCase())) {
+                    const key = packageSources['@_key'];
+                    sourceKeys.push(key);
+                    core.debug(`Found a URL with key ${key}`);
                 }
             }
         }
