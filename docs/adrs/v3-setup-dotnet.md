@@ -1,7 +1,7 @@
 # v3 setup-dotnet
 
 Date: 2022-08-25  
-Status: Proposed
+Status: Accepted
 
 # Context
 - GitHub-hosted Ubuntu and Windows runners have .NET versions pre-installed in system directories
