@@ -1,6 +1,6 @@
-import io = require('@actions/io');
-import fs = require('fs');
-import path = require('path');
+import * as io from '@actions/io';
+import fs from 'fs';
+import path from 'path';
 
 const fakeSourcesDirForTesting = path.join(
   __dirname,

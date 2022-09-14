@@ -1,17 +1,7 @@
 #!/bin/bash
 
-if [[ "$(git status --porcelain)" != "" ]]; then
-    echo ----------------------------------------
-    echo git status
-    echo ----------------------------------------
-    git status
-    echo ----------------------------------------
-    echo git diff
-    echo ----------------------------------------
+if [ "$(git diff --ignore-space-at-eol dist/ | wc -l)" -gt "0" ]; then
+    echo "Detected uncommitted changes after build.  See status below:"
     git diff
-    echo ----------------------------------------
-    echo Troubleshooting
-    echo ----------------------------------------
-    echo "::error::Unstaged changes detected. Locally try running: git clean -ffdx && npm ci && npm run pre-checkin"
     exit 1
 fi
