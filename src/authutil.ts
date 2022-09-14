@@ -4,7 +4,6 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import * as xmlbuilder from 'xmlbuilder';
 import * as xmlParser from 'fast-xml-parser';
-import {ProcessEnvOptions} from 'child_process';
 
 export function configAuthentication(
   feedUrl: string,
@@ -47,7 +46,7 @@ function writeFeedToFile(
   existingFileLocation: string,
   tempFileLocation: string
 ) {
-  console.log(
+  core.info(
     `dotnet-auth: Finding any source references in ${existingFileLocation}, writing a new temporary configuration file with credentials to ${tempFileLocation}`
   );
   let xml: xmlbuilder.XMLElement;
@@ -58,7 +57,7 @@ function writeFeedToFile(
     owner = github.context.repo.owner;
   }
 
-  if (!process.env.NUGET_AUTH_TOKEN || process.env.NUGET_AUTH_TOKEN == '') {
+  if (!process.env.NUGET_AUTH_TOKEN) {
     throw new Error(
       'The NUGET_AUTH_TOKEN environment variable was not provided. In this step, add the following: \r\nenv:\r\n  NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}'
     );
@@ -67,22 +66,22 @@ function writeFeedToFile(
   if (fs.existsSync(existingFileLocation)) {
     // get key from existing NuGet.config so NuGet/dotnet can match credentials
     const curContents: string = fs.readFileSync(existingFileLocation, 'utf8');
-    var json = xmlParser.parse(curContents, {ignoreAttributes: false});
+    const json = xmlParser.parse(curContents, {ignoreAttributes: false});
 
-    if (typeof json.configuration == 'undefined') {
+    if (typeof json.configuration === 'undefined') {
       throw new Error(`The provided NuGet.config seems invalid.`);
     }
     if (typeof json.configuration.packageSources != 'undefined') {
       if (typeof json.configuration.packageSources.add != 'undefined') {
         // file has at least one <add>
-        if (typeof json.configuration.packageSources.add[0] == 'undefined') {
+        if (typeof json.configuration.packageSources.add[0] === 'undefined') {
           // file has only one <add>
           if (
             json.configuration.packageSources.add['@_value']
               .toLowerCase()
               .includes(feedUrl.toLowerCase())
           ) {
-            let key = json.configuration.packageSources.add['@_key'];
+            const key = json.configuration.packageSources.add['@_key'];
             sourceKeys.push(key);
             core.debug(`Found a URL with key ${key}`);
           }
@@ -97,7 +96,7 @@ function writeFeedToFile(
             const value = source['@_value'];
             core.debug(`source '${value}'`);
             if (value.toLowerCase().includes(feedUrl.toLowerCase())) {
-              let key = source['@_key'];
+              const key = source['@_key'];
               sourceKeys.push(key);
               core.debug(`Found a URL with key ${key}`);
             }
@@ -114,7 +113,7 @@ function writeFeedToFile(
     .up()
     .up();
 
-  if (sourceKeys.length == 0) {
+  if (!sourceKeys.length) {
     let keystring = 'Source';
     xml = xml
       .ele('packageSources')
@@ -150,6 +149,6 @@ function writeFeedToFile(
   //             ? '%NUGET_AUTH_TOKEN%'
   //             : '$NUGET_AUTH_TOKEN'
 
-  var output = xml.end({pretty: true});
+  const output = xml.end({pretty: true});
   fs.writeFileSync(tempFileLocation, output);
 }
