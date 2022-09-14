@@ -4,23 +4,42 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import * as xmlbuilder from 'xmlbuilder';
 import * as xmlParser from 'fast-xml-parser';
+import {ProcessEnvOptions} from 'child_process';
 
 export function configAuthentication(
   feedUrl: string,
-  existingFileLocation: string = ''
+  existingFileLocation: string = '',
+  processRoot: string = process.cwd()
 ) {
   const existingNuGetConfig: string = path.resolve(
-    process.env['RUNNER_TEMP'] || process.cwd(),
-    existingFileLocation == '' ? 'nuget.config' : existingFileLocation
+    processRoot,
+    existingFileLocation === ''
+      ? getExistingNugetConfig(processRoot)
+      : existingFileLocation
   );
 
   const tempNuGetConfig: string = path.resolve(
-    process.env['RUNNER_TEMP'] || process.cwd(),
+    processRoot,
     '../',
     'nuget.config'
   );
 
   writeFeedToFile(feedUrl, existingNuGetConfig, tempNuGetConfig);
+}
+
+function isValidKey(key: string): boolean {
+  return /^[\w\-\.]+$/i.test(key);
+}
+
+function getExistingNugetConfig(processRoot: string) {
+  const defaultConfigName = 'nuget.config';
+  const configFileNames = fs
+    .readdirSync(processRoot)
+    .filter(filename => filename.toLowerCase() === defaultConfigName);
+  if (configFileNames.length) {
+    return configFileNames[0];
+  }
+  return defaultConfigName;
 }
 
 function writeFeedToFile(
@@ -107,9 +126,9 @@ function writeFeedToFile(
   xml = xml.ele('packageSourceCredentials');
 
   sourceKeys.forEach(key => {
-    if (key.indexOf(' ') > -1) {
+    if (!isValidKey(key)) {
       throw new Error(
-        "This action currently can't handle source names with spaces. Remove the space from your repo's NuGet.config and try again."
+        "Source name can contain letters, numbers, and '-', '_', '.' symbols only. Please, fix source name in NuGet.config and try again."
       );
     }
 
