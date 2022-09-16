@@ -236,7 +236,7 @@ jobs:
           run: |
             $version = & dotnet --version
             Write-Host "Installed version: $version"
-            if (-not $version.Contains("preview")) { throw "Unexpected version" }
+            if (-not ($version.Contains("preview") -or $version.Contains("rc"))) { throw "Unexpected version" }
 
   test-proxy:
     runs-on: ubuntu-latest
