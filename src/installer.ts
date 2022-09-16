@@ -117,8 +117,7 @@ export class DotnetCoreInstaller {
 
       // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
       let powershellPath = await io.which('pwsh', false);
-      if (powershellPath == '')
-      {
+      if (powershellPath == '') {
         powershellPath = await io.which('powershell', true);
       }
 
