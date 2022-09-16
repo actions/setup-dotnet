@@ -212,8 +212,7 @@ class DotnetVersionResolver {
     }
     resolveVersionInput() {
         return __awaiter(this, void 0, void 0, function* () {
-            if (!semver_1.default.valid(this.inputVersion) &&
-                !semver_1.default.validRange(this.inputVersion)) {
+            if (!this.isValidVersion(this.inputVersion)) {
                 throw new Error(`'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B, A.B.x, A, A.x`);
             }
             if (semver_1.default.valid(this.inputVersion)) {
@@ -222,9 +221,9 @@ class DotnetVersionResolver {
             }
             else {
                 const [major, minor] = this.inputVersion.split('.');
-                if (this.testTag(major)) {
+                if (this.isNumericTag(major)) {
                     this.resolvedArgument.type = 'channel';
-                    if (this.testTag(minor)) {
+                    if (this.isNumericTag(minor)) {
                         this.resolvedArgument.value = `${major}.${minor}`;
                     }
                     else {
@@ -239,7 +238,10 @@ class DotnetVersionResolver {
             }
         });
     }
-    testTag(versionTag) {
+    isValidVersion(version) {
+        return semver_1.default.valid(version) || semver_1.default.validRange(version) ? true : false;
+    }
+    isNumericTag(versionTag) {
         return /^\d+$/.test(versionTag);
     }
     createDotNetVersion() {

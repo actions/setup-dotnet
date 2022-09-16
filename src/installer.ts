@@ -42,10 +42,7 @@ export class DotnetVersionResolver {
   }
 
   private async resolveVersionInput(): Promise<void> {
-    if (
-      !semver.valid(this.inputVersion) &&
-      !semver.validRange(this.inputVersion)
-    ) {
+    if (!this.isValidVersion(this.inputVersion)) {
       throw new Error(
         `'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B, A.B.x, A, A.x`
       );
@@ -56,9 +53,9 @@ export class DotnetVersionResolver {
     } else {
       const [major, minor] = this.inputVersion.split('.');
 
-      if (this.testTag(major)) {
+      if (this.isNumericTag(major)) {
         this.resolvedArgument.type = 'channel';
-        if (this.testTag(minor)) {
+        if (this.isNumericTag(minor)) {
           this.resolvedArgument.value = `${major}.${minor}`;
         } else {
           const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
@@ -75,7 +72,11 @@ export class DotnetVersionResolver {
     }
   }
 
-  private testTag(versionTag): Boolean {
+  private isValidVersion(version) {
+    return semver.valid(version) || semver.validRange(version) ? true : false;
+  }
+
+  private isNumericTag(versionTag): Boolean {
     return /^\d+$/.test(versionTag);
   }
 
