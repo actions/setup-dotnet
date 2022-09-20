@@ -42,7 +42,7 @@ export class DotnetVersionResolver {
   }
 
   private async resolveVersionInput(): Promise<void> {
-    if (!this.isValidVersion(this.inputVersion)) {
+    if (!semver.validRange(this.inputVersion)) {
       throw new Error(
         `'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B, A.B.x, A, A.x`
       );
@@ -70,10 +70,6 @@ export class DotnetVersionResolver {
       }
       this.resolvedArgument.qualityFlag = +major >= 6 ? true : false;
     }
-  }
-
-  private isValidVersion(version) {
-    return semver.valid(version) || semver.validRange(version) ? true : false;
   }
 
   private isNumericTag(versionTag): Boolean {
@@ -237,7 +233,8 @@ export class DotnetCoreInstaller {
         `-InstallDir '${DotnetCoreInstaller.installationDirectoryWindows}'`
       );
       // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
-      scriptPath = await io.which('powershell', true);
+      scriptPath =
+        (await io.which('powershell', false)) || (await io.which('pwsh', true));
       scriptArguments = [...windowsDefaultOptions, scriptArguments.join(' ')];
     } else {
       chmodSync(escapedScript, '777');

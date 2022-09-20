@@ -212,7 +212,7 @@ class DotnetVersionResolver {
     }
     resolveVersionInput() {
         return __awaiter(this, void 0, void 0, function* () {
-            if (!this.isValidVersion(this.inputVersion)) {
+            if (!semver_1.default.validRange(this.inputVersion)) {
                 throw new Error(`'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B, A.B.x, A, A.x`);
             }
             if (semver_1.default.valid(this.inputVersion)) {
@@ -237,9 +237,6 @@ class DotnetVersionResolver {
                 this.resolvedArgument.qualityFlag = +major >= 6 ? true : false;
             }
         });
-    }
-    isValidVersion(version) {
-        return semver_1.default.valid(version) || semver_1.default.validRange(version) ? true : false;
     }
     isNumericTag(versionTag) {
         return /^\d+$/.test(versionTag);
@@ -358,7 +355,8 @@ class DotnetCoreInstaller {
                 }
                 scriptArguments.push(`-InstallDir '${DotnetCoreInstaller.installationDirectoryWindows}'`);
                 // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
-                scriptPath = yield io.which('powershell', true);
+                scriptPath =
+                    (yield io.which('powershell', false)) || (yield io.which('pwsh', true));
                 scriptArguments = [...windowsDefaultOptions, scriptArguments.join(' ')];
             }
             else {
