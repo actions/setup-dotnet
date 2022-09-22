@@ -6,35 +6,17 @@ import * as hc from '@actions/http-client';
 import {chmodSync} from 'fs';
 import path from 'path';
 import semver from 'semver';
-import {IS_LINUX, IS_WINDOWS, logWarning} from './utils';
+import {IS_LINUX, IS_WINDOWS} from './utils';
 
-export interface IDotNetVersion {
+export interface DotnetVersion {
   type: string;
   value: string;
   qualityFlag: boolean;
 }
 
-export class DotnetQualityValidator {
-  private quality: string;
-  private qualityOptions = ['daily', 'signed', 'validated', 'preview', 'ga'];
-
-  constructor(quality: string) {
-    this.quality = quality;
-  }
-
-  public validateQuality() {
-    if (this.quality && !this.qualityOptions.includes(this.quality)) {
-      throw new Error(
-        `${this.quality} is not a supported value for 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`
-      );
-    }
-    return this.quality;
-  }
-}
-
 export class DotnetVersionResolver {
   private inputVersion: string;
-  private resolvedArgument: IDotNetVersion;
+  private resolvedArgument: DotnetVersion;
 
   constructor(version: string) {
     this.inputVersion = version.trim();
@@ -62,7 +44,7 @@ export class DotnetVersionResolver {
             allowRetries: true,
             maxRetries: 3
           });
-          this.resolvedArgument.value = await this.getReleasesJsonUrl(
+          this.resolvedArgument.value = await this.getLatestVersion(
             httpClient,
             [major, minor]
           );
@@ -72,7 +54,7 @@ export class DotnetVersionResolver {
     }
   }
 
-  private isNumericTag(versionTag): Boolean {
+  private isNumericTag(versionTag): boolean {
     return /^\d+$/.test(versionTag);
   }
 
@@ -95,7 +77,7 @@ export class DotnetVersionResolver {
     return this.resolvedArgument;
   }
 
-  private async getReleasesJsonUrl(
+  private async getLatestVersion(
     httpClient: hc.HttpClient,
     versionParts: string[]
   ): Promise<string> {
@@ -170,14 +152,14 @@ export class DotnetCoreInstaller {
   }
 
   private setQuality(
-    dotnetVersion: IDotNetVersion,
+    dotnetVersion: DotnetVersion,
     scriptArguments: string[]
   ): void {
     const option = IS_WINDOWS ? '-Quality' : '--quality';
     if (dotnetVersion.qualityFlag) {
       scriptArguments.push(option, this.quality);
     } else {
-      logWarning(
+      core.warning(
         `'dotnet-quality' input can be used only with .NET SDK version in A.B, A.B.x, A and A.x formats where the major tag is higher than 5. You specified: ${this.version}. 'dotnet-quality' input is ignored.`
       );
     }
@@ -203,13 +185,6 @@ export class DotnetCoreInstaller {
     const versionResolver = new DotnetVersionResolver(this.version);
     const dotnetVersion = await versionResolver.createDotNetVersion();
 
-    const envVariables: {[key: string]: string} = {};
-    for (let key in process.env) {
-      if (process.env[key]) {
-        let value: any = process.env[key];
-        envVariables[key] = value;
-      }
-    }
     if (IS_WINDOWS) {
       scriptArguments = ['&', `'${escapedScript}'`];
 
@@ -259,7 +234,7 @@ export class DotnetCoreInstaller {
     const {exitCode, stdout} = await exec.getExecOutput(
       `"${scriptPath}"`,
       scriptArguments,
-      {env: envVariables, ignoreReturnCode: true}
+      {ignoreReturnCode: true}
     );
     if (exitCode) {
       throw new Error(`Failed to install dotnet ${exitCode}. ${stdout}`);

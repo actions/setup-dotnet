@@ -3,7 +3,7 @@ import * as os from 'os';
 import fs from 'fs';
 import path from 'path';
 import each from 'jest-each';
-import * as hc from '@actions/core/node_modules/@actions/http-client';
+import * as hc from '@actions/http-client';
 import * as installer from '../src/installer';
 
 import {IS_WINDOWS} from '../src/utils';
@@ -151,38 +151,6 @@ describe('DotnetCoreInstaller tests', () => {
       normalizeFileContents(upToDateContents)
     );
   }, 30000);
-});
-
-describe('DotnetQualityValidator tests', () => {
-  it("returns quality if it's supplied and valid", () => {
-    const qualityInput = 'preview';
-    const dotnetQualityValidator = new installer.DotnetQualityValidator(
-      qualityInput
-    );
-    const result = dotnetQualityValidator.validateQuality();
-
-    expect(result).toBe('preview');
-  });
-
-  each(['', undefined]).test(
-    "input value '%s' should be returned as it is",
-    version => {
-      const dotnetQualityValidator = new installer.DotnetQualityValidator(
-        version
-      );
-      const result = dotnetQualityValidator.validateQuality();
-      expect(result).toBe(version);
-    }
-  );
-
-  it('throws if quality is supplied and invalid', () => {
-    const qualityInput = 'invalid';
-    const dotnetQualityValidator = new installer.DotnetQualityValidator(
-      qualityInput
-    );
-
-    expect(() => dotnetQualityValidator.validateQuality()).toThrow();
-  });
 });
 
 describe('DotnetVersionResolver tests', () => {

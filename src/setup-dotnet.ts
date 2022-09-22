@@ -1,8 +1,18 @@
 import * as core from '@actions/core';
-import {DotnetQualityValidator, DotnetCoreInstaller} from './installer';
+import {DotnetCoreInstaller} from './installer';
 import * as fs from 'fs';
 import path from 'path';
 import * as auth from './authutil';
+
+const qualityOptions = [
+  'daily',
+  'signed',
+  'validated',
+  'preview',
+  'ga'
+] as const;
+
+type QualityOptions = typeof qualityOptions[number];
 
 export async function run() {
   try {
@@ -38,10 +48,13 @@ export async function run() {
     }
 
     if (versions.length) {
-      const qualityValidator = new DotnetQualityValidator(
-        core.getInput('dotnet-quality')
-      );
-      const quality = qualityValidator.validateQuality();
+      const quality = core.getInput('dotnet-quality') as QualityOptions;
+
+      if (quality && !qualityOptions.includes(quality)) {
+        throw new Error(
+          `${quality} is not a supported value for 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`
+        );
+      }
 
       let dotnetInstaller: DotnetCoreInstaller;
       const uniqueVersions = new Set<string>(versions);
