@@ -7,6 +7,7 @@ import {chmodSync} from 'fs';
 import path from 'path';
 import semver from 'semver';
 import {IS_LINUX, IS_WINDOWS} from './utils';
+import {QualityOptions} from './setup-dotnet';
 
 export interface DotnetVersion {
   type: string;
@@ -111,7 +112,7 @@ export class DotnetVersionResolver {
 
 export class DotnetCoreInstaller {
   private version: string;
-  private quality: string;
+  private quality: QualityOptions;
   private static readonly installationDirectoryWindows = path.join(
     process.env['PROGRAMFILES'] + '',
     'dotnet'
@@ -146,7 +147,7 @@ export class DotnetCoreInstaller {
     }
   }
 
-  constructor(version: string, quality: string) {
+  constructor(version: string, quality: QualityOptions) {
     this.version = version;
     this.quality = quality;
   }

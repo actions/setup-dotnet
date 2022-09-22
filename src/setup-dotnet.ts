@@ -12,7 +12,7 @@ const qualityOptions = [
   'ga'
 ] as const;
 
-type QualityOptions = typeof qualityOptions[number];
+export type QualityOptions = typeof qualityOptions[number];
 
 export async function run() {
   try {
@@ -50,7 +50,7 @@ export async function run() {
     if (versions.length) {
       const quality = core.getInput('dotnet-quality') as QualityOptions;
 
-      if (quality && !qualityOptions.includes(quality)) {
+      if (!qualityOptions.includes(quality)) {
         throw new Error(
           `${quality} is not a supported value for 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`
         );
