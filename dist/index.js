@@ -447,7 +447,7 @@ function run() {
             }
             if (versions.length) {
                 const quality = core.getInput('dotnet-quality');
-                if (!qualityOptions.includes(quality)) {
+                if (quality && !qualityOptions.includes(quality)) {
                     throw new Error(`${quality} is not a supported value for 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`);
                 }
                 let dotnetInstaller;
