@@ -5,6 +5,7 @@ import path from 'path';
 import each from 'jest-each';
 import * as hc from '@actions/http-client';
 import * as installer from '../src/installer';
+import {QualityOptions} from '../src/setup-dotnet';
 
 import {IS_WINDOWS} from '../src/utils';
 import {IS_LINUX} from '../src/utils';
@@ -267,7 +268,10 @@ function normalizeFileContents(contents: string): string {
 }
 
 async function getDotnet(version: string, quality: string = ''): Promise<void> {
-  const dotnetInstaller = new installer.DotnetCoreInstaller(version, quality);
+  const dotnetInstaller = new installer.DotnetCoreInstaller(
+    version,
+    quality as QualityOptions
+  );
   await dotnetInstaller.installDotnet();
   installer.DotnetCoreInstaller.addToPath();
 }
