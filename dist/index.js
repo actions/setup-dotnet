@@ -335,7 +335,8 @@ class DotnetCoreInstaller {
                 }
                 scriptArguments.push(`-InstallDir '${DotnetCoreInstaller.installationDirectoryWindows}'`);
                 // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
-                scriptPath = yield io.which('powershell', true);
+                scriptPath =
+                    (yield io.which('pwsh', false)) || (yield io.which('powershell', true));
                 scriptArguments = [...windowsDefaultOptions, scriptArguments.join(' ')];
             }
             else {
