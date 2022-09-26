@@ -88,20 +88,18 @@ export class DotnetVersionResolver {
     const result = response.result || {};
     let releasesInfo: any[] = result['releases-index'];
 
-    releasesInfo = releasesInfo.filter((info: any) => {
-      const sdkParts: string[] = info['channel-version'].split('.');
-      return versionParts[0] == sdkParts[0];
+    let releaseInfo = releasesInfo.find(info => {
+      let sdkParts: string[] = info['channel-version'].split('.');
+      return sdkParts[0] === versionParts[0];
     });
 
-    if (releasesInfo.length === 0) {
+    if (!releaseInfo) {
       throw new Error(
         `Could not find info for version ${versionParts.join('.')} at ${
           DotnetVersionResolver.DotNetCoreIndexUrl
         }`
       );
     }
-
-    const releaseInfo = releasesInfo[0];
 
     return releaseInfo['channel-version'];
   }
