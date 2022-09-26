@@ -275,7 +275,7 @@ class DotnetCoreInstaller {
                     command += ` -ProxyBypassList ${process.env['no_proxy']}`;
                 }
                 // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
-                const powershellPath = yield io.which('powershell', true);
+                const powershellPath = (yield io.which('pwsh', false)) || (yield io.which('powershell', true));
                 var options = {
                     listeners: {
                         stdout: (data) => {
