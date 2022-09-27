@@ -27,7 +27,7 @@ export async function run() {
     // Proxy, auth, (etc) are still set up, even if no version is identified
     //
     const versions = core.getMultilineInput('dotnet-version');
-    let installedDotnetVersions: string[] = [];
+    const installedDotnetVersions: string[] = [];
 
     const globalJsonFileInput = core.getInput('global-json-file');
     if (globalJsonFileInput) {
@@ -62,7 +62,7 @@ export async function run() {
       const uniqueVersions = new Set<string>(versions);
       for (const version of uniqueVersions) {
         dotnetInstaller = new DotnetCoreInstaller(version, quality);
-        let installedVersion = await dotnetInstaller.installDotnet();
+        const installedVersion = await dotnetInstaller.installDotnet();
         installedDotnetVersions.push(installedVersion);
       }
       DotnetCoreInstaller.addToPath();

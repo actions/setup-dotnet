@@ -363,7 +363,7 @@ class DotnetCoreInstaller {
         let resolvedVersion = '';
         const installedByScriptPattern = /Installed version is (?<version>\d+\.\d+\.\d.*)$/m;
         const preinstalledOnRunnerPattern = /.NET Core SDK with version '(?<version>\d+\.\d+\.\d.*)'/m;
-        let regExpressions = [
+        const regExpressions = [
             installedByScriptPattern,
             preinstalledOnRunnerPattern
         ];
@@ -447,7 +447,7 @@ function run() {
             // Proxy, auth, (etc) are still set up, even if no version is identified
             //
             const versions = core.getMultilineInput('dotnet-version');
-            let installedDotnetVersions = [];
+            const installedDotnetVersions = [];
             const globalJsonFileInput = core.getInput('global-json-file');
             if (globalJsonFileInput) {
                 const globalJsonPath = path_1.default.join(process.cwd(), globalJsonFileInput);
@@ -473,7 +473,7 @@ function run() {
                 const uniqueVersions = new Set(versions);
                 for (const version of uniqueVersions) {
                     dotnetInstaller = new installer_1.DotnetCoreInstaller(version, quality);
-                    let installedVersion = yield dotnetInstaller.installDotnet();
+                    const installedVersion = yield dotnetInstaller.installDotnet();
                     installedDotnetVersions.push(installedVersion);
                 }
                 installer_1.DotnetCoreInstaller.addToPath();

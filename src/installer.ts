@@ -247,7 +247,7 @@ export class DotnetCoreInstaller {
     const installedByScriptPattern = /Installed version is (?<version>\d+\.\d+\.\d.*)$/m;
     const preinstalledOnRunnerPattern = /.NET Core SDK with version '(?<version>\d+\.\d+\.\d.*)'/m;
 
-    let regExpressions: RegExp[] = [
+    const regExpressions: RegExp[] = [
       installedByScriptPattern,
       preinstalledOnRunnerPattern
     ];
