@@ -2,6 +2,7 @@ import * as core from '@actions/core';
 import {DotnetCoreInstaller} from './installer';
 import * as fs from 'fs';
 import path from 'path';
+import semver from 'semver';
 import * as auth from './authutil';
 
 const qualityOptions = [
@@ -26,6 +27,7 @@ export async function run() {
     // Proxy, auth, (etc) are still set up, even if no version is identified
     //
     const versions = core.getMultilineInput('dotnet-version');
+    let installedDotnetVersions: string[] = [];
 
     const globalJsonFileInput = core.getInput('global-json-file');
     if (globalJsonFileInput) {
@@ -60,7 +62,8 @@ export async function run() {
       const uniqueVersions = new Set<string>(versions);
       for (const version of uniqueVersions) {
         dotnetInstaller = new DotnetCoreInstaller(version, quality);
-        await dotnetInstaller.installDotnet();
+        let installedVersion = await dotnetInstaller.installDotnet();
+        installedDotnetVersions.push(installedVersion);
       }
       DotnetCoreInstaller.addToPath();
     }
@@ -70,6 +73,13 @@ export async function run() {
     if (sourceUrl) {
       auth.configAuthentication(sourceUrl, configFile);
     }
+
+    core.setOutput(
+      'dotnet-version',
+      semver.maxSatisfying(installedDotnetVersions, '*', {
+        includePrerelease: true
+      })
+    );
 
     const matchersPath = path.join(__dirname, '..', '.github');
     core.info(`##[add-matcher]${path.join(matchersPath, 'csc.json')}`);

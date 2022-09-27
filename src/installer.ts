@@ -238,5 +238,27 @@ export class DotnetCoreInstaller {
     if (exitCode) {
       throw new Error(`Failed to install dotnet ${exitCode}. ${stdout}`);
     }
+
+    return this.outputDotnetVersion(stdout);
+  }
+
+  private outputDotnetVersion(logs: string): string {
+    let resolvedVersion: string = '';
+    const installedByScriptPattern = /Installed version is (?<version>\d+\.\d+\.\d.*)$/m;
+    const preinstalledOnRunnerPattern = /.NET Core SDK with version '(?<version>\d+\.\d+\.\d.*)'/m;
+
+    let regExpressions: RegExp[] = [
+      installedByScriptPattern,
+      preinstalledOnRunnerPattern
+    ];
+
+    for (let regExp of regExpressions) {
+      if (regExp.test(logs)) {
+        resolvedVersion = logs.match(regExp)!.groups!.version;
+        break;
+      }
+    }
+
+    return resolvedVersion;
   }
 }

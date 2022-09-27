@@ -356,7 +356,24 @@ class DotnetCoreInstaller {
             if (exitCode) {
                 throw new Error(`Failed to install dotnet ${exitCode}. ${stdout}`);
             }
+            return this.outputDotnetVersion(stdout);
         });
+    }
+    outputDotnetVersion(logs) {
+        let resolvedVersion = '';
+        const installedByScriptPattern = /Installed version is (?<version>\d+\.\d+\.\d.*)$/m;
+        const preinstalledOnRunnerPattern = /.NET Core SDK with version '(?<version>\d+\.\d+\.\d.*)'/m;
+        let regExpressions = [
+            installedByScriptPattern,
+            preinstalledOnRunnerPattern
+        ];
+        for (let regExp of regExpressions) {
+            if (regExp.test(logs)) {
+                resolvedVersion = logs.match(regExp).groups.version;
+                break;
+            }
+        }
+        return resolvedVersion;
     }
 }
 exports.DotnetCoreInstaller = DotnetCoreInstaller;
@@ -408,6 +425,7 @@ const core = __importStar(__nccwpck_require__(2186));
 const installer_1 = __nccwpck_require__(1480);
 const fs = __importStar(__nccwpck_require__(7147));
 const path_1 = __importDefault(__nccwpck_require__(1017));
+const semver_1 = __importDefault(__nccwpck_require__(5911));
 const auth = __importStar(__nccwpck_require__(8527));
 const qualityOptions = [
     'daily',
@@ -429,6 +447,7 @@ function run() {
             // Proxy, auth, (etc) are still set up, even if no version is identified
             //
             const versions = core.getMultilineInput('dotnet-version');
+            let installedDotnetVersions = [];
             const globalJsonFileInput = core.getInput('global-json-file');
             if (globalJsonFileInput) {
                 const globalJsonPath = path_1.default.join(process.cwd(), globalJsonFileInput);
@@ -454,7 +473,8 @@ function run() {
                 const uniqueVersions = new Set(versions);
                 for (const version of uniqueVersions) {
                     dotnetInstaller = new installer_1.DotnetCoreInstaller(version, quality);
-                    yield dotnetInstaller.installDotnet();
+                    let installedVersion = yield dotnetInstaller.installDotnet();
+                    installedDotnetVersions.push(installedVersion);
                 }
                 installer_1.DotnetCoreInstaller.addToPath();
             }
@@ -463,6 +483,9 @@ function run() {
             if (sourceUrl) {
                 auth.configAuthentication(sourceUrl, configFile);
             }
+            core.setOutput('dotnet-version', semver_1.default.maxSatisfying(installedDotnetVersions, '*', {
+                includePrerelease: true
+            }));
             const matchersPath = path_1.default.join(__dirname, '..', '.github');
             core.info(`##[add-matcher]${path_1.default.join(matchersPath, 'csc.json')}`);
         }
