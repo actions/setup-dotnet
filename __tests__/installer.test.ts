@@ -1,34 +1,55 @@
-import io = require('@actions/io');
-import fs = require('fs');
-import os = require('os');
-import path = require('path');
-import hc = require('@actions/http-client');
+import * as io from '@actions/io';
+import * as os from 'os';
+import fs from 'fs';
+import path from 'path';
+import each from 'jest-each';
+import * as hc from '@actions/http-client';
+import * as installer from '../src/installer';
+import {QualityOptions} from '../src/setup-dotnet';
 
-const toolDir = path.join(__dirname, 'runner', 'tools');
+import {IS_WINDOWS} from '../src/utils';
+import {IS_LINUX} from '../src/utils';
+
+let toolDir: string;
+
+if (IS_WINDOWS) {
+  toolDir = path.join(process.env['PROGRAMFILES'] + '', 'dotnet');
+} else if (IS_LINUX) {
+  toolDir = '/usr/share/dotnet';
+} else {
+  toolDir = path.join(process.env['HOME'] + '', '.dotnet');
+}
 const tempDir = path.join(__dirname, 'runner', 'temp');
 
 process.env['RUNNER_TOOL_CACHE'] = toolDir;
 process.env['RUNNER_TEMP'] = tempDir;
-import * as installer from '../src/installer';
 
-const IS_WINDOWS = process.platform === 'win32';
-
-describe('installer tests', () => {
+describe('DotnetCoreInstaller tests', () => {
   beforeAll(async () => {
     process.env.RUNNER_TOOL_CACHE = toolDir;
     process.env.DOTNET_INSTALL_DIR = toolDir;
     process.env.RUNNER_TEMP = tempDir;
     process.env.DOTNET_ROOT = '';
-    await io.rmRF(toolDir);
-    await io.rmRF(tempDir);
-  });
-
-  afterAll(async () => {
     try {
-      await io.rmRF(toolDir);
-      await io.rmRF(tempDir);
-    } catch {
-      console.log('Failed to remove test directories');
+      await io.rmRF(`${toolDir}/*`);
+      await io.rmRF(`${tempDir}/*`);
+    } catch (err) {
+      console.log(
+        `Failed to remove test directories, check the error message:${os.EOL}`,
+        err.message
+      );
+    }
+  }, 30000);
+
+  afterEach(async () => {
+    try {
+      await io.rmRF(`${toolDir}/*`);
+      await io.rmRF(`${tempDir}/*`);
+    } catch (err) {
+      console.log(
+        `Failed to remove test directories, check the error message:${os.EOL}`,
+        err.message
+      );
     }
   }, 30000);
 
@@ -87,13 +108,9 @@ describe('installer tests', () => {
   }, 600000); //This needs some time to download on "slower" internet connections
 
   it('Throws if no location contains correct dotnet version', async () => {
-    let thrown = false;
-    try {
+    await expect(async () => {
       await getDotnet('1000.0.0');
-    } catch {
-      thrown = true;
-    }
-    expect(thrown).toBe(true);
+    }).rejects.toThrow();
   }, 30000);
 
   it('Uses an up to date bash download script', async () => {
@@ -137,6 +154,112 @@ describe('installer tests', () => {
   }, 30000);
 });
 
+describe('DotnetVersionResolver tests', () => {
+  each([
+    '3.1',
+    '3.x',
+    '3.1.x',
+    '3.1.*',
+    '3.1.X',
+    '3.1.2',
+    '3.1.0-preview1'
+  ]).test(
+    "if valid version: '%s' is supplied, it should return version object with some value",
+    async version => {
+      const dotnetVersionResolver = new installer.DotnetVersionResolver(
+        version
+      );
+      const versionObject = await dotnetVersionResolver.createDotNetVersion();
+
+      expect(!!versionObject.value).toBeTruthy;
+    }
+  );
+
+  each([
+    '.',
+    '..',
+    ' . ',
+    '. ',
+    ' .',
+    ' . . ',
+    ' .. ',
+    ' .  ',
+    '-1.-1',
+    '-1',
+    '-1.-1.-1',
+    '..3',
+    '1..3',
+    '1..',
+    '.2.3',
+    '.2.x',
+    '*.',
+    '1.2.',
+    '1.2.-abc',
+    'a.b',
+    'a.b.c',
+    'a.b.c-preview',
+    ' 0 . 1 . 2 ',
+    'invalid'
+  ]).test(
+    "if invalid version: '%s' is supplied, it should throw",
+    async version => {
+      const dotnetVersionResolver = new installer.DotnetVersionResolver(
+        version
+      );
+
+      await expect(
+        async () => await dotnetVersionResolver.createDotNetVersion()
+      ).rejects.toThrow();
+    }
+  );
+
+  each(['3.1', '3.1.x', '3.1.*', '3.1.X']).test(
+    "if version: '%s' that can be resolved to 'channel' option is supplied, it should set quality flag to 'true' and type to 'channel' in version object",
+    async version => {
+      const dotnetVersionResolver = new installer.DotnetVersionResolver(
+        version
+      );
+      const versionObject = await dotnetVersionResolver.createDotNetVersion();
+
+      expect(versionObject.type.toLowerCase().includes('channel')).toBeTruthy;
+      expect(versionObject.qualityFlag).toBeTruthy;
+    }
+  );
+
+  each(['3.1.2', '3.1.0-preview1']).test(
+    "if version: '%s' that can be resolved to 'version' option is supplied, it should set quality flag to 'false' and type to 'version' in version object",
+    async version => {
+      const dotnetVersionResolver = new installer.DotnetVersionResolver(
+        version
+      );
+      const versionObject = await dotnetVersionResolver.createDotNetVersion();
+
+      expect(versionObject.type.toLowerCase().includes('version')).toBeTruthy;
+      expect(versionObject.qualityFlag).toBeFalsy;
+    }
+  );
+
+  each(['3.1.2', '3.1']).test(
+    'it should create proper line arguments for powershell/bash installation scripts',
+    async version => {
+      const dotnetVersionResolver = new installer.DotnetVersionResolver(
+        version
+      );
+      const versionObject = await dotnetVersionResolver.createDotNetVersion();
+      const windowsRegEx = new RegExp(/^-[VC]/);
+      const nonWindowsRegEx = new RegExp(/^--[vc]/);
+
+      if (IS_WINDOWS) {
+        expect(windowsRegEx.test(versionObject.type)).toBeTruthy;
+        expect(nonWindowsRegEx.test(versionObject.type)).toBeFalsy;
+      } else {
+        expect(nonWindowsRegEx.test(versionObject.type)).toBeTruthy;
+        expect(windowsRegEx.test(versionObject.type)).toBeFalsy;
+      }
+    }
+  );
+});
+
 function normalizeFileContents(contents: string): string {
   return contents
     .trim()
@@ -144,8 +267,11 @@ function normalizeFileContents(contents: string): string {
     .replace(new RegExp('\r', 'g'), '\n');
 }
 
-async function getDotnet(version: string): Promise<void> {
-  const dotnetInstaller = new installer.DotnetCoreInstaller(version);
+async function getDotnet(version: string, quality: string = ''): Promise<void> {
+  const dotnetInstaller = new installer.DotnetCoreInstaller(
+    version,
+    quality as QualityOptions
+  );
   await dotnetInstaller.installDotnet();
   installer.DotnetCoreInstaller.addToPath();
 }

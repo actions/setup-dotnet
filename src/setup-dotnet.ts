@@ -1,8 +1,18 @@
 import * as core from '@actions/core';
-import * as installer from './installer';
+import {DotnetCoreInstaller} from './installer';
 import * as fs from 'fs';
-import * as path from 'path';
+import path from 'path';
 import * as auth from './authutil';
+
+const qualityOptions = [
+  'daily',
+  'signed',
+  'validated',
+  'preview',
+  'ga'
+] as const;
+
+export type QualityOptions = typeof qualityOptions[number];
 
 export async function run() {
   try {
@@ -15,7 +25,7 @@ export async function run() {
     // If a valid version still can't be identified, nothing will be installed.
     // Proxy, auth, (etc) are still set up, even if no version is identified
     //
-    let versions = core.getMultilineInput('dotnet-version');
+    const versions = core.getMultilineInput('dotnet-version');
 
     const globalJsonFileInput = core.getInput('global-json-file');
     if (globalJsonFileInput) {
@@ -38,18 +48,21 @@ export async function run() {
     }
 
     if (versions.length) {
-      const includePrerelease: boolean = core.getBooleanInput(
-        'include-prerelease'
-      );
-      let dotnetInstaller!: installer.DotnetCoreInstaller;
-      for (const version of new Set<string>(versions)) {
-        dotnetInstaller = new installer.DotnetCoreInstaller(
-          version,
-          includePrerelease
+      const quality = core.getInput('dotnet-quality') as QualityOptions;
+
+      if (quality && !qualityOptions.includes(quality)) {
+        throw new Error(
+          `${quality} is not a supported value for 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`
         );
+      }
+
+      let dotnetInstaller: DotnetCoreInstaller;
+      const uniqueVersions = new Set<string>(versions);
+      for (const version of uniqueVersions) {
+        dotnetInstaller = new DotnetCoreInstaller(version, quality);
         await dotnetInstaller.installDotnet();
       }
-      installer.DotnetCoreInstaller.addToPath();
+      DotnetCoreInstaller.addToPath();
     }
 
     const sourceUrl: string = core.getInput('source-url');
@@ -59,7 +72,7 @@ export async function run() {
     }
 
     const matchersPath = path.join(__dirname, '..', '.github');
-    console.log(`##[add-matcher]${path.join(matchersPath, 'csc.json')}`);
+    core.info(`##[add-matcher]${path.join(matchersPath, 'csc.json')}`);
   } catch (error) {
     core.setFailed(error.message);
   }
