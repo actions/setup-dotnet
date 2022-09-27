@@ -141,6 +141,41 @@ steps:
 ```
 > **Note**: It's the only way to push a package to nuget.org feed for macOS/Linux machines due to API key config store limitations.
 
+# Outputs and environment variables
+
+## Outputs
+
+### `dotnet-version`
+
+Using **dotnet-version** output it's possible to get the installed by action .NET SDK version. 
+
+**Single version installation**
+
+In case of a single version installation, `dotnet-version` contains the version that is installed by the action.
+
+```yaml
+    - uses: actions/setup-dotnet@v3
+      id: cp310
+      with:
+        dotnet-version: 3.1.422
+    - run: echo '${{ steps.cp310.outputs.dotnet-version }}' # outputs 3.1.422
+```
+
+**Multiple version installation**
+
+In case of a multiple version installation, `dotnet-version` contains the latest version that is installed by the action.
+
+```yaml
+    - uses: actions/setup-dotnet@v3
+      id: cp310
+      with:
+        dotnet-version: | 
+          3.1.422
+          5.0.408
+    - run: echo '${{ steps.cp310.outputs.dotnet-version }}' # outputs 5.0.408
+```
+
+
 ## Environment variables
 
 Some environment variables may be necessary for your particular case or to improve logging. Some examples are listed below, but the full list with complete details can be found here: https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-environment-variables
