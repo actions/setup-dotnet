@@ -147,11 +147,11 @@ steps:
 
 ### `dotnet-version`
 
-Using **dotnet-version** output it's possible to get the installed by action .NET SDK version. 
+Using the **dotnet-version** output it's possible to get the installed by the action .NET SDK version. 
 
 **Single version installation**
 
-In case of a single version installation, `dotnet-version` contains the version that is installed by the action.
+In case of a single version installation, the `dotnet-version` output contains the version that is installed by the action.
 
 ```yaml
     - uses: actions/setup-dotnet@v3
@@ -163,7 +163,7 @@ In case of a single version installation, `dotnet-version` contains the version 
 
 **Multiple version installation**
 
-In case of a multiple version installation, `dotnet-version` contains the latest version that is installed by the action.
+In case of a multiple version installation, the `dotnet-version` output contains the latest version that is installed by the action.
 
 ```yaml
     - uses: actions/setup-dotnet@v3
@@ -174,7 +174,20 @@ In case of a multiple version installation, `dotnet-version` contains the latest
           5.0.408
     - run: echo '${{ steps.cp310.outputs.dotnet-version }}' # outputs 5.0.408
 ```
+**Installation from global.json**
 
+When the `dotnet-version` input is used along withthe `global-json-file` input, the `dotnet-version` output contains the version resolved from the `global.json`.
+
+```yaml
+    - uses: actions/setup-dotnet@v3
+      id: cp310
+      with:
+        dotnet-version: | 
+          3.1.422
+          5.0.408
+        global-json-file: "./global.json" # contains version 2.2.207
+    - run: echo '${{ steps.cp310.outputs.dotnet-version }}' # outputs 2.2.207
+```
 
 ## Environment variables
 
