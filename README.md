@@ -22,7 +22,7 @@ See [action.yml](action.yml)
 ```yaml
 steps:
 - uses: actions/checkout@v3
-- uses: actions/setup-dotnet@v3
+- uses: actions/setup-dotnet@v2.1.1
   with:
     dotnet-version: '3.1.x'
 - run: dotnet build <my project>
@@ -33,7 +33,7 @@ steps:
 steps:
 - uses: actions/checkout@v3
 - name: Setup dotnet
-  uses: actions/setup-dotnet@v3
+  uses: actions/setup-dotnet@v2.1.1
   with:
     dotnet-version: | 
       3.1.x
@@ -59,7 +59,7 @@ This input sets up the action to install the latest build of the specified quali
 ```yml
 steps:
 - uses: actions/checkout@v3
-- uses: actions/setup-dotnet@v3
+- uses: actions/setup-dotnet@v2.1.1
   with:
     dotnet-version: '6.0.x'
     dotnet-quality: 'preview'
@@ -74,7 +74,7 @@ steps:
 ```yml
 steps:
 - uses: actions/checkout@v3
-- uses: actions/setup-dotnet@v3
+- uses: actions/setup-dotnet@v2.1.1
   with:
     global-json-file: csharp/global.json
 - run: dotnet build <my project>
@@ -94,7 +94,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Setup dotnet
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v2.1.1
         with:
           dotnet-version: ${{ matrix.dotnet }}
       - run: dotnet build <my project>
@@ -105,7 +105,7 @@ jobs:
 ```yml
 steps:
 - uses: actions/checkout@v3
-- uses: actions/setup-dotnet@v3
+- uses: actions/setup-dotnet@v2.1.1
   with:
     dotnet-version: '3.1.x'
     source-url: https://nuget.pkg.github.com/<owner>/index.json
@@ -120,7 +120,7 @@ steps:
 
 ### Azure Artifacts
 ```yml
-- uses: actions/setup-dotnet@v3
+- uses: actions/setup-dotnet@v2.1.1
   with:
     source-url: https://pkgs.dev.azure.com/<your-organization>/_packaging/<your-feed-name>/nuget/v3/index.json
   env:
@@ -131,7 +131,7 @@ steps:
 
 ### nuget.org
 ```yml
-- uses: actions/setup-dotnet@v3
+- uses: actions/setup-dotnet@v2.1.1
   with:
     dotnet-version: 3.1.x
 - name: Publish the package to nuget.org
@@ -159,7 +159,7 @@ build:
     DOTNET_NOLOGO: true
   steps:
     - uses: actions/checkout@main
-    - uses: actions/setup-dotnet@v3
+    - uses: actions/setup-dotnet@v2.1.1
       with:
         dotnet-version: '3.1.x'
 ```
