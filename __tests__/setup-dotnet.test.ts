@@ -22,6 +22,7 @@ const tempDir = path.join(__dirname, 'runner', 'temp2');
 
 describe('setup-dotnet tests', () => {
   let getMultilineInputSpy = jest.spyOn(core, 'getMultilineInput');
+  let setOutputSpy = jest.spyOn(core, 'setOutput');
 
   beforeAll(async () => {
     process.env.RUNNER_TOOL_CACHE = toolDir;
@@ -65,8 +66,6 @@ describe('setup-dotnet tests', () => {
 
   it('Sets output with the installed version', async () => {
     const versions = ['3.1.201', '6.0.401'];
-
-    let setOutputSpy = jest.spyOn(core, 'getMultilineInput');
 
     getMultilineInputSpy.mockImplementation(() => {
       return versions;
