@@ -1,6 +1,6 @@
 {
   "name": "setup-dotnet",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "private": true,
   "description": "setup dotnet action",
   "main": "lib/setup-dotnet.js",
@@ -9,7 +9,7 @@
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts",
     "prepare": "husky install",
-    "test": "jest",
+    "test": "jest --coverage --config ./jest.config.js",
     "update-installers": "nwget https://dot.net/v1/dotnet-install.ps1 -O externals/install-dotnet.ps1 && nwget https://dot.net/v1/dotnet-install.sh -O externals/install-dotnet.sh"
   },
   "repository": {
@@ -24,10 +24,10 @@
   "author": "GitHub",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.6.0",
+    "@actions/core": "^1.9.1",
     "@actions/exec": "^1.0.4",
     "@actions/github": "^1.1.0",
-    "@actions/http-client": "^1.0.8",
+    "@actions/http-client": "^2.0.1",
     "@actions/io": "^1.0.2",
     "fast-xml-parser": "^3.15.1",
     "semver": "^6.3.0",
