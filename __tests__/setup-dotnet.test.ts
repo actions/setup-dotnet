@@ -64,7 +64,7 @@ describe('setup-dotnet tests', () => {
     }
   }, 400000);
 
-  it('Sets output with the installed version', async () => {
+  it('Sets output with the latest installed by action version', async () => {
     const versions = ['3.1.201', '6.0.401'];
 
     getMultilineInputSpy.mockImplementation(() => {
@@ -73,6 +73,6 @@ describe('setup-dotnet tests', () => {
 
     await setup.run();
 
-    expect(setOutputSpy).toBeCalledWith('dotnet-version', '3.1.201');
+    expect(setOutputSpy).toBeCalledWith('dotnet-version', '6.0.401');
   }, 400000);
 });
