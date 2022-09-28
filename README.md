@@ -176,7 +176,7 @@ In case of a multiple version installation, the `dotnet-version` output contains
 ```
 **Installation from global.json**
 
-When the `dotnet-version` input is used along withthe `global-json-file` input, the `dotnet-version` output contains the version resolved from the `global.json`.
+When the `dotnet-version` input is used along with the `global-json-file` input, the `dotnet-version` output contains the version resolved from the `global.json`.
 
 ```yaml
     - uses: actions/setup-dotnet@v3
