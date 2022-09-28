@@ -107,6 +107,15 @@ describe('DotnetCoreInstaller tests', () => {
     expect(process.env.PATH?.startsWith(toolDir)).toBe(true);
   }, 600000); //This needs some time to download on "slower" internet connections
 
+  it('Returns string with installed SDK version', async () => {
+    const version = '3.1.120';
+    let installedVersion: string;
+
+    installedVersion = await getDotnet(version);
+
+    expect(installedVersion).toBe('3.1.120');
+  }, 600000);
+
   it('Throws if no location contains correct dotnet version', async () => {
     await expect(async () => {
       await getDotnet('1000.0.0');
@@ -267,11 +276,15 @@ function normalizeFileContents(contents: string): string {
     .replace(new RegExp('\r', 'g'), '\n');
 }
 
-async function getDotnet(version: string, quality: string = ''): Promise<void> {
+async function getDotnet(
+  version: string,
+  quality: string = ''
+): Promise<string> {
   const dotnetInstaller = new installer.DotnetCoreInstaller(
     version,
     quality as QualityOptions
   );
-  await dotnetInstaller.installDotnet();
+  const installedVersion = await dotnetInstaller.installDotnet();
   installer.DotnetCoreInstaller.addToPath();
+  return installedVersion;
 }

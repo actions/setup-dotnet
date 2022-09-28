@@ -1,4 +1,5 @@
 import * as io from '@actions/io';
+import * as core from '@actions/core';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -20,6 +21,8 @@ if (IS_WINDOWS) {
 const tempDir = path.join(__dirname, 'runner', 'temp2');
 
 describe('setup-dotnet tests', () => {
+  let getMultilineInputSpy = jest.spyOn(core, 'getMultilineInput');
+
   beforeAll(async () => {
     process.env.RUNNER_TOOL_CACHE = toolDir;
     process.env.DOTNET_INSTALL_DIR = toolDir;
@@ -58,5 +61,19 @@ describe('setup-dotnet tests', () => {
     } else {
       expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
     }
+  }, 400000);
+
+  it('Sets output with the installed version', async () => {
+    const versions = ['3.1.201', '6.0.401'];
+
+    let setOutputSpy = jest.spyOn(core, 'getMultilineInput');
+
+    getMultilineInputSpy.mockImplementation(() => {
+      return versions;
+    });
+
+    await setup.run();
+
+    expect(setOutputSpy).toBeCalledWith('dotnet-version', '3.1.201');
   }, 400000);
 });
