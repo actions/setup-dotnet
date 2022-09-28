@@ -75,17 +75,15 @@ export async function run() {
     }
 
     const comparisonRange: string = globalJsonFileInput
-      ? versions.at(-1)!
+      ? versions[versions.length - 1]!
       : '*';
-
-    const includePrereleaseOption = {
-      includePrerelease: true
-    };
 
     const versionToOutput = semver.maxSatisfying(
       installedDotnetVersions,
       comparisonRange,
-      includePrereleaseOption
+      {
+        includePrerelease: true
+      }
     );
 
     core.setOutput('dotnet-version', versionToOutput);

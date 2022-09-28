@@ -484,12 +484,11 @@ function run() {
                 auth.configAuthentication(sourceUrl, configFile);
             }
             const comparisonRange = globalJsonFileInput
-                ? versions.at(-1)
+                ? versions[versions.length - 1]
                 : '*';
-            const includePrereleaseOption = {
+            const versionToOutput = semver_1.default.maxSatisfying(installedDotnetVersions, comparisonRange, {
                 includePrerelease: true
-            };
-            const versionToOutput = semver_1.default.maxSatisfying(installedDotnetVersions, comparisonRange, includePrereleaseOption);
+            });
             core.setOutput('dotnet-version', versionToOutput);
             const matchersPath = path_1.default.join(__dirname, '..', '.github');
             core.info(`##[add-matcher]${path_1.default.join(matchersPath, 'csc.json')}`);
