@@ -85,7 +85,7 @@ describe('setup-dotnet tests', () => {
     }
 
     inputs['dotnet-version'] = ['3.1.201', '6.0.401'];
-    inputs['global-json-file'] = globalJsonPath;
+    inputs['global-json-file'] = './global.json';
 
     getMultilineInputSpy.mockImplementation(input => inputs[input]);
 
