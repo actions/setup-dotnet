@@ -21,8 +21,11 @@ if (IS_WINDOWS) {
 const tempDir = path.join(__dirname, 'runner', 'temp2');
 
 describe('setup-dotnet tests', () => {
+  let getInputSpy = jest.spyOn(core, 'getInput');
   let getMultilineInputSpy = jest.spyOn(core, 'getMultilineInput');
   let setOutputSpy = jest.spyOn(core, 'setOutput');
+
+  let inputs = {} as any;
 
   beforeAll(async () => {
     process.env.RUNNER_TOOL_CACHE = toolDir;
@@ -64,15 +67,32 @@ describe('setup-dotnet tests', () => {
     }
   }, 400000);
 
-  it('Sets output with the latest installed by action version', async () => {
-    const versions = ['3.1.201', '6.0.401'];
+  it("Sets output with the latest installed by action version if global.json file isn't specified", async () => {
+    inputs['dotnet-version'] = ['3.1.201', '6.0.401'];
 
-    getMultilineInputSpy.mockImplementation(() => {
-      return versions;
-    });
+    getMultilineInputSpy.mockImplementation(input => inputs[input]);
 
     await setup.run();
 
     expect(setOutputSpy).toBeCalledWith('dotnet-version', '6.0.401');
+  }, 400000);
+
+  it("Sets output with the version specified in global.json, if it's present", async () => {
+    const globalJsonPath = path.join(process.cwd(), 'global.json');
+    const jsonContents = `{${os.EOL}"sdk": {${os.EOL}"version": "3.0.103"${os.EOL}}${os.EOL}}`;
+    if (!fs.existsSync(globalJsonPath)) {
+      fs.writeFileSync(globalJsonPath, jsonContents);
+    }
+
+    inputs['dotnet-version'] = ['3.1.201', '6.0.401'];
+    inputs['global-json-file'] = globalJsonPath;
+
+    getMultilineInputSpy.mockImplementation(input => inputs[input]);
+
+    getInputSpy.mockImplementation(input => inputs[input]);
+
+    await setup.run();
+
+    expect(setOutputSpy).toBeCalledWith('dotnet-version', '3.0.103');
   }, 400000);
 });
