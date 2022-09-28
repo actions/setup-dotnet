@@ -74,12 +74,21 @@ export async function run() {
       auth.configAuthentication(sourceUrl, configFile);
     }
 
-    core.setOutput(
-      'dotnet-version',
-      semver.maxSatisfying(installedDotnetVersions, '*', {
-        includePrerelease: true
-      })
+    const comparisonRange: string = globalJsonFileInput
+      ? versions.at(-1)!
+      : '*';
+
+    const includePrereleaseOption = {
+      includePrerelease: true
+    };
+
+    const versionToOutput = semver.maxSatisfying(
+      installedDotnetVersions,
+      comparisonRange,
+      includePrereleaseOption
     );
+
+    core.setOutput('dotnet-version', versionToOutput);
 
     const matchersPath = path.join(__dirname, '..', '.github');
     core.info(`##[add-matcher]${path.join(matchersPath, 'csc.json')}`);
