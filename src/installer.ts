@@ -214,7 +214,7 @@ export class DotnetCoreInstaller {
       // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
       scriptPath =
         (await io.which('pwsh', false)) || (await io.which('powershell', true));
-      scriptArguments = [...windowsDefaultOptions, scriptArguments.join(' ')];
+      scriptArguments = windowsDefaultOptions.concat(scriptArguments);
     } else {
       chmodSync(escapedScript, '777');
       scriptPath = await io.which(escapedScript, true);
