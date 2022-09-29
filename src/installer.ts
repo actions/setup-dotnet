@@ -4,9 +4,10 @@ import * as exec from '@actions/exec';
 import * as io from '@actions/io';
 import * as hc from '@actions/http-client';
 import {chmodSync} from 'fs';
+import {readdir} from 'fs/promises';
 import path from 'path';
 import semver from 'semver';
-import {IS_LINUX, IS_WINDOWS} from './utils';
+import {IS_LINUX, IS_WINDOWS, IS_MAC} from './utils';
 import {QualityOptions} from './setup-dotnet';
 
 export interface DotnetVersion {
@@ -116,6 +117,10 @@ export class DotnetCoreInstaller {
     'dotnet'
   );
   private static readonly installationDirectoryLinux = '/usr/share/dotnet';
+  private static readonly installationDirectoryMac = path.join(
+    process.env['HOME'] + '',
+    '.dotnet'
+  );
 
   static addToPath() {
     if (process.env['DOTNET_INSTALL_DIR']) {
@@ -136,10 +141,10 @@ export class DotnetCoreInstaller {
         );
       } else {
         // This is the default set in install-dotnet.sh
-        core.addPath(path.join(process.env['HOME'] + '', '.dotnet'));
+        core.addPath(DotnetCoreInstaller.installationDirectoryMac);
         core.exportVariable(
           'DOTNET_ROOT',
-          path.join(process.env['HOME'] + '', '.dotnet')
+          DotnetCoreInstaller.installationDirectoryMac
         );
       }
     }
@@ -229,6 +234,13 @@ export class DotnetCoreInstaller {
           DotnetCoreInstaller.installationDirectoryLinux
         );
       }
+
+      if (IS_MAC) {
+        scriptArguments.push(
+          '--install-dir',
+          DotnetCoreInstaller.installationDirectoryMac
+        );
+      }
     }
     const {exitCode, stdout} = await exec.getExecOutput(
       `"${scriptPath}"`,
@@ -239,26 +251,20 @@ export class DotnetCoreInstaller {
       throw new Error(`Failed to install dotnet ${exitCode}. ${stdout}`);
     }
 
-    return this.outputDotnetVersion(stdout);
+    return this.outputDotnetVersion(
+      dotnetVersion.value,
+      scriptArguments[scriptArguments.length - 1]
+    );
   }
 
-  private outputDotnetVersion(logs: string): string {
-    let resolvedVersion: string = '';
-    const installedByScriptPattern = /Installed version is (?<version>\d+\.\d+\.\d.*)$/m;
-    const preinstalledOnRunnerPattern = /.NET Core SDK with version '(?<version>\d+\.\d+\.\d.*)'/m;
+  private async outputDotnetVersion(
+    version,
+    installationPath
+  ): Promise<string> {
+    let versionsOnRunner: string[] = await readdir(installationPath);
 
-    const regExpressions: RegExp[] = [
-      installedByScriptPattern,
-      preinstalledOnRunnerPattern
-    ];
+    let installedVersion = semver.maxSatisfying(versionsOnRunner, version)!;
 
-    for (let regExp of regExpressions) {
-      if (regExp.test(logs)) {
-        resolvedVersion = logs.match(regExp)!.groups!.version;
-        break;
-      }
-    }
-
-    return resolvedVersion;
+    return installedVersion;
   }
 }
