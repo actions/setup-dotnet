@@ -263,7 +263,7 @@ export class DotnetCoreInstaller {
     installationPath
   ): Promise<string> {
     let versionsOnRunner: string[] = await readdir(
-      path.join(installationPath, 'sdk')
+      path.join(installationPath.replace(/'/g, ''), 'sdk')
     );
 
     let installedVersion = semver.maxSatisfying(versionsOnRunner, version)!;
