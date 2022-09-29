@@ -210,7 +210,7 @@ export class DotnetCoreInstaller {
 
       scriptArguments.push(
         '-InstallDir',
-        DotnetCoreInstaller.installationDirectoryWindows
+        `'${DotnetCoreInstaller.installationDirectoryWindows}'`
       );
       // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
       scriptPath =
