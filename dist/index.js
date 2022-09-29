@@ -366,7 +366,9 @@ class DotnetCoreInstaller {
     outputDotnetVersion(version, installationPath) {
         return __awaiter(this, void 0, void 0, function* () {
             let versionsOnRunner = yield promises_1.readdir(path_1.default.join(installationPath.replace(/'/g, ''), 'sdk'));
-            let installedVersion = semver_1.default.maxSatisfying(versionsOnRunner, version);
+            let installedVersion = semver_1.default.maxSatisfying(versionsOnRunner, version, {
+                includePrerelease: true
+            });
             return installedVersion;
         });
     }

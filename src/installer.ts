@@ -266,7 +266,9 @@ export class DotnetCoreInstaller {
       path.join(installationPath.replace(/'/g, ''), 'sdk')
     );
 
-    let installedVersion = semver.maxSatisfying(versionsOnRunner, version)!;
+    let installedVersion = semver.maxSatisfying(versionsOnRunner, version, {
+      includePrerelease: true
+    })!;
 
     return installedVersion;
   }
