@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import * as xmlbuilder from 'xmlbuilder';
-import * as xmlParser from 'fast-xml-parser';
+import {XMLParser} from 'fast-xml-parser';
 
 export function configAuthentication(
   feedUrl: string,
@@ -66,7 +66,12 @@ function writeFeedToFile(
   if (fs.existsSync(existingFileLocation)) {
     // get key from existing NuGet.config so NuGet/dotnet can match credentials
     const curContents: string = fs.readFileSync(existingFileLocation, 'utf8');
-    const json = xmlParser.parse(curContents, {ignoreAttributes: false});
+
+    const parserOptions = {
+      ignoreAttributes: false
+    };
+    const parser = new XMLParser(parserOptions);
+    const json = parser.parse(curContents);
 
     if (typeof json.configuration === 'undefined') {
       throw new Error(`The provided NuGet.config seems invalid.`);
