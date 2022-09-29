@@ -189,6 +189,7 @@ const exec = __importStar(__nccwpck_require__(1514));
 const io = __importStar(__nccwpck_require__(7436));
 const hc = __importStar(__nccwpck_require__(6255));
 const fs_1 = __nccwpck_require__(7147);
+const promises_1 = __nccwpck_require__(3292);
 const path_1 = __importDefault(__nccwpck_require__(1017));
 const semver_1 = __importDefault(__nccwpck_require__(5911));
 const utils_1 = __nccwpck_require__(918);
@@ -284,8 +285,8 @@ class DotnetCoreInstaller {
             }
             else {
                 // This is the default set in install-dotnet.sh
-                core.addPath(path_1.default.join(process.env['HOME'] + '', '.dotnet'));
-                core.exportVariable('DOTNET_ROOT', path_1.default.join(process.env['HOME'] + '', '.dotnet'));
+                core.addPath(DotnetCoreInstaller.installationDirectoryMac);
+                core.exportVariable('DOTNET_ROOT', DotnetCoreInstaller.installationDirectoryMac);
             }
         }
     }
@@ -332,11 +333,11 @@ class DotnetCoreInstaller {
                 if (process.env['no_proxy'] != null) {
                     scriptArguments.push(`-ProxyBypassList ${process.env['no_proxy']}`);
                 }
-                scriptArguments.push(`-InstallDir '${DotnetCoreInstaller.installationDirectoryWindows}'`);
+                scriptArguments.push('-InstallDir', `'${DotnetCoreInstaller.installationDirectoryWindows}'`);
                 // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
                 scriptPath =
                     (yield io.which('pwsh', false)) || (yield io.which('powershell', true));
-                scriptArguments = [...windowsDefaultOptions, scriptArguments.join(' ')];
+                scriptArguments = windowsDefaultOptions.concat(scriptArguments);
             }
             else {
                 fs_1.chmodSync(escapedScript, '777');
@@ -351,17 +352,31 @@ class DotnetCoreInstaller {
                 if (utils_1.IS_LINUX) {
                     scriptArguments.push('--install-dir', DotnetCoreInstaller.installationDirectoryLinux);
                 }
+                if (utils_1.IS_MAC) {
+                    scriptArguments.push('--install-dir', DotnetCoreInstaller.installationDirectoryMac);
+                }
             }
             const { exitCode, stdout } = yield exec.getExecOutput(`"${scriptPath}"`, scriptArguments, { ignoreReturnCode: true });
             if (exitCode) {
                 throw new Error(`Failed to install dotnet ${exitCode}. ${stdout}`);
             }
+            return this.outputDotnetVersion(dotnetVersion.value, scriptArguments[scriptArguments.length - 1]);
+        });
+    }
+    outputDotnetVersion(version, installationPath) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let versionsOnRunner = yield promises_1.readdir(path_1.default.join(installationPath.replace(/'/g, ''), 'sdk'));
+            let installedVersion = semver_1.default.maxSatisfying(versionsOnRunner, version, {
+                includePrerelease: true
+            });
+            return installedVersion;
         });
     }
 }
 exports.DotnetCoreInstaller = DotnetCoreInstaller;
 DotnetCoreInstaller.installationDirectoryWindows = path_1.default.join(process.env['PROGRAMFILES'] + '', 'dotnet');
 DotnetCoreInstaller.installationDirectoryLinux = '/usr/share/dotnet';
+DotnetCoreInstaller.installationDirectoryMac = path_1.default.join(process.env['HOME'] + '', '.dotnet');
 
 
 /***/ }),
@@ -408,6 +423,7 @@ const core = __importStar(__nccwpck_require__(2186));
 const installer_1 = __nccwpck_require__(1480);
 const fs = __importStar(__nccwpck_require__(7147));
 const path_1 = __importDefault(__nccwpck_require__(1017));
+const semver_1 = __importDefault(__nccwpck_require__(5911));
 const auth = __importStar(__nccwpck_require__(8527));
 const qualityOptions = [
     'daily',
@@ -429,6 +445,7 @@ function run() {
             // Proxy, auth, (etc) are still set up, even if no version is identified
             //
             const versions = core.getMultilineInput('dotnet-version');
+            const installedDotnetVersions = [];
             const globalJsonFileInput = core.getInput('global-json-file');
             if (globalJsonFileInput) {
                 const globalJsonPath = path_1.default.join(process.cwd(), globalJsonFileInput);
@@ -454,7 +471,8 @@ function run() {
                 const uniqueVersions = new Set(versions);
                 for (const version of uniqueVersions) {
                     dotnetInstaller = new installer_1.DotnetCoreInstaller(version, quality);
-                    yield dotnetInstaller.installDotnet();
+                    const installedVersion = yield dotnetInstaller.installDotnet();
+                    installedDotnetVersions.push(installedVersion);
                 }
                 installer_1.DotnetCoreInstaller.addToPath();
             }
@@ -463,6 +481,13 @@ function run() {
             if (sourceUrl) {
                 auth.configAuthentication(sourceUrl, configFile);
             }
+            const comparisonRange = globalJsonFileInput
+                ? versions[versions.length - 1]
+                : '*';
+            const versionToOutput = semver_1.default.maxSatisfying(installedDotnetVersions, comparisonRange, {
+                includePrerelease: true
+            });
+            core.setOutput('dotnet-version', versionToOutput);
             const matchersPath = path_1.default.join(__dirname, '..', '.github');
             core.info(`##[add-matcher]${path_1.default.join(matchersPath, 'csc.json')}`);
         }
@@ -498,9 +523,10 @@ run();
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.IS_LINUX = exports.IS_WINDOWS = void 0;
+exports.IS_MAC = exports.IS_LINUX = exports.IS_WINDOWS = void 0;
 exports.IS_WINDOWS = process.platform === 'win32';
 exports.IS_LINUX = process.platform === 'linux';
+exports.IS_MAC = process.platform === 'darwin';
 
 
 /***/ }),
@@ -25685,6 +25711,14 @@ module.exports = require("events");
 
 "use strict";
 module.exports = require("fs");
+
+/***/ }),
+
+/***/ 3292:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("fs/promises");
 
 /***/ }),
 
