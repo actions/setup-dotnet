@@ -2,8 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-import * as xmlbuilder from 'xmlbuilder';
-import {XMLParser} from 'fast-xml-parser';
+import {XMLParser, XMLBuilder} from 'fast-xml-parser';
 
 export function configAuthentication(
   feedUrl: string,
@@ -49,7 +48,6 @@ function writeFeedToFile(
   core.info(
     `dotnet-auth: Finding any source references in ${existingFileLocation}, writing a new temporary configuration file with credentials to ${tempFileLocation}`
   );
-  let xml: xmlbuilder.XMLElement;
   let sourceKeys: string[] = [];
   let owner: string = core.getInput('owner');
   let sourceUrl: string = feedUrl;
@@ -103,24 +101,50 @@ function writeFeedToFile(
     }
   }
 
-  xml = xmlbuilder
-    .create('configuration')
-    .ele('config')
-    .ele('add', {key: 'defaultPushSource', value: sourceUrl})
-    .up()
-    .up();
+  const xmlSource: any[] = [
+    {
+      '?xml version="1.0"': [
+        {
+          '#text': ''
+        }
+      ]
+    },
+    {
+      configuration: [
+        {
+          config: [
+            {
+              add: [],
+              ':@': {
+                '@_key': 'defaultPushSource',
+                '@_value': sourceUrl
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ];
 
   if (!sourceKeys.length) {
     let keystring = 'Source';
-    xml = xml
-      .ele('packageSources')
-      .ele('add', {key: keystring, value: sourceUrl})
-      .up()
-      .up();
+
+    xmlSource[1].configuration.push({
+      packageSources: [
+        {
+          add: [],
+          ':@': {
+            '@_key': keystring,
+            '@_value': sourceUrl
+          }
+        }
+      ]
+    });
+
     sourceKeys.push(keystring);
   }
-  xml = xml.ele('packageSourceCredentials');
 
+  const packageSourceCredentials: any[] = [];
   sourceKeys.forEach(key => {
     if (!isValidKey(key)) {
       throw new Error(
@@ -128,16 +152,24 @@ function writeFeedToFile(
       );
     }
 
-    xml = xml
-      .ele(key)
-      .ele('add', {key: 'Username', value: owner})
-      .up()
-      .ele('add', {
-        key: 'ClearTextPassword',
-        value: process.env.NUGET_AUTH_TOKEN
-      })
-      .up()
-      .up();
+    packageSourceCredentials.push({
+      [key]: [
+        {
+          add: [],
+          ':@': {
+            '@_key': 'Username',
+            '@_value': owner
+          }
+        },
+        {
+          add: [],
+          ':@': {
+            '@_key': 'ClearTextPassword',
+            '@_value': process.env.NUGET_AUTH_TOKEN
+          }
+        }
+      ]
+    });
   });
 
   // If NuGet fixes itself such that on Linux it can look for environment variables in the config file (it doesn't seem to work today),
@@ -146,6 +178,18 @@ function writeFeedToFile(
   //             ? '%NUGET_AUTH_TOKEN%'
   //             : '$NUGET_AUTH_TOKEN'
 
-  const output = xml.end({pretty: true});
+  const xmlBuilderOptions = {
+    format: true,
+    ignoreAttributes: false,
+    preserveOrder: true,
+    allowBooleanAttributes: true,
+    suppressBooleanAttributes: true,
+    suppressEmptyNode: true
+  };
+
+  const builder = new XMLBuilder(xmlBuilderOptions);
+
+  const output = builder.build(xmlSource);
+
   fs.writeFileSync(tempFileLocation, output);
 }
