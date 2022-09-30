@@ -170,6 +170,10 @@ export class DotnetCoreInstaller {
   }
 
   public async installDotnet(): Promise<string> {
+    const dotnetInstallDir = process.env['DOTNET_INSTALL_DIR'];
+    if (dotnetInstallDir) {
+      core.debug(`DOTNET_INSTALL_DIR is set up to ${dotnetInstallDir}`);
+    }
     const windowsDefaultOptions = [
       '-NoLogo',
       '-Sta',

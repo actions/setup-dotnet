@@ -301,6 +301,10 @@ class DotnetCoreInstaller {
     }
     installDotnet() {
         return __awaiter(this, void 0, void 0, function* () {
+            const dotnetInstallDir = process.env['DOTNET_INSTALL_DIR'];
+            if (dotnetInstallDir) {
+                core.debug(`DOTNET_INSTALL_DIR is set up to ${dotnetInstallDir}`);
+            }
             const windowsDefaultOptions = [
                 '-NoLogo',
                 '-Sta',
