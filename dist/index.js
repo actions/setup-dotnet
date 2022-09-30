@@ -178,6 +178,7 @@ function writeFeedToFile(feedUrl, existingFileLocation, tempFileLocation) {
     };
     const builder = new fast_xml_parser_1.XMLBuilder(xmlBuilderOptions);
     const output = builder.build(xmlSource);
+    core.debug(output);
     fs.writeFileSync(tempFileLocation, output);
 }
 
