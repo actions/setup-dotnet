@@ -191,5 +191,7 @@ function writeFeedToFile(
 
   const output = builder.build(xmlSource);
 
+  core.debug(output)
+
   fs.writeFileSync(tempFileLocation, output);
 }
