@@ -337,7 +337,7 @@ class DotnetCoreInstaller {
                 if (process.env['no_proxy'] != null) {
                     scriptArguments.push(`-ProxyBypassList ${process.env['no_proxy']}`);
                 }
-                if (!process.env['DOTNET_INSTALL_DIR']) {
+                if (!dotnetInstallDir) {
                     scriptArguments.push('-InstallDir', `'${DotnetCoreInstaller.installationDirectoryWindows}'`);
                 }
                 // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
@@ -355,7 +355,7 @@ class DotnetCoreInstaller {
                 if (this.quality) {
                     this.setQuality(dotnetVersion, scriptArguments);
                 }
-                if (!process.env['DOTNET_INSTALL_DIR']) {
+                if (!dotnetInstallDir) {
                     scriptArguments.push('--install-dir', utils_1.IS_LINUX
                         ? DotnetCoreInstaller.installationDirectoryLinux
                         : DotnetCoreInstaller.installationDirectoryMac);
@@ -365,8 +365,8 @@ class DotnetCoreInstaller {
             if (exitCode) {
                 throw new Error(`Failed to install dotnet ${exitCode}. ${stdout}`);
             }
-            return this.outputDotnetVersion(dotnetVersion.value, process.env['DOTNET_INSTALL_DIR']
-                ? process.env['DOTNET_INSTALL_DIR']
+            return this.outputDotnetVersion(dotnetVersion.value, dotnetInstallDir
+                ? dotnetInstallDir
                 : scriptArguments[scriptArguments.length - 1]);
         });
     }

@@ -212,7 +212,7 @@ export class DotnetCoreInstaller {
         scriptArguments.push(`-ProxyBypassList ${process.env['no_proxy']}`);
       }
 
-      if (!process.env['DOTNET_INSTALL_DIR']) {
+      if (!dotnetInstallDir) {
         scriptArguments.push(
           '-InstallDir',
           `'${DotnetCoreInstaller.installationDirectoryWindows}'`
@@ -235,7 +235,7 @@ export class DotnetCoreInstaller {
         this.setQuality(dotnetVersion, scriptArguments);
       }
 
-      if (!process.env['DOTNET_INSTALL_DIR']) {
+      if (!dotnetInstallDir) {
         scriptArguments.push(
           '--install-dir',
           IS_LINUX
@@ -255,8 +255,8 @@ export class DotnetCoreInstaller {
 
     return this.outputDotnetVersion(
       dotnetVersion.value,
-      process.env['DOTNET_INSTALL_DIR']
-        ? process.env['DOTNET_INSTALL_DIR']
+      dotnetInstallDir
+        ? dotnetInstallDir
         : scriptArguments[scriptArguments.length - 1]
     );
   }
