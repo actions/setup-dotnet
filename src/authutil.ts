@@ -193,7 +193,7 @@ function writeFeedToFile(
 
   const builder = new XMLBuilder(xmlBuilderOptions);
 
-  const output = builder.build(xmlSource);
+  const output = builder.build(xmlSource).trim();
 
   core.debug(output);
 
