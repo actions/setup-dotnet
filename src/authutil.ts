@@ -103,11 +103,14 @@ function writeFeedToFile(
 
   const xmlSource: any[] = [
     {
-      '?xml version="1.0"': [
+      '?xml': [
         {
           '#text': ''
         }
-      ]
+      ],
+      ':@': {
+        '@_version': '1.0'
+      }
     },
     {
       configuration: [
@@ -176,12 +179,6 @@ function writeFeedToFile(
     packageSourceCredentials
   });
 
-  // If NuGet fixes itself such that on Linux it can look for environment variables in the config file (it doesn't seem to work today),
-  // use this for the value above
-  //           process.platform == 'win32'
-  //             ? '%NUGET_AUTH_TOKEN%'
-  //             : '$NUGET_AUTH_TOKEN'
-
   const xmlBuilderOptions = {
     format: true,
     ignoreAttributes: false,
@@ -194,8 +191,6 @@ function writeFeedToFile(
   const builder = new XMLBuilder(xmlBuilderOptions);
 
   const output = builder.build(xmlSource).trim();
-
-  core.debug(output);
 
   fs.writeFileSync(tempFileLocation, output);
 }
