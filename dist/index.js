@@ -333,7 +333,9 @@ class DotnetCoreInstaller {
                 if (process.env['no_proxy'] != null) {
                     scriptArguments.push(`-ProxyBypassList ${process.env['no_proxy']}`);
                 }
-                scriptArguments.push('-InstallDir', `'${DotnetCoreInstaller.installationDirectoryWindows}'`);
+                if (!process.env['DOTNET_INSTALL_DIR']) {
+                    scriptArguments.push('-InstallDir', `'${DotnetCoreInstaller.installationDirectoryWindows}'`);
+                }
                 // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
                 scriptPath =
                     (yield io.which('pwsh', false)) || (yield io.which('powershell', true));
@@ -349,18 +351,19 @@ class DotnetCoreInstaller {
                 if (this.quality) {
                     this.setQuality(dotnetVersion, scriptArguments);
                 }
-                if (utils_1.IS_LINUX) {
-                    scriptArguments.push('--install-dir', DotnetCoreInstaller.installationDirectoryLinux);
-                }
-                if (utils_1.IS_MAC) {
-                    scriptArguments.push('--install-dir', DotnetCoreInstaller.installationDirectoryMac);
+                if (!process.env['DOTNET_INSTALL_DIR']) {
+                    scriptArguments.push('--install-dir', utils_1.IS_LINUX
+                        ? DotnetCoreInstaller.installationDirectoryLinux
+                        : DotnetCoreInstaller.installationDirectoryMac);
                 }
             }
             const { exitCode, stdout } = yield exec.getExecOutput(`"${scriptPath}"`, scriptArguments, { ignoreReturnCode: true });
             if (exitCode) {
                 throw new Error(`Failed to install dotnet ${exitCode}. ${stdout}`);
             }
-            return this.outputDotnetVersion(dotnetVersion.value, scriptArguments[scriptArguments.length - 1]);
+            return this.outputDotnetVersion(dotnetVersion.value, process.env['DOTNET_INSTALL_DIR']
+                ? process.env['DOTNET_INSTALL_DIR']
+                : scriptArguments[scriptArguments.length - 1]);
         });
     }
     outputDotnetVersion(version, installationPath) {
@@ -523,10 +526,9 @@ run();
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.IS_MAC = exports.IS_LINUX = exports.IS_WINDOWS = void 0;
+exports.IS_LINUX = exports.IS_WINDOWS = void 0;
 exports.IS_WINDOWS = process.platform === 'win32';
 exports.IS_LINUX = process.platform === 'linux';
-exports.IS_MAC = process.platform === 'darwin';
 
 
 /***/ }),

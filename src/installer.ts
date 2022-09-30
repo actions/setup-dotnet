@@ -7,7 +7,7 @@ import {chmodSync} from 'fs';
 import {readdir} from 'fs/promises';
 import path from 'path';
 import semver from 'semver';
-import {IS_LINUX, IS_WINDOWS, IS_MAC} from './utils';
+import {IS_LINUX, IS_WINDOWS} from './utils';
 import {QualityOptions} from './setup-dotnet';
 
 export interface DotnetVersion {
@@ -208,10 +208,12 @@ export class DotnetCoreInstaller {
         scriptArguments.push(`-ProxyBypassList ${process.env['no_proxy']}`);
       }
 
-      scriptArguments.push(
-        '-InstallDir',
-        `'${DotnetCoreInstaller.installationDirectoryWindows}'`
-      );
+      if (!process.env['DOTNET_INSTALL_DIR']) {
+        scriptArguments.push(
+          '-InstallDir',
+          `'${DotnetCoreInstaller.installationDirectoryWindows}'`
+        );
+      }
       // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
       scriptPath =
         (await io.which('pwsh', false)) || (await io.which('powershell', true));
@@ -229,17 +231,12 @@ export class DotnetCoreInstaller {
         this.setQuality(dotnetVersion, scriptArguments);
       }
 
-      if (IS_LINUX) {
+      if (!process.env['DOTNET_INSTALL_DIR']) {
         scriptArguments.push(
           '--install-dir',
-          DotnetCoreInstaller.installationDirectoryLinux
-        );
-      }
-
-      if (IS_MAC) {
-        scriptArguments.push(
-          '--install-dir',
-          DotnetCoreInstaller.installationDirectoryMac
+          IS_LINUX
+            ? DotnetCoreInstaller.installationDirectoryLinux
+            : DotnetCoreInstaller.installationDirectoryMac
         );
       }
     }
@@ -254,7 +251,9 @@ export class DotnetCoreInstaller {
 
     return this.outputDotnetVersion(
       dotnetVersion.value,
-      scriptArguments[scriptArguments.length - 1]
+      process.env['DOTNET_INSTALL_DIR']
+        ? process.env['DOTNET_INSTALL_DIR']
+        : scriptArguments[scriptArguments.length - 1]
     );
   }
 
