@@ -237,6 +237,60 @@ jobs:
             $version = & dotnet --version
             Write-Host "Installed version: $version"
             if (-not ($version.Contains("preview") -or $version.Contains("rc"))) { throw "Unexpected version" }
+  
+  test-dotnet-version-output-during-single-version-installation:
+      runs-on: ${{ matrix.operating-system }}
+      strategy:
+        fail-fast: false
+        matrix:
+          operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v3
+        - name: Clear toolcache
+          shell: pwsh
+          run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+               
+        - name: Setup dotnet 6.0.401
+          uses: ./
+          id: step1
+          with:
+            dotnet-version: "6.0.401"
+
+        - name: Verify value of the dotnet-version output
+          shell: pwsh
+          run: |
+            $version = & dotnet --version
+            Write-Host "Installed version: $version"
+            if (-not ($version -eq '${{steps.step1.outputs.dotnet-version}}')) { throw "Unexpected output value" }
+  
+  test-dotnet-version-output-during-multiple-version-installation:
+      runs-on: ${{ matrix.operating-system }}
+      strategy:
+        fail-fast: false
+        matrix:
+          operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v3
+        - name: Clear toolcache
+          shell: pwsh
+          run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+               
+        - name: Setup dotnet 6.0.401, 5.0.408, 7.0.100-rc.1.22431.12
+          uses: ./
+          id: step2
+          with:
+            dotnet-version: |
+              7.0.100-rc.1.22431.12
+              6.0.401
+              5.0.408
+
+        - name: Verify value of the dotnet-version output
+          shell: pwsh
+          run: |
+            $version = "7.0.100-rc.1.22431.12"
+            if (-not ($version -eq '${{steps.step2.outputs.dotnet-version}}')) { throw "Unexpected output value" }
 
   test-proxy:
     runs-on: ubuntu-latest
