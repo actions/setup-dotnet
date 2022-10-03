@@ -361,7 +361,11 @@ class DotnetCoreInstaller {
                         : DotnetCoreInstaller.installationDirectoryMac);
                 }
             }
-            const { exitCode, stdout } = yield exec.getExecOutput(`"${scriptPath}"`, scriptArguments, { ignoreReturnCode: true });
+            const getExecOutputOptions = {
+                ignoreReturnCode: true,
+                env: process.env
+            };
+            const { exitCode, stdout } = yield exec.getExecOutput(`"${scriptPath}"`, scriptArguments, getExecOutputOptions);
             if (exitCode) {
                 throw new Error(`Failed to install dotnet ${exitCode}. ${stdout}`);
             }
