@@ -301,10 +301,6 @@ class DotnetCoreInstaller {
     }
     installDotnet() {
         return __awaiter(this, void 0, void 0, function* () {
-            const dotnetInstallDir = process.env['DOTNET_INSTALL_DIR'];
-            if (dotnetInstallDir) {
-                core.debug(`DOTNET_INSTALL_DIR is set up to ${dotnetInstallDir}`);
-            }
             const windowsDefaultOptions = [
                 '-NoLogo',
                 '-Sta',
@@ -337,10 +333,10 @@ class DotnetCoreInstaller {
                 if (process.env['no_proxy'] != null) {
                     scriptArguments.push(`-ProxyBypassList ${process.env['no_proxy']}`);
                 }
-                if (!dotnetInstallDir) {
-                    scriptArguments.push('-InstallDir', `'${DotnetCoreInstaller.installationDirectoryWindows}'`);
+                if (!process.env['DOTNET_INSTALL_DIR']) {
+                    process.env['DOTNET_INSTALL_DIR'] =
+                        DotnetCoreInstaller.installationDirectoryWindows;
                 }
-                // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
                 scriptPath =
                     (yield io.which('pwsh', false)) || (yield io.which('powershell', true));
                 scriptArguments = windowsDefaultOptions.concat(scriptArguments);
@@ -355,12 +351,13 @@ class DotnetCoreInstaller {
                 if (this.quality) {
                     this.setQuality(dotnetVersion, scriptArguments);
                 }
-                if (!dotnetInstallDir) {
-                    scriptArguments.push('--install-dir', utils_1.IS_LINUX
+                if (!process.env['DOTNET_INSTALL_DIR']) {
+                    process.env['DOTNET_INSTALL_DIR'] = utils_1.IS_LINUX
                         ? DotnetCoreInstaller.installationDirectoryLinux
-                        : DotnetCoreInstaller.installationDirectoryMac);
+                        : DotnetCoreInstaller.installationDirectoryMac;
                 }
             }
+            // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
             const getExecOutputOptions = {
                 ignoreReturnCode: true,
                 env: process.env
@@ -369,9 +366,7 @@ class DotnetCoreInstaller {
             if (exitCode) {
                 throw new Error(`Failed to install dotnet ${exitCode}. ${stdout}`);
             }
-            return this.outputDotnetVersion(dotnetVersion.value, dotnetInstallDir
-                ? dotnetInstallDir
-                : scriptArguments[scriptArguments.length - 1]);
+            return this.outputDotnetVersion(dotnetVersion.value, process.env['DOTNET_INSTALL_DIR']);
         });
     }
     outputDotnetVersion(version, installationPath) {

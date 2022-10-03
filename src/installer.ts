@@ -170,10 +170,6 @@ export class DotnetCoreInstaller {
   }
 
   public async installDotnet(): Promise<string> {
-    const dotnetInstallDir = process.env['DOTNET_INSTALL_DIR'];
-    if (dotnetInstallDir) {
-      core.debug(`DOTNET_INSTALL_DIR is set up to ${dotnetInstallDir}`);
-    }
     const windowsDefaultOptions = [
       '-NoLogo',
       '-Sta',
@@ -212,13 +208,11 @@ export class DotnetCoreInstaller {
         scriptArguments.push(`-ProxyBypassList ${process.env['no_proxy']}`);
       }
 
-      if (!dotnetInstallDir) {
-        scriptArguments.push(
-          '-InstallDir',
-          `'${DotnetCoreInstaller.installationDirectoryWindows}'`
-        );
+      if (!process.env['DOTNET_INSTALL_DIR']) {
+        process.env['DOTNET_INSTALL_DIR'] =
+          DotnetCoreInstaller.installationDirectoryWindows;
       }
-      // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
+
       scriptPath =
         (await io.which('pwsh', false)) || (await io.which('powershell', true));
       scriptArguments = windowsDefaultOptions.concat(scriptArguments);
@@ -235,16 +229,13 @@ export class DotnetCoreInstaller {
         this.setQuality(dotnetVersion, scriptArguments);
       }
 
-      if (!dotnetInstallDir) {
-        scriptArguments.push(
-          '--install-dir',
-          IS_LINUX
-            ? DotnetCoreInstaller.installationDirectoryLinux
-            : DotnetCoreInstaller.installationDirectoryMac
-        );
+      if (!process.env['DOTNET_INSTALL_DIR']) {
+        process.env['DOTNET_INSTALL_DIR'] = IS_LINUX
+          ? DotnetCoreInstaller.installationDirectoryLinux
+          : DotnetCoreInstaller.installationDirectoryMac;
       }
     }
-
+    // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
     const getExecOutputOptions = {
       ignoreReturnCode: true,
       env: process.env as {string: string}
@@ -260,9 +251,7 @@ export class DotnetCoreInstaller {
 
     return this.outputDotnetVersion(
       dotnetVersion.value,
-      dotnetInstallDir
-        ? dotnetInstallDir
-        : scriptArguments[scriptArguments.length - 1]
+      process.env['DOTNET_INSTALL_DIR']
     );
   }
 
