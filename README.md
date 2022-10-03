@@ -205,7 +205,7 @@ Some environment variables may be necessary for your particular case or to impro
 build:
   runs-on: ubuntu-latest
   env:
-    DOTNET_INSTALL_DIR: "some/specific/directory"
+    DOTNET_INSTALL_DIR: "path/to/directory"
   steps:
     - uses: actions/checkout@main
     - uses: actions/setup-dotnet@v3
