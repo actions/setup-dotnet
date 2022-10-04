@@ -7,7 +7,7 @@ import {chmodSync} from 'fs';
 import {readdir} from 'fs/promises';
 import path from 'path';
 import semver from 'semver';
-import {IS_LINUX, IS_WINDOWS, IS_MAC} from './utils';
+import {IS_LINUX, IS_WINDOWS} from './utils';
 import {QualityOptions} from './setup-dotnet';
 
 export interface DotnetVersion {
@@ -208,11 +208,11 @@ export class DotnetCoreInstaller {
         scriptArguments.push(`-ProxyBypassList ${process.env['no_proxy']}`);
       }
 
-      scriptArguments.push(
-        '-InstallDir',
-        `'${DotnetCoreInstaller.installationDirectoryWindows}'`
-      );
-      // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
+      if (!process.env['DOTNET_INSTALL_DIR']) {
+        process.env['DOTNET_INSTALL_DIR'] =
+          DotnetCoreInstaller.installationDirectoryWindows;
+      }
+
       scriptPath =
         (await io.which('pwsh', false)) || (await io.which('powershell', true));
       scriptArguments = windowsDefaultOptions.concat(scriptArguments);
@@ -229,24 +229,21 @@ export class DotnetCoreInstaller {
         this.setQuality(dotnetVersion, scriptArguments);
       }
 
-      if (IS_LINUX) {
-        scriptArguments.push(
-          '--install-dir',
-          DotnetCoreInstaller.installationDirectoryLinux
-        );
-      }
-
-      if (IS_MAC) {
-        scriptArguments.push(
-          '--install-dir',
-          DotnetCoreInstaller.installationDirectoryMac
-        );
+      if (!process.env['DOTNET_INSTALL_DIR']) {
+        process.env['DOTNET_INSTALL_DIR'] = IS_LINUX
+          ? DotnetCoreInstaller.installationDirectoryLinux
+          : DotnetCoreInstaller.installationDirectoryMac;
       }
     }
+    // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
+    const getExecOutputOptions = {
+      ignoreReturnCode: true,
+      env: process.env as {string: string}
+    };
     const {exitCode, stdout} = await exec.getExecOutput(
       `"${scriptPath}"`,
       scriptArguments,
-      {ignoreReturnCode: true}
+      getExecOutputOptions
     );
     if (exitCode) {
       throw new Error(`Failed to install dotnet ${exitCode}. ${stdout}`);
@@ -254,7 +251,7 @@ export class DotnetCoreInstaller {
 
     return this.outputDotnetVersion(
       dotnetVersion.value,
-      scriptArguments[scriptArguments.length - 1]
+      process.env['DOTNET_INSTALL_DIR']
     );
   }
 

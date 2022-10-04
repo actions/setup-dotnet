@@ -195,6 +195,7 @@ Some environment variables may be necessary for your particular case or to impro
 
 | **Env.variable**      | **Description** | **Default value** |
 | ----------- | ----------- | ----------- |
+| DOTNET_INSTALL_DIR      |Specifies a directory where .NET SDKs should be installed by the action|*isn't set*|
 | DOTNET_NOLOGO      |Removes logo and telemetry message from first run of dotnet cli|*false*|
 | DOTNET_CLI_TELEMETRY_OPTOUT   |Opt-out of telemetry being sent to Microsoft|*false*|
 | DOTNET_MULTILEVEL_LOOKUP   |Configures whether the global install location is used as a fall-back|*true*|
@@ -204,7 +205,7 @@ Some environment variables may be necessary for your particular case or to impro
 build:
   runs-on: ubuntu-latest
   env:
-    DOTNET_NOLOGO: true
+    DOTNET_INSTALL_DIR: "path/to/directory"
   steps:
     - uses: actions/checkout@main
     - uses: actions/setup-dotnet@v3
