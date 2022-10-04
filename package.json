@@ -1,6 +1,6 @@
 {
   "name": "setup-dotnet",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "private": true,
   "description": "setup dotnet action",
   "main": "lib/setup-dotnet.js",
