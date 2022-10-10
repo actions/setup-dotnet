@@ -8,7 +8,11 @@
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -21,7 +25,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -152,7 +156,11 @@ function writeFeedToFile(feedUrl, existingFileLocation, tempFileLocation) {
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -165,7 +173,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -181,6 +189,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+var _a;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.DotnetCoreInstaller = exports.DotnetVersionResolver = void 0;
 // Load tempDirectory before it gets wiped by tool-cache
@@ -191,6 +200,7 @@ const hc = __importStar(__nccwpck_require__(6255));
 const fs_1 = __nccwpck_require__(7147);
 const promises_1 = __nccwpck_require__(3292);
 const path_1 = __importDefault(__nccwpck_require__(1017));
+const os_1 = __importDefault(__nccwpck_require__(2037));
 const semver_1 = __importDefault(__nccwpck_require__(5911));
 const utils_1 = __nccwpck_require__(918);
 class DotnetVersionResolver {
@@ -269,26 +279,21 @@ class DotnetCoreInstaller {
         this.version = version;
         this.quality = quality;
     }
-    static addToPath() {
-        if (process.env['DOTNET_INSTALL_DIR']) {
-            core.addPath(process.env['DOTNET_INSTALL_DIR']);
-            core.exportVariable('DOTNET_ROOT', process.env['DOTNET_INSTALL_DIR']);
+    static convertInstallPathToAbsolute(installDir) {
+        let transformedPath;
+        if (path_1.default.isAbsolute(installDir)) {
+            transformedPath = installDir;
         }
         else {
-            if (utils_1.IS_WINDOWS) {
-                core.addPath(DotnetCoreInstaller.installationDirectoryWindows);
-                core.exportVariable('DOTNET_ROOT', DotnetCoreInstaller.installationDirectoryWindows);
-            }
-            else if (utils_1.IS_LINUX) {
-                core.addPath(DotnetCoreInstaller.installationDirectoryLinux);
-                core.exportVariable('DOTNET_ROOT', DotnetCoreInstaller.installationDirectoryLinux);
-            }
-            else {
-                // This is the default set in install-dotnet.sh
-                core.addPath(DotnetCoreInstaller.installationDirectoryMac);
-                core.exportVariable('DOTNET_ROOT', DotnetCoreInstaller.installationDirectoryMac);
-            }
+            transformedPath = installDir.startsWith('~')
+                ? path_1.default.join(os_1.default.homedir(), installDir.slice(1))
+                : (transformedPath = path_1.default.join(process.cwd(), installDir));
         }
+        return path_1.default.normalize(transformedPath);
+    }
+    static addToPath() {
+        core.addPath(process.env['DOTNET_INSTALL_DIR']);
+        core.exportVariable('DOTNET_ROOT', process.env['DOTNET_INSTALL_DIR']);
     }
     setQuality(dotnetVersion, scriptArguments) {
         const option = utils_1.IS_WINDOWS ? '-Quality' : '--quality';
@@ -333,16 +338,12 @@ class DotnetCoreInstaller {
                 if (process.env['no_proxy'] != null) {
                     scriptArguments.push(`-ProxyBypassList ${process.env['no_proxy']}`);
                 }
-                if (!process.env['DOTNET_INSTALL_DIR']) {
-                    process.env['DOTNET_INSTALL_DIR'] =
-                        DotnetCoreInstaller.installationDirectoryWindows;
-                }
                 scriptPath =
                     (yield io.which('pwsh', false)) || (yield io.which('powershell', true));
                 scriptArguments = windowsDefaultOptions.concat(scriptArguments);
             }
             else {
-                fs_1.chmodSync(escapedScript, '777');
+                (0, fs_1.chmodSync)(escapedScript, '777');
                 scriptPath = yield io.which(escapedScript, true);
                 scriptArguments = [];
                 if (dotnetVersion.type) {
@@ -350,11 +351,6 @@ class DotnetCoreInstaller {
                 }
                 if (this.quality) {
                     this.setQuality(dotnetVersion, scriptArguments);
-                }
-                if (!process.env['DOTNET_INSTALL_DIR']) {
-                    process.env['DOTNET_INSTALL_DIR'] = utils_1.IS_LINUX
-                        ? DotnetCoreInstaller.installationDirectoryLinux
-                        : DotnetCoreInstaller.installationDirectoryMac;
                 }
             }
             // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
@@ -366,12 +362,13 @@ class DotnetCoreInstaller {
             if (exitCode) {
                 throw new Error(`Failed to install dotnet ${exitCode}. ${stdout}`);
             }
-            return this.outputDotnetVersion(dotnetVersion.value, process.env['DOTNET_INSTALL_DIR']);
+            return this.outputDotnetVersion(dotnetVersion.value);
         });
     }
-    outputDotnetVersion(version, installationPath) {
+    outputDotnetVersion(version) {
         return __awaiter(this, void 0, void 0, function* () {
-            let versionsOnRunner = yield promises_1.readdir(path_1.default.join(installationPath.replace(/'/g, ''), 'sdk'));
+            const installationPath = process.env['DOTNET_INSTALL_DIR'];
+            let versionsOnRunner = yield (0, promises_1.readdir)(path_1.default.join(installationPath.replace(/'/g, ''), 'sdk'));
             let installedVersion = semver_1.default.maxSatisfying(versionsOnRunner, version, {
                 includePrerelease: true
             });
@@ -380,9 +377,27 @@ class DotnetCoreInstaller {
     }
 }
 exports.DotnetCoreInstaller = DotnetCoreInstaller;
-DotnetCoreInstaller.installationDirectoryWindows = path_1.default.join(process.env['PROGRAMFILES'] + '', 'dotnet');
-DotnetCoreInstaller.installationDirectoryLinux = '/usr/share/dotnet';
-DotnetCoreInstaller.installationDirectoryMac = path_1.default.join(process.env['HOME'] + '', '.dotnet');
+_a = DotnetCoreInstaller;
+(() => {
+    const installationDirectoryWindows = path_1.default.join(process.env['PROGRAMFILES'] + '', 'dotnet');
+    const installationDirectoryLinux = '/usr/share/dotnet';
+    const installationDirectoryMac = path_1.default.join(process.env['HOME'] + '', '.dotnet');
+    const dotnetInstallDir = process.env['DOTNET_INSTALL_DIR'];
+    if (dotnetInstallDir) {
+        process.env['DOTNET_INSTALL_DIR'] =
+            _a.convertInstallPathToAbsolute(dotnetInstallDir);
+    }
+    else {
+        if (utils_1.IS_WINDOWS) {
+            process.env['DOTNET_INSTALL_DIR'] = installationDirectoryWindows;
+        }
+        else {
+            process.env['DOTNET_INSTALL_DIR'] = utils_1.IS_LINUX
+                ? installationDirectoryLinux
+                : installationDirectoryMac;
+        }
+    }
+})();
 
 
 /***/ }),
@@ -394,7 +409,11 @@ DotnetCoreInstaller.installationDirectoryMac = path_1.default.join(process.env['
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -407,7 +426,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };

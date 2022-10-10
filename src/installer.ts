@@ -6,6 +6,7 @@ import * as hc from '@actions/http-client';
 import {chmodSync} from 'fs';
 import {readdir} from 'fs/promises';
 import path from 'path';
+import os from 'os';
 import semver from 'semver';
 import {IS_LINUX, IS_WINDOWS} from './utils';
 import {QualityOptions} from './setup-dotnet';
@@ -112,40 +113,29 @@ export class DotnetVersionResolver {
 export class DotnetCoreInstaller {
   private version: string;
   private quality: QualityOptions;
-  private static readonly installationDirectoryWindows = path.join(
-    process.env['PROGRAMFILES'] + '',
-    'dotnet'
-  );
-  private static readonly installationDirectoryLinux = '/usr/share/dotnet';
-  private static readonly installationDirectoryMac = path.join(
-    process.env['HOME'] + '',
-    '.dotnet'
-  );
 
-  static addToPath() {
-    if (process.env['DOTNET_INSTALL_DIR']) {
-      core.addPath(process.env['DOTNET_INSTALL_DIR']);
-      core.exportVariable('DOTNET_ROOT', process.env['DOTNET_INSTALL_DIR']);
+  static {
+    const installationDirectoryWindows = path.join(
+      process.env['PROGRAMFILES'] + '',
+      'dotnet'
+    );
+    const installationDirectoryLinux = '/usr/share/dotnet';
+    const installationDirectoryMac = path.join(
+      process.env['HOME'] + '',
+      '.dotnet'
+    );
+    const dotnetInstallDir: string | undefined =
+      process.env['DOTNET_INSTALL_DIR'];
+    if (dotnetInstallDir) {
+      process.env['DOTNET_INSTALL_DIR'] =
+        this.convertInstallPathToAbsolute(dotnetInstallDir);
     } else {
       if (IS_WINDOWS) {
-        core.addPath(DotnetCoreInstaller.installationDirectoryWindows);
-        core.exportVariable(
-          'DOTNET_ROOT',
-          DotnetCoreInstaller.installationDirectoryWindows
-        );
-      } else if (IS_LINUX) {
-        core.addPath(DotnetCoreInstaller.installationDirectoryLinux);
-        core.exportVariable(
-          'DOTNET_ROOT',
-          DotnetCoreInstaller.installationDirectoryLinux
-        );
+        process.env['DOTNET_INSTALL_DIR'] = installationDirectoryWindows;
       } else {
-        // This is the default set in install-dotnet.sh
-        core.addPath(DotnetCoreInstaller.installationDirectoryMac);
-        core.exportVariable(
-          'DOTNET_ROOT',
-          DotnetCoreInstaller.installationDirectoryMac
-        );
+        process.env['DOTNET_INSTALL_DIR'] = IS_LINUX
+          ? installationDirectoryLinux
+          : installationDirectoryMac;
       }
     }
   }
@@ -153,6 +143,23 @@ export class DotnetCoreInstaller {
   constructor(version: string, quality: QualityOptions) {
     this.version = version;
     this.quality = quality;
+  }
+
+  private static convertInstallPathToAbsolute(installDir: string): string {
+    let transformedPath;
+    if (path.isAbsolute(installDir)) {
+      transformedPath = installDir;
+    } else {
+      transformedPath = installDir.startsWith('~')
+        ? path.join(os.homedir(), installDir.slice(1))
+        : (transformedPath = path.join(process.cwd(), installDir));
+    }
+    return path.normalize(transformedPath);
+  }
+
+  static addToPath() {
+    core.addPath(process.env['DOTNET_INSTALL_DIR']!);
+    core.exportVariable('DOTNET_ROOT', process.env['DOTNET_INSTALL_DIR']);
   }
 
   private setQuality(
@@ -208,11 +215,6 @@ export class DotnetCoreInstaller {
         scriptArguments.push(`-ProxyBypassList ${process.env['no_proxy']}`);
       }
 
-      if (!process.env['DOTNET_INSTALL_DIR']) {
-        process.env['DOTNET_INSTALL_DIR'] =
-          DotnetCoreInstaller.installationDirectoryWindows;
-      }
-
       scriptPath =
         (await io.which('pwsh', false)) || (await io.which('powershell', true));
       scriptArguments = windowsDefaultOptions.concat(scriptArguments);
@@ -227,12 +229,6 @@ export class DotnetCoreInstaller {
 
       if (this.quality) {
         this.setQuality(dotnetVersion, scriptArguments);
-      }
-
-      if (!process.env['DOTNET_INSTALL_DIR']) {
-        process.env['DOTNET_INSTALL_DIR'] = IS_LINUX
-          ? DotnetCoreInstaller.installationDirectoryLinux
-          : DotnetCoreInstaller.installationDirectoryMac;
       }
     }
     // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
@@ -249,16 +245,11 @@ export class DotnetCoreInstaller {
       throw new Error(`Failed to install dotnet ${exitCode}. ${stdout}`);
     }
 
-    return this.outputDotnetVersion(
-      dotnetVersion.value,
-      process.env['DOTNET_INSTALL_DIR']
-    );
+    return this.outputDotnetVersion(dotnetVersion.value);
   }
 
-  private async outputDotnetVersion(
-    version,
-    installationPath
-  ): Promise<string> {
+  private async outputDotnetVersion(version): Promise<string> {
+    const installationPath = process.env['DOTNET_INSTALL_DIR']!;
     let versionsOnRunner: string[] = await readdir(
       path.join(installationPath.replace(/'/g, ''), 'sdk')
     );

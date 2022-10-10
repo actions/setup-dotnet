@@ -195,10 +195,17 @@ Some environment variables may be necessary for your particular case or to impro
 
 | **Env.variable**      | **Description** | **Default value** |
 | ----------- | ----------- | ----------- |
-| DOTNET_INSTALL_DIR      |Specifies a directory where .NET SDKs should be installed by the action|*isn't set*|
+| DOTNET_INSTALL_DIR      |Specifies a directory where .NET SDKs should be installed by the action.|*default value for each OS* |
 | DOTNET_NOLOGO      |Removes logo and telemetry message from first run of dotnet cli|*false*|
 | DOTNET_CLI_TELEMETRY_OPTOUT   |Opt-out of telemetry being sent to Microsoft|*false*|
 | DOTNET_MULTILEVEL_LOOKUP   |Configures whether the global install location is used as a fall-back|*true*|
+
+The default value of the `DOTNET_INSTALL_DIR` environment variable depends on the operation system which is used on a runner:
+| **Operation system**      | **Default value** |
+| ----------- | ----------- |
+| **Windows** | `C:\Program Files\dotnet` |
+| **Ubuntu** | `/usr/share/dotnet` |
+| **macOS** | `/Users/runner/.dotnet` |
 
 **Example usage**:
 ```yml
