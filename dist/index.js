@@ -35,8 +35,7 @@ const fs = __importStar(__nccwpck_require__(7147));
 const path = __importStar(__nccwpck_require__(1017));
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
-const xmlbuilder = __importStar(__nccwpck_require__(2958));
-const xmlParser = __importStar(__nccwpck_require__(7448));
+const fast_xml_parser_1 = __nccwpck_require__(2603);
 function configAuthentication(feedUrl, existingFileLocation = '', processRoot = process.cwd()) {
     const existingNuGetConfig = path.resolve(processRoot, existingFileLocation === ''
         ? getExistingNugetConfig(processRoot)
@@ -59,8 +58,8 @@ function getExistingNugetConfig(processRoot) {
     return defaultConfigName;
 }
 function writeFeedToFile(feedUrl, existingFileLocation, tempFileLocation) {
+    var _a, _b;
     core.info(`dotnet-auth: Finding any source references in ${existingFileLocation}, writing a new temporary configuration file with credentials to ${tempFileLocation}`);
-    let xml;
     let sourceKeys = [];
     let owner = core.getInput('owner');
     let sourceUrl = feedUrl;
@@ -73,76 +72,117 @@ function writeFeedToFile(feedUrl, existingFileLocation, tempFileLocation) {
     if (fs.existsSync(existingFileLocation)) {
         // get key from existing NuGet.config so NuGet/dotnet can match credentials
         const curContents = fs.readFileSync(existingFileLocation, 'utf8');
-        const json = xmlParser.parse(curContents, { ignoreAttributes: false });
+        const parserOptions = {
+            ignoreAttributes: false
+        };
+        const parser = new fast_xml_parser_1.XMLParser(parserOptions);
+        const json = parser.parse(curContents);
         if (typeof json.configuration === 'undefined') {
             throw new Error(`The provided NuGet.config seems invalid.`);
         }
-        if (typeof json.configuration.packageSources != 'undefined') {
-            if (typeof json.configuration.packageSources.add != 'undefined') {
-                // file has at least one <add>
-                if (typeof json.configuration.packageSources.add[0] === 'undefined') {
-                    // file has only one <add>
-                    if (json.configuration.packageSources.add['@_value']
-                        .toLowerCase()
-                        .includes(feedUrl.toLowerCase())) {
-                        const key = json.configuration.packageSources.add['@_key'];
+        if ((_b = (_a = json.configuration) === null || _a === void 0 ? void 0 : _a.packageSources) === null || _b === void 0 ? void 0 : _b.add) {
+            const packageSources = json.configuration.packageSources.add;
+            if (Array.isArray(packageSources)) {
+                packageSources.forEach(source => {
+                    const value = source['@_value'];
+                    core.debug(`source '${value}'`);
+                    if (value.toLowerCase().includes(feedUrl.toLowerCase())) {
+                        const key = source['@_key'];
                         sourceKeys.push(key);
                         core.debug(`Found a URL with key ${key}`);
                     }
-                }
-                else {
-                    // file has 2+ <add>
-                    for (let i = 0; i < json.configuration.packageSources.add.length; i++) {
-                        const source = json.configuration.packageSources.add[i];
-                        const value = source['@_value'];
-                        core.debug(`source '${value}'`);
-                        if (value.toLowerCase().includes(feedUrl.toLowerCase())) {
-                            const key = source['@_key'];
-                            sourceKeys.push(key);
-                            core.debug(`Found a URL with key ${key}`);
-                        }
-                    }
+                });
+            }
+            else {
+                if (packageSources['@_value']
+                    .toLowerCase()
+                    .includes(feedUrl.toLowerCase())) {
+                    const key = packageSources['@_key'];
+                    sourceKeys.push(key);
+                    core.debug(`Found a URL with key ${key}`);
                 }
             }
         }
     }
-    xml = xmlbuilder
-        .create('configuration')
-        .ele('config')
-        .ele('add', { key: 'defaultPushSource', value: sourceUrl })
-        .up()
-        .up();
+    const xmlSource = [
+        {
+            '?xml': [
+                {
+                    '#text': ''
+                }
+            ],
+            ':@': {
+                '@_version': '1.0'
+            }
+        },
+        {
+            configuration: [
+                {
+                    config: [
+                        {
+                            add: [],
+                            ':@': {
+                                '@_key': 'defaultPushSource',
+                                '@_value': sourceUrl
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ];
     if (!sourceKeys.length) {
         let keystring = 'Source';
-        xml = xml
-            .ele('packageSources')
-            .ele('add', { key: keystring, value: sourceUrl })
-            .up()
-            .up();
+        xmlSource[1].configuration.push({
+            packageSources: [
+                {
+                    add: [],
+                    ':@': {
+                        '@_key': keystring,
+                        '@_value': sourceUrl
+                    }
+                }
+            ]
+        });
         sourceKeys.push(keystring);
     }
-    xml = xml.ele('packageSourceCredentials');
+    const packageSourceCredentials = [];
     sourceKeys.forEach(key => {
         if (!isValidKey(key)) {
             throw new Error("Source name can contain letters, numbers, and '-', '_', '.' symbols only. Please, fix source name in NuGet.config and try again.");
         }
-        xml = xml
-            .ele(key)
-            .ele('add', { key: 'Username', value: owner })
-            .up()
-            .ele('add', {
-            key: 'ClearTextPassword',
-            value: process.env.NUGET_AUTH_TOKEN
-        })
-            .up()
-            .up();
+        packageSourceCredentials.push({
+            [key]: [
+                {
+                    add: [],
+                    ':@': {
+                        '@_key': 'Username',
+                        '@_value': owner
+                    }
+                },
+                {
+                    add: [],
+                    ':@': {
+                        '@_key': 'ClearTextPassword',
+                        '@_value': process.env.NUGET_AUTH_TOKEN
+                    }
+                }
+            ]
+        });
     });
-    // If NuGet fixes itself such that on Linux it can look for environment variables in the config file (it doesn't seem to work today),
-    // use this for the value above
-    //           process.platform == 'win32'
-    //             ? '%NUGET_AUTH_TOKEN%'
-    //             : '$NUGET_AUTH_TOKEN'
-    const output = xml.end({ pretty: true });
+    xmlSource[1].configuration.push({
+        packageSourceCredentials
+    });
+    const xmlBuilderOptions = {
+        format: true,
+        ignoreAttributes: false,
+        preserveOrder: true,
+        allowBooleanAttributes: true,
+        suppressBooleanAttributes: true,
+        suppressEmptyNode: true
+    };
+    const builder = new fast_xml_parser_1.XMLBuilder(xmlBuilderOptions);
+    const output = builder.build(xmlSource).trim();
     fs.writeFileSync(tempFileLocation, output);
 }
 
