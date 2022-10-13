@@ -8,7 +8,11 @@
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -21,7 +25,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -31,7 +35,8 @@ const fs = __importStar(__nccwpck_require__(7147));
 const path = __importStar(__nccwpck_require__(1017));
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
-const fast_xml_parser_1 = __nccwpck_require__(2603);
+const xmlbuilder = __importStar(__nccwpck_require__(2958));
+const xmlParser = __importStar(__nccwpck_require__(7448));
 function configAuthentication(feedUrl, existingFileLocation = '', processRoot = process.cwd()) {
     const existingNuGetConfig = path.resolve(processRoot, existingFileLocation === ''
         ? getExistingNugetConfig(processRoot)
@@ -54,8 +59,8 @@ function getExistingNugetConfig(processRoot) {
     return defaultConfigName;
 }
 function writeFeedToFile(feedUrl, existingFileLocation, tempFileLocation) {
-    var _a, _b;
     core.info(`dotnet-auth: Finding any source references in ${existingFileLocation}, writing a new temporary configuration file with credentials to ${tempFileLocation}`);
+    let xml;
     let sourceKeys = [];
     let owner = core.getInput('owner');
     let sourceUrl = feedUrl;
@@ -68,117 +73,76 @@ function writeFeedToFile(feedUrl, existingFileLocation, tempFileLocation) {
     if (fs.existsSync(existingFileLocation)) {
         // get key from existing NuGet.config so NuGet/dotnet can match credentials
         const curContents = fs.readFileSync(existingFileLocation, 'utf8');
-        const parserOptions = {
-            ignoreAttributes: false
-        };
-        const parser = new fast_xml_parser_1.XMLParser(parserOptions);
-        const json = parser.parse(curContents);
+        const json = xmlParser.parse(curContents, { ignoreAttributes: false });
         if (typeof json.configuration === 'undefined') {
             throw new Error(`The provided NuGet.config seems invalid.`);
         }
-        if ((_b = (_a = json.configuration) === null || _a === void 0 ? void 0 : _a.packageSources) === null || _b === void 0 ? void 0 : _b.add) {
-            const packageSources = json.configuration.packageSources.add;
-            if (Array.isArray(packageSources)) {
-                packageSources.forEach(source => {
-                    const value = source['@_value'];
-                    core.debug(`source '${value}'`);
-                    if (value.toLowerCase().includes(feedUrl.toLowerCase())) {
-                        const key = source['@_key'];
+        if (typeof json.configuration.packageSources != 'undefined') {
+            if (typeof json.configuration.packageSources.add != 'undefined') {
+                // file has at least one <add>
+                if (typeof json.configuration.packageSources.add[0] === 'undefined') {
+                    // file has only one <add>
+                    if (json.configuration.packageSources.add['@_value']
+                        .toLowerCase()
+                        .includes(feedUrl.toLowerCase())) {
+                        const key = json.configuration.packageSources.add['@_key'];
                         sourceKeys.push(key);
                         core.debug(`Found a URL with key ${key}`);
                     }
-                });
-            }
-            else {
-                if (packageSources['@_value']
-                    .toLowerCase()
-                    .includes(feedUrl.toLowerCase())) {
-                    const key = packageSources['@_key'];
-                    sourceKeys.push(key);
-                    core.debug(`Found a URL with key ${key}`);
                 }
-            }
-        }
-    }
-    const xmlSource = [
-        {
-            '?xml': [
-                {
-                    '#text': ''
-                }
-            ],
-            ':@': {
-                '@_version': '1.0'
-            }
-        },
-        {
-            configuration: [
-                {
-                    config: [
-                        {
-                            add: [],
-                            ':@': {
-                                '@_key': 'defaultPushSource',
-                                '@_value': sourceUrl
-                            }
+                else {
+                    // file has 2+ <add>
+                    for (let i = 0; i < json.configuration.packageSources.add.length; i++) {
+                        const source = json.configuration.packageSources.add[i];
+                        const value = source['@_value'];
+                        core.debug(`source '${value}'`);
+                        if (value.toLowerCase().includes(feedUrl.toLowerCase())) {
+                            const key = source['@_key'];
+                            sourceKeys.push(key);
+                            core.debug(`Found a URL with key ${key}`);
                         }
-                    ]
-                }
-            ]
-        }
-    ];
-    if (!sourceKeys.length) {
-        let keystring = 'Source';
-        xmlSource[1].configuration.push({
-            packageSources: [
-                {
-                    add: [],
-                    ':@': {
-                        '@_key': keystring,
-                        '@_value': sourceUrl
                     }
                 }
-            ]
-        });
+            }
+        }
+    }
+    xml = xmlbuilder
+        .create('configuration')
+        .ele('config')
+        .ele('add', { key: 'defaultPushSource', value: sourceUrl })
+        .up()
+        .up();
+    if (!sourceKeys.length) {
+        let keystring = 'Source';
+        xml = xml
+            .ele('packageSources')
+            .ele('add', { key: keystring, value: sourceUrl })
+            .up()
+            .up();
         sourceKeys.push(keystring);
     }
-    const packageSourceCredentials = [];
+    xml = xml.ele('packageSourceCredentials');
     sourceKeys.forEach(key => {
         if (!isValidKey(key)) {
             throw new Error("Source name can contain letters, numbers, and '-', '_', '.' symbols only. Please, fix source name in NuGet.config and try again.");
         }
-        packageSourceCredentials.push({
-            [key]: [
-                {
-                    add: [],
-                    ':@': {
-                        '@_key': 'Username',
-                        '@_value': owner
-                    }
-                },
-                {
-                    add: [],
-                    ':@': {
-                        '@_key': 'ClearTextPassword',
-                        '@_value': process.env.NUGET_AUTH_TOKEN
-                    }
-                }
-            ]
-        });
+        xml = xml
+            .ele(key)
+            .ele('add', { key: 'Username', value: owner })
+            .up()
+            .ele('add', {
+            key: 'ClearTextPassword',
+            value: process.env.NUGET_AUTH_TOKEN
+        })
+            .up()
+            .up();
     });
-    xmlSource[1].configuration.push({
-        packageSourceCredentials
-    });
-    const xmlBuilderOptions = {
-        format: true,
-        ignoreAttributes: false,
-        preserveOrder: true,
-        allowBooleanAttributes: true,
-        suppressBooleanAttributes: true,
-        suppressEmptyNode: true
-    };
-    const builder = new fast_xml_parser_1.XMLBuilder(xmlBuilderOptions);
-    const output = builder.build(xmlSource).trim();
+    // If NuGet fixes itself such that on Linux it can look for environment variables in the config file (it doesn't seem to work today),
+    // use this for the value above
+    //           process.platform == 'win32'
+    //             ? '%NUGET_AUTH_TOKEN%'
+    //             : '$NUGET_AUTH_TOKEN'
+    const output = xml.end({ pretty: true });
     fs.writeFileSync(tempFileLocation, output);
 }
 
@@ -192,7 +156,11 @@ function writeFeedToFile(feedUrl, existingFileLocation, tempFileLocation) {
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -205,7 +173,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -221,6 +189,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+var _a;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.DotnetCoreInstaller = exports.DotnetVersionResolver = void 0;
 // Load tempDirectory before it gets wiped by tool-cache
@@ -231,6 +200,7 @@ const hc = __importStar(__nccwpck_require__(6255));
 const fs_1 = __nccwpck_require__(7147);
 const promises_1 = __nccwpck_require__(3292);
 const path_1 = __importDefault(__nccwpck_require__(1017));
+const os_1 = __importDefault(__nccwpck_require__(2037));
 const semver_1 = __importDefault(__nccwpck_require__(5911));
 const utils_1 = __nccwpck_require__(918);
 class DotnetVersionResolver {
@@ -309,26 +279,21 @@ class DotnetCoreInstaller {
         this.version = version;
         this.quality = quality;
     }
-    static addToPath() {
-        if (process.env['DOTNET_INSTALL_DIR']) {
-            core.addPath(process.env['DOTNET_INSTALL_DIR']);
-            core.exportVariable('DOTNET_ROOT', process.env['DOTNET_INSTALL_DIR']);
+    static convertInstallPathToAbsolute(installDir) {
+        let transformedPath;
+        if (path_1.default.isAbsolute(installDir)) {
+            transformedPath = installDir;
         }
         else {
-            if (utils_1.IS_WINDOWS) {
-                core.addPath(DotnetCoreInstaller.installationDirectoryWindows);
-                core.exportVariable('DOTNET_ROOT', DotnetCoreInstaller.installationDirectoryWindows);
-            }
-            else if (utils_1.IS_LINUX) {
-                core.addPath(DotnetCoreInstaller.installationDirectoryLinux);
-                core.exportVariable('DOTNET_ROOT', DotnetCoreInstaller.installationDirectoryLinux);
-            }
-            else {
-                // This is the default set in install-dotnet.sh
-                core.addPath(DotnetCoreInstaller.installationDirectoryMac);
-                core.exportVariable('DOTNET_ROOT', DotnetCoreInstaller.installationDirectoryMac);
-            }
+            transformedPath = installDir.startsWith('~')
+                ? path_1.default.join(os_1.default.homedir(), installDir.slice(1))
+                : (transformedPath = path_1.default.join(process.cwd(), installDir));
         }
+        return path_1.default.normalize(transformedPath);
+    }
+    static addToPath() {
+        core.addPath(process.env['DOTNET_INSTALL_DIR']);
+        core.exportVariable('DOTNET_ROOT', process.env['DOTNET_INSTALL_DIR']);
     }
     setQuality(dotnetVersion, scriptArguments) {
         const option = utils_1.IS_WINDOWS ? '-Quality' : '--quality';
@@ -373,14 +338,12 @@ class DotnetCoreInstaller {
                 if (process.env['no_proxy'] != null) {
                     scriptArguments.push(`-ProxyBypassList ${process.env['no_proxy']}`);
                 }
-                scriptArguments.push('-InstallDir', `'${DotnetCoreInstaller.installationDirectoryWindows}'`);
-                // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
                 scriptPath =
                     (yield io.which('pwsh', false)) || (yield io.which('powershell', true));
                 scriptArguments = windowsDefaultOptions.concat(scriptArguments);
             }
             else {
-                fs_1.chmodSync(escapedScript, '777');
+                (0, fs_1.chmodSync)(escapedScript, '777');
                 scriptPath = yield io.which(escapedScript, true);
                 scriptArguments = [];
                 if (dotnetVersion.type) {
@@ -389,23 +352,23 @@ class DotnetCoreInstaller {
                 if (this.quality) {
                     this.setQuality(dotnetVersion, scriptArguments);
                 }
-                if (utils_1.IS_LINUX) {
-                    scriptArguments.push('--install-dir', DotnetCoreInstaller.installationDirectoryLinux);
-                }
-                if (utils_1.IS_MAC) {
-                    scriptArguments.push('--install-dir', DotnetCoreInstaller.installationDirectoryMac);
-                }
             }
-            const { exitCode, stdout } = yield exec.getExecOutput(`"${scriptPath}"`, scriptArguments, { ignoreReturnCode: true });
+            // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used
+            const getExecOutputOptions = {
+                ignoreReturnCode: true,
+                env: process.env
+            };
+            const { exitCode, stdout } = yield exec.getExecOutput(`"${scriptPath}"`, scriptArguments, getExecOutputOptions);
             if (exitCode) {
                 throw new Error(`Failed to install dotnet ${exitCode}. ${stdout}`);
             }
-            return this.outputDotnetVersion(dotnetVersion.value, scriptArguments[scriptArguments.length - 1]);
+            return this.outputDotnetVersion(dotnetVersion.value);
         });
     }
-    outputDotnetVersion(version, installationPath) {
+    outputDotnetVersion(version) {
         return __awaiter(this, void 0, void 0, function* () {
-            let versionsOnRunner = yield promises_1.readdir(path_1.default.join(installationPath.replace(/'/g, ''), 'sdk'));
+            const installationPath = process.env['DOTNET_INSTALL_DIR'];
+            let versionsOnRunner = yield (0, promises_1.readdir)(path_1.default.join(installationPath.replace(/'/g, ''), 'sdk'));
             let installedVersion = semver_1.default.maxSatisfying(versionsOnRunner, version, {
                 includePrerelease: true
             });
@@ -414,9 +377,27 @@ class DotnetCoreInstaller {
     }
 }
 exports.DotnetCoreInstaller = DotnetCoreInstaller;
-DotnetCoreInstaller.installationDirectoryWindows = path_1.default.join(process.env['PROGRAMFILES'] + '', 'dotnet');
-DotnetCoreInstaller.installationDirectoryLinux = '/usr/share/dotnet';
-DotnetCoreInstaller.installationDirectoryMac = path_1.default.join(process.env['HOME'] + '', '.dotnet');
+_a = DotnetCoreInstaller;
+(() => {
+    const installationDirectoryWindows = path_1.default.join(process.env['PROGRAMFILES'] + '', 'dotnet');
+    const installationDirectoryLinux = '/usr/share/dotnet';
+    const installationDirectoryMac = path_1.default.join(process.env['HOME'] + '', '.dotnet');
+    const dotnetInstallDir = process.env['DOTNET_INSTALL_DIR'];
+    if (dotnetInstallDir) {
+        process.env['DOTNET_INSTALL_DIR'] =
+            _a.convertInstallPathToAbsolute(dotnetInstallDir);
+    }
+    else {
+        if (utils_1.IS_WINDOWS) {
+            process.env['DOTNET_INSTALL_DIR'] = installationDirectoryWindows;
+        }
+        else {
+            process.env['DOTNET_INSTALL_DIR'] = utils_1.IS_LINUX
+                ? installationDirectoryLinux
+                : installationDirectoryMac;
+        }
+    }
+})();
 
 
 /***/ }),
@@ -428,7 +409,11 @@ DotnetCoreInstaller.installationDirectoryMac = path_1.default.join(process.env['
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -441,7 +426,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -563,10 +548,9 @@ run();
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.IS_MAC = exports.IS_LINUX = exports.IS_WINDOWS = void 0;
+exports.IS_LINUX = exports.IS_WINDOWS = void 0;
 exports.IS_WINDOWS = process.platform === 'win32';
 exports.IS_LINUX = process.platform === 'linux';
-exports.IS_MAC = process.platform === 'darwin';
 
 
 /***/ }),
@@ -710,7 +694,6 @@ const file_command_1 = __nccwpck_require__(717);
 const utils_1 = __nccwpck_require__(5278);
 const os = __importStar(__nccwpck_require__(2037));
 const path = __importStar(__nccwpck_require__(1017));
-const uuid_1 = __nccwpck_require__(5840);
 const oidc_utils_1 = __nccwpck_require__(8041);
 /**
  * The code to exit an action
@@ -740,20 +723,9 @@ function exportVariable(name, val) {
     process.env[name] = convertedVal;
     const filePath = process.env['GITHUB_ENV'] || '';
     if (filePath) {
-        const delimiter = `ghadelimiter_${uuid_1.v4()}`;
-        // These should realistically never happen, but just in case someone finds a way to exploit uuid generation let's not allow keys or values that contain the delimiter.
-        if (name.includes(delimiter)) {
-            throw new Error(`Unexpected input: name should not contain the delimiter "${delimiter}"`);
-        }
-        if (convertedVal.includes(delimiter)) {
-            throw new Error(`Unexpected input: value should not contain the delimiter "${delimiter}"`);
-        }
-        const commandValue = `${name}<<${delimiter}${os.EOL}${convertedVal}${os.EOL}${delimiter}`;
-        file_command_1.issueCommand('ENV', commandValue);
+        return file_command_1.issueFileCommand('ENV', file_command_1.prepareKeyValueMessage(name, val));
     }
-    else {
-        command_1.issueCommand('set-env', { name }, convertedVal);
-    }
+    command_1.issueCommand('set-env', { name }, convertedVal);
 }
 exports.exportVariable = exportVariable;
 /**
@@ -771,7 +743,7 @@ exports.setSecret = setSecret;
 function addPath(inputPath) {
     const filePath = process.env['GITHUB_PATH'] || '';
     if (filePath) {
-        file_command_1.issueCommand('PATH', inputPath);
+        file_command_1.issueFileCommand('PATH', inputPath);
     }
     else {
         command_1.issueCommand('add-path', {}, inputPath);
@@ -811,7 +783,10 @@ function getMultilineInput(name, options) {
     const inputs = getInput(name, options)
         .split('\n')
         .filter(x => x !== '');
-    return inputs;
+    if (options && options.trimWhitespace === false) {
+        return inputs;
+    }
+    return inputs.map(input => input.trim());
 }
 exports.getMultilineInput = getMultilineInput;
 /**
@@ -844,8 +819,12 @@ exports.getBooleanInput = getBooleanInput;
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function setOutput(name, value) {
+    const filePath = process.env['GITHUB_OUTPUT'] || '';
+    if (filePath) {
+        return file_command_1.issueFileCommand('OUTPUT', file_command_1.prepareKeyValueMessage(name, value));
+    }
     process.stdout.write(os.EOL);
-    command_1.issueCommand('set-output', { name }, value);
+    command_1.issueCommand('set-output', { name }, utils_1.toCommandValue(value));
 }
 exports.setOutput = setOutput;
 /**
@@ -974,7 +953,11 @@ exports.group = group;
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function saveState(name, value) {
-    command_1.issueCommand('save-state', { name }, value);
+    const filePath = process.env['GITHUB_STATE'] || '';
+    if (filePath) {
+        return file_command_1.issueFileCommand('STATE', file_command_1.prepareKeyValueMessage(name, value));
+    }
+    command_1.issueCommand('save-state', { name }, utils_1.toCommandValue(value));
 }
 exports.saveState = saveState;
 /**
@@ -1040,13 +1023,14 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.issueCommand = void 0;
+exports.prepareKeyValueMessage = exports.issueFileCommand = void 0;
 // We use any as a valid input type
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const fs = __importStar(__nccwpck_require__(7147));
 const os = __importStar(__nccwpck_require__(2037));
+const uuid_1 = __nccwpck_require__(5840);
 const utils_1 = __nccwpck_require__(5278);
-function issueCommand(command, message) {
+function issueFileCommand(command, message) {
     const filePath = process.env[`GITHUB_${command}`];
     if (!filePath) {
         throw new Error(`Unable to find environment variable for file command ${command}`);
@@ -1058,7 +1042,22 @@ function issueCommand(command, message) {
         encoding: 'utf8'
     });
 }
-exports.issueCommand = issueCommand;
+exports.issueFileCommand = issueFileCommand;
+function prepareKeyValueMessage(key, value) {
+    const delimiter = `ghadelimiter_${uuid_1.v4()}`;
+    const convertedValue = utils_1.toCommandValue(value);
+    // These should realistically never happen, but just in case someone finds a
+    // way to exploit uuid generation let's not allow keys or values that contain
+    // the delimiter.
+    if (key.includes(delimiter)) {
+        throw new Error(`Unexpected input: name should not contain the delimiter "${delimiter}"`);
+    }
+    if (convertedValue.includes(delimiter)) {
+        throw new Error(`Unexpected input: value should not contain the delimiter "${delimiter}"`);
+    }
+    return `${key}<<${delimiter}${os.EOL}${convertedValue}${os.EOL}${delimiter}`;
+}
+exports.prepareKeyValueMessage = prepareKeyValueMessage;
 //# sourceMappingURL=file-command.js.map
 
 /***/ }),
