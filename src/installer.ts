@@ -20,9 +20,11 @@ export interface DotnetVersion {
 export class DotnetVersionResolver {
   private inputVersion: string;
   private resolvedArgument: DotnetVersion;
+  private architecture: string;
 
-  constructor(version: string) {
+  constructor(version: string, architecture: string = '') {
     this.inputVersion = version.trim();
+    this.architecture = architecture;
     this.resolvedArgument = {type: '', value: '', qualityFlag: false};
   }
 
@@ -229,6 +231,10 @@ export class DotnetCoreInstaller {
 
       if (this.quality) {
         this.setQuality(dotnetVersion, scriptArguments);
+      }
+      
+      if (this.architecture != '') {
+        scriptArguments.push('--architecture', this.architecture);
       }
     }
     // process.env must be explicitly passed in for DOTNET_INSTALL_DIR to be used

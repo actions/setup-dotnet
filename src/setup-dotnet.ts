@@ -28,6 +28,11 @@ export async function run() {
     //
     const versions = core.getMultilineInput('dotnet-version');
     const installedDotnetVersions: string[] = [];
+    let architecture = core.getInput('architecture');
+    
+    if (!architecture) {
+      architecture = '';
+    }
 
     const globalJsonFileInput = core.getInput('global-json-file');
     if (globalJsonFileInput) {
@@ -61,7 +66,7 @@ export async function run() {
       let dotnetInstaller: DotnetCoreInstaller;
       const uniqueVersions = new Set<string>(versions);
       for (const version of uniqueVersions) {
-        dotnetInstaller = new DotnetCoreInstaller(version, quality);
+        dotnetInstaller = new DotnetCoreInstaller(version, quality, architecture);
         const installedVersion = await dotnetInstaller.installDotnet();
         installedDotnetVersions.push(installedVersion);
       }

@@ -17,6 +17,9 @@ inputs:
     description: 'Optional OWNER for using packages from GitHub Package Registry organizations/users other than the current repository''s owner. Only used if a GPR URL is also provided in source-url'
   config-file:
     description: 'Optional NuGet.config location, if your NuGet.config isn''t located in the root of the repo.'
+  architecture:
+    description: 'Optional architecture to use. If not provided, will default to the OS architecture.'
+    required: False
 outputs:
   dotnet-version:
     description: 'Contains the installed by action .NET SDK version for reuse.'

@@ -28,6 +28,17 @@ steps:
 - run: dotnet build <my project>
 ```
 
+**Specific architecture:**
+```yml
+steps:
+- uses: actions/checkout@v3
+- uses: actions/setup-dotnet@v2
+  with:
+    dotnet-version: '6.0.x'
+    architecture: 'x86'
+- run: dotnet build <my project>
+```
+
 **Multiple version installation**:
 ```yml
 steps:
