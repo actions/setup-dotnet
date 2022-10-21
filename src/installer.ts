@@ -20,11 +20,9 @@ export interface DotnetVersion {
 export class DotnetVersionResolver {
   private inputVersion: string;
   private resolvedArgument: DotnetVersion;
-  private architecture: string;
 
-  constructor(version: string, architecture: string = '') {
+  constructor(version: string) {
     this.inputVersion = version.trim();
-    this.architecture = architecture;
     this.resolvedArgument = {type: '', value: '', qualityFlag: false};
   }
 
@@ -115,6 +113,7 @@ export class DotnetVersionResolver {
 export class DotnetCoreInstaller {
   private version: string;
   private quality: QualityOptions;
+  private architecture: string;
 
   static {
     const installationDirectoryWindows = path.join(
@@ -142,9 +141,14 @@ export class DotnetCoreInstaller {
     }
   }
 
-  constructor(version: string, quality: QualityOptions) {
+  constructor(
+    version: string,
+    quality: QualityOptions,
+    architecture: string = ''
+  ) {
     this.version = version;
     this.quality = quality;
+    this.architecture = architecture;
   }
 
   private static convertInstallPathToAbsolute(installDir: string): string {
@@ -232,7 +236,7 @@ export class DotnetCoreInstaller {
       if (this.quality) {
         this.setQuality(dotnetVersion, scriptArguments);
       }
-      
+
       if (this.architecture != '') {
         scriptArguments.push('--architecture', this.architecture);
       }

@@ -296,7 +296,7 @@ function normalizeFileContents(contents: string): string {
 
 async function getDotnet(
   version: string,
-  quality: string = ''
+  quality: string = '',
   architecture: string = ''
 ): Promise<string> {
   const dotnetInstaller = new installer.DotnetCoreInstaller(
