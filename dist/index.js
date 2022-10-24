@@ -35,8 +35,7 @@ const fs = __importStar(__nccwpck_require__(7147));
 const path = __importStar(__nccwpck_require__(1017));
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
-const xmlbuilder = __importStar(__nccwpck_require__(2958));
-const xmlParser = __importStar(__nccwpck_require__(7448));
+const fast_xml_parser_1 = __nccwpck_require__(2603);
 function configAuthentication(feedUrl, existingFileLocation = '', processRoot = process.cwd()) {
     const existingNuGetConfig = path.resolve(processRoot, existingFileLocation === ''
         ? getExistingNugetConfig(processRoot)
@@ -59,8 +58,8 @@ function getExistingNugetConfig(processRoot) {
     return defaultConfigName;
 }
 function writeFeedToFile(feedUrl, existingFileLocation, tempFileLocation) {
+    var _a, _b;
     core.info(`dotnet-auth: Finding any source references in ${existingFileLocation}, writing a new temporary configuration file with credentials to ${tempFileLocation}`);
-    let xml;
     let sourceKeys = [];
     let owner = core.getInput('owner');
     let sourceUrl = feedUrl;
@@ -73,76 +72,117 @@ function writeFeedToFile(feedUrl, existingFileLocation, tempFileLocation) {
     if (fs.existsSync(existingFileLocation)) {
         // get key from existing NuGet.config so NuGet/dotnet can match credentials
         const curContents = fs.readFileSync(existingFileLocation, 'utf8');
-        const json = xmlParser.parse(curContents, { ignoreAttributes: false });
+        const parserOptions = {
+            ignoreAttributes: false
+        };
+        const parser = new fast_xml_parser_1.XMLParser(parserOptions);
+        const json = parser.parse(curContents);
         if (typeof json.configuration === 'undefined') {
             throw new Error(`The provided NuGet.config seems invalid.`);
         }
-        if (typeof json.configuration.packageSources != 'undefined') {
-            if (typeof json.configuration.packageSources.add != 'undefined') {
-                // file has at least one <add>
-                if (typeof json.configuration.packageSources.add[0] === 'undefined') {
-                    // file has only one <add>
-                    if (json.configuration.packageSources.add['@_value']
-                        .toLowerCase()
-                        .includes(feedUrl.toLowerCase())) {
-                        const key = json.configuration.packageSources.add['@_key'];
+        if ((_b = (_a = json.configuration) === null || _a === void 0 ? void 0 : _a.packageSources) === null || _b === void 0 ? void 0 : _b.add) {
+            const packageSources = json.configuration.packageSources.add;
+            if (Array.isArray(packageSources)) {
+                packageSources.forEach(source => {
+                    const value = source['@_value'];
+                    core.debug(`source '${value}'`);
+                    if (value.toLowerCase().includes(feedUrl.toLowerCase())) {
+                        const key = source['@_key'];
                         sourceKeys.push(key);
                         core.debug(`Found a URL with key ${key}`);
                     }
-                }
-                else {
-                    // file has 2+ <add>
-                    for (let i = 0; i < json.configuration.packageSources.add.length; i++) {
-                        const source = json.configuration.packageSources.add[i];
-                        const value = source['@_value'];
-                        core.debug(`source '${value}'`);
-                        if (value.toLowerCase().includes(feedUrl.toLowerCase())) {
-                            const key = source['@_key'];
-                            sourceKeys.push(key);
-                            core.debug(`Found a URL with key ${key}`);
-                        }
-                    }
+                });
+            }
+            else {
+                if (packageSources['@_value']
+                    .toLowerCase()
+                    .includes(feedUrl.toLowerCase())) {
+                    const key = packageSources['@_key'];
+                    sourceKeys.push(key);
+                    core.debug(`Found a URL with key ${key}`);
                 }
             }
         }
     }
-    xml = xmlbuilder
-        .create('configuration')
-        .ele('config')
-        .ele('add', { key: 'defaultPushSource', value: sourceUrl })
-        .up()
-        .up();
+    const xmlSource = [
+        {
+            '?xml': [
+                {
+                    '#text': ''
+                }
+            ],
+            ':@': {
+                '@_version': '1.0'
+            }
+        },
+        {
+            configuration: [
+                {
+                    config: [
+                        {
+                            add: [],
+                            ':@': {
+                                '@_key': 'defaultPushSource',
+                                '@_value': sourceUrl
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ];
     if (!sourceKeys.length) {
         let keystring = 'Source';
-        xml = xml
-            .ele('packageSources')
-            .ele('add', { key: keystring, value: sourceUrl })
-            .up()
-            .up();
+        xmlSource[1].configuration.push({
+            packageSources: [
+                {
+                    add: [],
+                    ':@': {
+                        '@_key': keystring,
+                        '@_value': sourceUrl
+                    }
+                }
+            ]
+        });
         sourceKeys.push(keystring);
     }
-    xml = xml.ele('packageSourceCredentials');
+    const packageSourceCredentials = [];
     sourceKeys.forEach(key => {
         if (!isValidKey(key)) {
             throw new Error("Source name can contain letters, numbers, and '-', '_', '.' symbols only. Please, fix source name in NuGet.config and try again.");
         }
-        xml = xml
-            .ele(key)
-            .ele('add', { key: 'Username', value: owner })
-            .up()
-            .ele('add', {
-            key: 'ClearTextPassword',
-            value: process.env.NUGET_AUTH_TOKEN
-        })
-            .up()
-            .up();
+        packageSourceCredentials.push({
+            [key]: [
+                {
+                    add: [],
+                    ':@': {
+                        '@_key': 'Username',
+                        '@_value': owner
+                    }
+                },
+                {
+                    add: [],
+                    ':@': {
+                        '@_key': 'ClearTextPassword',
+                        '@_value': process.env.NUGET_AUTH_TOKEN
+                    }
+                }
+            ]
+        });
     });
-    // If NuGet fixes itself such that on Linux it can look for environment variables in the config file (it doesn't seem to work today),
-    // use this for the value above
-    //           process.platform == 'win32'
-    //             ? '%NUGET_AUTH_TOKEN%'
-    //             : '$NUGET_AUTH_TOKEN'
-    const output = xml.end({ pretty: true });
+    xmlSource[1].configuration.push({
+        packageSourceCredentials
+    });
+    const xmlBuilderOptions = {
+        format: true,
+        ignoreAttributes: false,
+        preserveOrder: true,
+        allowBooleanAttributes: true,
+        suppressBooleanAttributes: true,
+        suppressEmptyNode: true
+    };
+    const builder = new fast_xml_parser_1.XMLBuilder(xmlBuilderOptions);
+    const output = builder.build(xmlSource).trim();
     fs.writeFileSync(tempFileLocation, output);
 }
 
@@ -8343,636 +8383,20 @@ module.exports = opts => {
 
 /***/ }),
 
-/***/ 5152:
+/***/ 2603:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
-//parse Empty Node as self closing node
-const buildOptions = (__nccwpck_require__(8280).buildOptions);
 
-const defaultOptions = {
-  attributeNamePrefix: '@_',
-  attrNodeName: false,
-  textNodeName: '#text',
-  ignoreAttributes: true,
-  cdataTagName: false,
-  cdataPositionChar: '\\c',
-  format: false,
-  indentBy: '  ',
-  supressEmptyNode: false,
-  tagValueProcessor: function(a) {
-    return a;
-  },
-  attrValueProcessor: function(a) {
-    return a;
-  },
-};
-
-const props = [
-  'attributeNamePrefix',
-  'attrNodeName',
-  'textNodeName',
-  'ignoreAttributes',
-  'cdataTagName',
-  'cdataPositionChar',
-  'format',
-  'indentBy',
-  'supressEmptyNode',
-  'tagValueProcessor',
-  'attrValueProcessor',
-];
-
-function Parser(options) {
-  this.options = buildOptions(options, defaultOptions, props);
-  if (this.options.ignoreAttributes || this.options.attrNodeName) {
-    this.isAttribute = function(/*a*/) {
-      return false;
-    };
-  } else {
-    this.attrPrefixLen = this.options.attributeNamePrefix.length;
-    this.isAttribute = isAttribute;
-  }
-  if (this.options.cdataTagName) {
-    this.isCDATA = isCDATA;
-  } else {
-    this.isCDATA = function(/*a*/) {
-      return false;
-    };
-  }
-  this.replaceCDATAstr = replaceCDATAstr;
-  this.replaceCDATAarr = replaceCDATAarr;
-
-  if (this.options.format) {
-    this.indentate = indentate;
-    this.tagEndChar = '>\n';
-    this.newLine = '\n';
-  } else {
-    this.indentate = function() {
-      return '';
-    };
-    this.tagEndChar = '>';
-    this.newLine = '';
-  }
-
-  if (this.options.supressEmptyNode) {
-    this.buildTextNode = buildEmptyTextNode;
-    this.buildObjNode = buildEmptyObjNode;
-  } else {
-    this.buildTextNode = buildTextValNode;
-    this.buildObjNode = buildObjectNode;
-  }
-
-  this.buildTextValNode = buildTextValNode;
-  this.buildObjectNode = buildObjectNode;
-}
-
-Parser.prototype.parse = function(jObj) {
-  return this.j2x(jObj, 0).val;
-};
-
-Parser.prototype.j2x = function(jObj, level) {
-  let attrStr = '';
-  let val = '';
-  const keys = Object.keys(jObj);
-  const len = keys.length;
-  for (let i = 0; i < len; i++) {
-    const key = keys[i];
-    if (typeof jObj[key] === 'undefined') {
-      // supress undefined node
-    } else if (jObj[key] === null) {
-      val += this.indentate(level) + '<' + key + '/' + this.tagEndChar;
-    } else if (jObj[key] instanceof Date) {
-      val += this.buildTextNode(jObj[key], key, '', level);
-    } else if (typeof jObj[key] !== 'object') {
-      //premitive type
-      const attr = this.isAttribute(key);
-      if (attr) {
-        attrStr += ' ' + attr + '="' + this.options.attrValueProcessor('' + jObj[key]) + '"';
-      } else if (this.isCDATA(key)) {
-        if (jObj[this.options.textNodeName]) {
-          val += this.replaceCDATAstr(jObj[this.options.textNodeName], jObj[key]);
-        } else {
-          val += this.replaceCDATAstr('', jObj[key]);
-        }
-      } else {
-        //tag value
-        if (key === this.options.textNodeName) {
-          if (jObj[this.options.cdataTagName]) {
-            //value will added while processing cdata
-          } else {
-            val += this.options.tagValueProcessor('' + jObj[key]);
-          }
-        } else {
-          val += this.buildTextNode(jObj[key], key, '', level);
-        }
-      }
-    } else if (Array.isArray(jObj[key])) {
-      //repeated nodes
-      if (this.isCDATA(key)) {
-        val += this.indentate(level);
-        if (jObj[this.options.textNodeName]) {
-          val += this.replaceCDATAarr(jObj[this.options.textNodeName], jObj[key]);
-        } else {
-          val += this.replaceCDATAarr('', jObj[key]);
-        }
-      } else {
-        //nested nodes
-        const arrLen = jObj[key].length;
-        for (let j = 0; j < arrLen; j++) {
-          const item = jObj[key][j];
-          if (typeof item === 'undefined') {
-            // supress undefined node
-          } else if (item === null) {
-            val += this.indentate(level) + '<' + key + '/' + this.tagEndChar;
-          } else if (typeof item === 'object') {
-            const result = this.j2x(item, level + 1);
-            val += this.buildObjNode(result.val, key, result.attrStr, level);
-          } else {
-            val += this.buildTextNode(item, key, '', level);
-          }
-        }
-      }
-    } else {
-      //nested node
-      if (this.options.attrNodeName && key === this.options.attrNodeName) {
-        const Ks = Object.keys(jObj[key]);
-        const L = Ks.length;
-        for (let j = 0; j < L; j++) {
-          attrStr += ' ' + Ks[j] + '="' + this.options.attrValueProcessor('' + jObj[key][Ks[j]]) + '"';
-        }
-      } else {
-        const result = this.j2x(jObj[key], level + 1);
-        val += this.buildObjNode(result.val, key, result.attrStr, level);
-      }
-    }
-  }
-  return {attrStr: attrStr, val: val};
-};
-
-function replaceCDATAstr(str, cdata) {
-  str = this.options.tagValueProcessor('' + str);
-  if (this.options.cdataPositionChar === '' || str === '') {
-    return str + '<![CDATA[' + cdata + ']]' + this.tagEndChar;
-  } else {
-    return str.replace(this.options.cdataPositionChar, '<![CDATA[' + cdata + ']]' + this.tagEndChar);
-  }
-}
-
-function replaceCDATAarr(str, cdata) {
-  str = this.options.tagValueProcessor('' + str);
-  if (this.options.cdataPositionChar === '' || str === '') {
-    return str + '<![CDATA[' + cdata.join(']]><![CDATA[') + ']]' + this.tagEndChar;
-  } else {
-    for (let v in cdata) {
-      str = str.replace(this.options.cdataPositionChar, '<![CDATA[' + cdata[v] + ']]>');
-    }
-    return str + this.newLine;
-  }
-}
-
-function buildObjectNode(val, key, attrStr, level) {
-  if (attrStr && !val.includes('<')) {
-    return (
-      this.indentate(level) +
-      '<' +
-      key +
-      attrStr +
-      '>' +
-      val +
-      //+ this.newLine
-      // + this.indentate(level)
-      '</' +
-      key +
-      this.tagEndChar
-    );
-  } else {
-    return (
-      this.indentate(level) +
-      '<' +
-      key +
-      attrStr +
-      this.tagEndChar +
-      val +
-      //+ this.newLine
-      this.indentate(level) +
-      '</' +
-      key +
-      this.tagEndChar
-    );
-  }
-}
-
-function buildEmptyObjNode(val, key, attrStr, level) {
-  if (val !== '') {
-    return this.buildObjectNode(val, key, attrStr, level);
-  } else {
-    return this.indentate(level) + '<' + key + attrStr + '/' + this.tagEndChar;
-    //+ this.newLine
-  }
-}
-
-function buildTextValNode(val, key, attrStr, level) {
-  return (
-    this.indentate(level) +
-    '<' +
-    key +
-    attrStr +
-    '>' +
-    this.options.tagValueProcessor(val) +
-    '</' +
-    key +
-    this.tagEndChar
-  );
-}
-
-function buildEmptyTextNode(val, key, attrStr, level) {
-  if (val !== '') {
-    return this.buildTextValNode(val, key, attrStr, level);
-  } else {
-    return this.indentate(level) + '<' + key + attrStr + '/' + this.tagEndChar;
-  }
-}
-
-function indentate(level) {
-  return this.options.indentBy.repeat(level);
-}
-
-function isAttribute(name /*, options*/) {
-  if (name.startsWith(this.options.attributeNamePrefix)) {
-    return name.substr(this.attrPrefixLen);
-  } else {
-    return false;
-  }
-}
-
-function isCDATA(name) {
-  return name === this.options.cdataTagName;
-}
-
-//formatting
-//indentation
-//\n after each closing or self closing tag
-
-module.exports = Parser;
-
-
-/***/ }),
-
-/***/ 1901:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-const char = function(a) {
-  return String.fromCharCode(a);
-};
-
-const chars = {
-  nilChar: char(176),
-  missingChar: char(201),
-  nilPremitive: char(175),
-  missingPremitive: char(200),
-
-  emptyChar: char(178),
-  emptyValue: char(177), //empty Premitive
-
-  boundryChar: char(179),
-
-  objStart: char(198),
-  arrStart: char(204),
-  arrayEnd: char(185),
-};
-
-const charsArr = [
-  chars.nilChar,
-  chars.nilPremitive,
-  chars.missingChar,
-  chars.missingPremitive,
-  chars.boundryChar,
-  chars.emptyChar,
-  chars.emptyValue,
-  chars.arrayEnd,
-  chars.objStart,
-  chars.arrStart,
-];
-
-const _e = function(node, e_schema, options) {
-  if (typeof e_schema === 'string') {
-    //premitive
-    if (node && node[0] && node[0].val !== undefined) {
-      return getValue(node[0].val, e_schema);
-    } else {
-      return getValue(node, e_schema);
-    }
-  } else {
-    const hasValidData = hasData(node);
-    if (hasValidData === true) {
-      let str = '';
-      if (Array.isArray(e_schema)) {
-        //attributes can't be repeated. hence check in children tags only
-        str += chars.arrStart;
-        const itemSchema = e_schema[0];
-        //var itemSchemaType = itemSchema;
-        const arr_len = node.length;
-
-        if (typeof itemSchema === 'string') {
-          for (let arr_i = 0; arr_i < arr_len; arr_i++) {
-            const r = getValue(node[arr_i].val, itemSchema);
-            str = processValue(str, r);
-          }
-        } else {
-          for (let arr_i = 0; arr_i < arr_len; arr_i++) {
-            const r = _e(node[arr_i], itemSchema, options);
-            str = processValue(str, r);
-          }
-        }
-        str += chars.arrayEnd; //indicates that next item is not array item
-      } else {
-        //object
-        str += chars.objStart;
-        const keys = Object.keys(e_schema);
-        if (Array.isArray(node)) {
-          node = node[0];
-        }
-        for (let i in keys) {
-          const key = keys[i];
-          //a property defined in schema can be present either in attrsMap or children tags
-          //options.textNodeName will not present in both maps, take it's value from val
-          //options.attrNodeName will be present in attrsMap
-          let r;
-          if (!options.ignoreAttributes && node.attrsMap && node.attrsMap[key]) {
-            r = _e(node.attrsMap[key], e_schema[key], options);
-          } else if (key === options.textNodeName) {
-            r = _e(node.val, e_schema[key], options);
-          } else {
-            r = _e(node.child[key], e_schema[key], options);
-          }
-          str = processValue(str, r);
-        }
-      }
-      return str;
-    } else {
-      return hasValidData;
-    }
-  }
-};
-
-const getValue = function(a /*, type*/) {
-  switch (a) {
-    case undefined:
-      return chars.missingPremitive;
-    case null:
-      return chars.nilPremitive;
-    case '':
-      return chars.emptyValue;
-    default:
-      return a;
-  }
-};
-
-const processValue = function(str, r) {
-  if (!isAppChar(r[0]) && !isAppChar(str[str.length - 1])) {
-    str += chars.boundryChar;
-  }
-  return str + r;
-};
-
-const isAppChar = function(ch) {
-  return charsArr.indexOf(ch) !== -1;
-};
-
-function hasData(jObj) {
-  if (jObj === undefined) {
-    return chars.missingChar;
-  } else if (jObj === null) {
-    return chars.nilChar;
-  } else if (
-    jObj.child &&
-    Object.keys(jObj.child).length === 0 &&
-    (!jObj.attrsMap || Object.keys(jObj.attrsMap).length === 0)
-  ) {
-    return chars.emptyChar;
-  } else {
-    return true;
-  }
-}
-
-const x2j = __nccwpck_require__(6712);
-const buildOptions = (__nccwpck_require__(8280).buildOptions);
-
-const convert2nimn = function(node, e_schema, options) {
-  options = buildOptions(options, x2j.defaultOptions, x2j.props);
-  return _e(node, e_schema, options);
-};
-
-exports.convert2nimn = convert2nimn;
-
-
-/***/ }),
-
-/***/ 8270:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const util = __nccwpck_require__(8280);
-
-const convertToJson = function(node, options) {
-  const jObj = {};
-
-  //when no child node or attr is present
-  if ((!node.child || util.isEmptyObject(node.child)) && (!node.attrsMap || util.isEmptyObject(node.attrsMap))) {
-    return util.isExist(node.val) ? node.val : '';
-  } else {
-    //otherwise create a textnode if node has some text
-    if (util.isExist(node.val)) {
-      if (!(typeof node.val === 'string' && (node.val === '' || node.val === options.cdataPositionChar))) {
-        if(options.arrayMode === "strict"){
-          jObj[options.textNodeName] = [ node.val ];
-        }else{
-          jObj[options.textNodeName] = node.val;
-        }
-      }
-    }
-  }
-
-  util.merge(jObj, node.attrsMap, options.arrayMode);
-
-  const keys = Object.keys(node.child);
-  for (let index = 0; index < keys.length; index++) {
-    var tagname = keys[index];
-    if (node.child[tagname] && node.child[tagname].length > 1) {
-      jObj[tagname] = [];
-      for (var tag in node.child[tagname]) {
-        jObj[tagname].push(convertToJson(node.child[tagname][tag], options));
-      }
-    } else {
-      if(options.arrayMode === true){
-        const result = convertToJson(node.child[tagname][0], options)
-        if(typeof result === 'object')
-          jObj[tagname] = [ result ];
-        else
-          jObj[tagname] = result;
-      }else if(options.arrayMode === "strict"){
-        jObj[tagname] = [convertToJson(node.child[tagname][0], options) ];
-      }else{
-        jObj[tagname] = convertToJson(node.child[tagname][0], options);
-      }
-    }
-  }
-
-  //add value
-  return jObj;
-};
-
-exports.convertToJson = convertToJson;
-
-
-/***/ }),
-
-/***/ 6014:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const util = __nccwpck_require__(8280);
-const buildOptions = (__nccwpck_require__(8280).buildOptions);
-const x2j = __nccwpck_require__(6712);
-
-//TODO: do it later
-const convertToJsonString = function(node, options) {
-  options = buildOptions(options, x2j.defaultOptions, x2j.props);
-
-  options.indentBy = options.indentBy || '';
-  return _cToJsonStr(node, options, 0);
-};
-
-const _cToJsonStr = function(node, options, level) {
-  let jObj = '{';
-
-  //traver through all the children
-  const keys = Object.keys(node.child);
-
-  for (let index = 0; index < keys.length; index++) {
-    var tagname = keys[index];
-    if (node.child[tagname] && node.child[tagname].length > 1) {
-      jObj += '"' + tagname + '" : [ ';
-      for (var tag in node.child[tagname]) {
-        jObj += _cToJsonStr(node.child[tagname][tag], options) + ' , ';
-      }
-      jObj = jObj.substr(0, jObj.length - 1) + ' ] '; //remove extra comma in last
-    } else {
-      jObj += '"' + tagname + '" : ' + _cToJsonStr(node.child[tagname][0], options) + ' ,';
-    }
-  }
-  util.merge(jObj, node.attrsMap);
-  //add attrsMap as new children
-  if (util.isEmptyObject(jObj)) {
-    return util.isExist(node.val) ? node.val : '';
-  } else {
-    if (util.isExist(node.val)) {
-      if (!(typeof node.val === 'string' && (node.val === '' || node.val === options.cdataPositionChar))) {
-        jObj += '"' + options.textNodeName + '" : ' + stringval(node.val);
-      }
-    }
-  }
-  //add value
-  if (jObj[jObj.length - 1] === ',') {
-    jObj = jObj.substr(0, jObj.length - 2);
-  }
-  return jObj + '}';
-};
-
-function stringval(v) {
-  if (v === true || v === false || !isNaN(v)) {
-    return v;
-  } else {
-    return '"' + v + '"';
-  }
-}
-
-function indentate(options, level) {
-  return options.indentBy.repeat(level);
-}
-
-exports.convertToJsonString = convertToJsonString;
-
-
-/***/ }),
-
-/***/ 7448:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const nodeToJson = __nccwpck_require__(8270);
-const xmlToNodeobj = __nccwpck_require__(6712);
-const x2xmlnode = __nccwpck_require__(6712);
-const buildOptions = (__nccwpck_require__(8280).buildOptions);
 const validator = __nccwpck_require__(1739);
+const XMLParser = __nccwpck_require__(2380);
+const XMLBuilder = __nccwpck_require__(660);
 
-exports.parse = function(xmlData, options, validationOption) {
-  if( validationOption){
-    if(validationOption === true) validationOption = {}
-    
-    const result = validator.validate(xmlData, validationOption);
-    if (result !== true) {
-      throw Error( result.err.msg)
-    }
-  }
-  options = buildOptions(options, x2xmlnode.defaultOptions, x2xmlnode.props);
-  const traversableObj = xmlToNodeobj.getTraversalObj(xmlData, options)
-  //print(traversableObj, "  ");
-  return nodeToJson.convertToJson(traversableObj, options);
-};
-exports.convertTonimn = __nccwpck_require__(1901).convert2nimn;
-exports.getTraversalObj = xmlToNodeobj.getTraversalObj;
-exports.convertToJson = nodeToJson.convertToJson;
-exports.convertToJsonString = __nccwpck_require__(6014).convertToJsonString;
-exports.validate = validator.validate;
-exports.j2xParser = __nccwpck_require__(5152);
-exports.parseToNimn = function(xmlData, schema, options) {
-  return exports.convertTonimn(exports.getTraversalObj(xmlData, options), schema, options);
-};
-
-
-function print(xmlNode, indentation){
-  if(xmlNode){
-    console.log(indentation + "{")
-    console.log(indentation + "  \"tagName\": \"" + xmlNode.tagname + "\", ");
-    if(xmlNode.parent){
-      console.log(indentation + "  \"parent\": \"" + xmlNode.parent.tagname  + "\", ");
-    }
-    console.log(indentation + "  \"val\": \"" + xmlNode.val  + "\", ");
-    console.log(indentation + "  \"attrs\": " + JSON.stringify(xmlNode.attrsMap,null,4)  + ", ");
-
-    if(xmlNode.child){
-      console.log(indentation + "\"child\": {")
-      const indentation2 = indentation + indentation;
-      Object.keys(xmlNode.child).forEach( function(key) {
-        const node = xmlNode.child[key];
-
-        if(Array.isArray(node)){
-          console.log(indentation +  "\""+key+"\" :[")
-          node.forEach( function(item,index) {
-            //console.log(indentation + " \""+index+"\" : [")
-            print(item, indentation2);
-          })
-          console.log(indentation + "],")  
-        }else{
-          console.log(indentation + " \""+key+"\" : {")
-          print(node, indentation2);
-          console.log(indentation + "},")  
-        }
-      });
-      console.log(indentation + "},")
-    }
-    console.log(indentation + "},")
-  }
+module.exports = {
+  XMLParser: XMLParser,
+  XMLValidator: validator,
+  XMLBuilder: XMLBuilder
 }
 
 /***/ }),
@@ -8993,6 +8417,7 @@ const getAllMatches = function(string, regex) {
   let match = regex.exec(string);
   while (match) {
     const allmatches = [];
+    allmatches.startIndex = regex.lastIndex - match[0].length;
     const len = match.length;
     for (let index = 0; index < len; index++) {
       allmatches.push(match[index]);
@@ -9026,9 +8451,9 @@ exports.merge = function(target, a, arrayMode) {
     const keys = Object.keys(a); // will return an array of own properties
     const len = keys.length; //don't make it inline
     for (let i = 0; i < len; i++) {
-      if(arrayMode === 'strict'){
+      if (arrayMode === 'strict') {
         target[keys[i]] = [ a[keys[i]] ];
-      }else{
+      } else {
         target[keys[i]] = a[keys[i]];
       }
     }
@@ -9049,22 +8474,6 @@ exports.getValue = function(v) {
 // const fakeCall = function(a) {return a;};
 // const fakeCallNoReturn = function() {};
 
-exports.buildOptions = function(options, defaultOptions, props) {
-  var newOptions = {};
-  if (!options) {
-    return defaultOptions; //if there are not options
-  }
-
-  for (let i = 0; i < props.length; i++) {
-    if (options[props[i]] !== undefined) {
-      newOptions[props[i]] = options[props[i]];
-    } else {
-      newOptions[props[i]] = defaultOptions[props[i]];
-    }
-  }
-  return newOptions;
-};
-
 exports.isName = isName;
 exports.getAllMatches = getAllMatches;
 exports.nameRegexp = nameRegexp;
@@ -9082,13 +8491,12 @@ const util = __nccwpck_require__(8280);
 
 const defaultOptions = {
   allowBooleanAttributes: false, //A tag can have attributes without any value
+  unpairedTags: []
 };
-
-const props = ['allowBooleanAttributes'];
 
 //const tagsPattern = new RegExp("<\\/?([\\w:\\-_\.]+)\\s*\/?>","g");
 exports.validate = function (xmlData, options) {
-  options = util.buildOptions(options, defaultOptions, props);
+  options = Object.assign({}, defaultOptions, options);
 
   //xmlData = xmlData.replace(/(\r\n|\n|\r)/gm,"");//make it single line
   //xmlData = xmlData.replace(/(^\s*<\?xml.*?\?>)/g,"");//Remove XML starting tag
@@ -9103,19 +8511,20 @@ exports.validate = function (xmlData, options) {
     // check for byte order mark (BOM)
     xmlData = xmlData.substr(1);
   }
-
+  
   for (let i = 0; i < xmlData.length; i++) {
-    if (xmlData[i] === '<') {
+
+    if (xmlData[i] === '<' && xmlData[i+1] === '?') {
+      i+=2;
+      i = readPI(xmlData,i);
+      if (i.err) return i;
+    }else if (xmlData[i] === '<') {
       //starting of tag
       //read until you reach to '>' avoiding any '>' in attribute value
-
+      let tagStartPos = i;
       i++;
-      if (xmlData[i] === '?') {
-        i = readPI(xmlData, ++i);
-        if (i.err) {
-          return i;
-        }
-      } else if (xmlData[i] === '!') {
+      
+      if (xmlData[i] === '!') {
         i = readCommentAndCDATA(xmlData, i);
         continue;
       } else {
@@ -9148,7 +8557,7 @@ exports.validate = function (xmlData, options) {
         if (!validateTagName(tagName)) {
           let msg;
           if (tagName.trim().length === 0) {
-            msg = "There is an unnecessary space between tag name and backward slash '</ ..'.";
+            msg = "Invalid space after '<'.";
           } else {
             msg = "Tag '"+tagName+"' is an invalid name.";
           }
@@ -9164,6 +8573,7 @@ exports.validate = function (xmlData, options) {
 
         if (attrStr[attrStr.length - 1] === '/') {
           //self closing tag
+          const attrStrStart = i - attrStr.length;
           attrStr = attrStr.substring(0, attrStr.length - 1);
           const isValid = validateAttributeString(attrStr, options);
           if (isValid === true) {
@@ -9173,17 +8583,20 @@ exports.validate = function (xmlData, options) {
             //the result from the nested function returns the position of the error within the attribute
             //in order to get the 'true' error line, we need to calculate the position where the attribute begins (i - attrStr.length) and then add the position within the attribute
             //this gives us the absolute index in the entire xml, which we can use to find the line at last
-            return getErrorObject(isValid.err.code, isValid.err.msg, getLineNumberForPosition(xmlData, i - attrStr.length + isValid.err.line));
+            return getErrorObject(isValid.err.code, isValid.err.msg, getLineNumberForPosition(xmlData, attrStrStart + isValid.err.line));
           }
         } else if (closingTag) {
           if (!result.tagClosed) {
             return getErrorObject('InvalidTag', "Closing tag '"+tagName+"' doesn't have proper closing.", getLineNumberForPosition(xmlData, i));
           } else if (attrStr.trim().length > 0) {
-            return getErrorObject('InvalidTag', "Closing tag '"+tagName+"' can't have attributes or invalid starting.", getLineNumberForPosition(xmlData, i));
+            return getErrorObject('InvalidTag', "Closing tag '"+tagName+"' can't have attributes or invalid starting.", getLineNumberForPosition(xmlData, tagStartPos));
           } else {
             const otg = tags.pop();
-            if (tagName !== otg) {
-              return getErrorObject('InvalidTag', "Closing tag '"+otg+"' is expected inplace of '"+tagName+"'.", getLineNumberForPosition(xmlData, i));
+            if (tagName !== otg.tagName) {
+              let openPos = getLineNumberForPosition(xmlData, otg.tagStartPos);
+              return getErrorObject('InvalidTag',
+                "Expected closing tag '"+otg.tagName+"' (opened in line "+openPos.line+", col "+openPos.col+") instead of closing tag '"+tagName+"'.",
+                getLineNumberForPosition(xmlData, tagStartPos));
             }
 
             //when there are no more tags, we reached the root level.
@@ -9203,8 +8616,10 @@ exports.validate = function (xmlData, options) {
           //if the root level has been reached before ...
           if (reachedRoot === true) {
             return getErrorObject('InvalidXml', 'Multiple possible root nodes found.', getLineNumberForPosition(xmlData, i));
+          } else if(options.unpairedTags.indexOf(tagName) !== -1){
+            //don't push into stack
           } else {
-            tags.push(tagName);
+            tags.push({tagName, tagStartPos});
           }
           tagFound = true;
         }
@@ -9218,7 +8633,10 @@ exports.validate = function (xmlData, options) {
               i++;
               i = readCommentAndCDATA(xmlData, i);
               continue;
-            } else {
+            } else if (xmlData[i+1] === '?') {
+              i = readPI(xmlData, ++i);
+              if (i.err) return i;
+            } else{
               break;
             }
           } else if (xmlData[i] === '&') {
@@ -9226,6 +8644,10 @@ exports.validate = function (xmlData, options) {
             if (afterAmp == -1)
               return getErrorObject('InvalidChar', "char '&' is not expected.", getLineNumberForPosition(xmlData, i));
             i = afterAmp;
+          }else{
+            if (reachedRoot === true && !isWhiteSpace(xmlData[i])) {
+              return getErrorObject('InvalidXml', "Extra text at the end", getLineNumberForPosition(xmlData, i));
+            }
           }
         } //end of reading tag text value
         if (xmlData[i] === '<') {
@@ -9233,7 +8655,7 @@ exports.validate = function (xmlData, options) {
         }
       }
     } else {
-      if (xmlData[i] === ' ' || xmlData[i] === '\t' || xmlData[i] === '\n' || xmlData[i] === '\r') {
+      if ( isWhiteSpace(xmlData[i])) {
         continue;
       }
       return getErrorObject('InvalidChar', "char '"+xmlData[i]+"' is not expected.", getLineNumberForPosition(xmlData, i));
@@ -9242,24 +8664,31 @@ exports.validate = function (xmlData, options) {
 
   if (!tagFound) {
     return getErrorObject('InvalidXml', 'Start tag expected.', 1);
-  } else if (tags.length > 0) {
-    return getErrorObject('InvalidXml', "Invalid '"+JSON.stringify(tags, null, 4).replace(/\r?\n/g, '')+"' found.", 1);
+  }else if (tags.length == 1) {
+      return getErrorObject('InvalidTag', "Unclosed tag '"+tags[0].tagName+"'.", getLineNumberForPosition(xmlData, tags[0].tagStartPos));
+  }else if (tags.length > 0) {
+      return getErrorObject('InvalidXml', "Invalid '"+
+          JSON.stringify(tags.map(t => t.tagName), null, 4).replace(/\r?\n/g, '')+
+          "' found.", {line: 1, col: 1});
   }
 
   return true;
 };
 
+function isWhiteSpace(char){
+  return char === ' ' || char === '\t' || char === '\n'  || char === '\r';
+}
 /**
  * Read Processing insstructions and skip
  * @param {*} xmlData
  * @param {*} i
  */
 function readPI(xmlData, i) {
-  var start = i;
+  const start = i;
   for (; i < xmlData.length; i++) {
     if (xmlData[i] == '?' || xmlData[i] == ' ') {
       //tagname
-      var tagname = xmlData.substr(start, i - start);
+      const tagname = xmlData.substr(start, i - start);
       if (i > 5 && tagname === 'xml') {
         return getErrorObject('InvalidXml', 'XML declaration allowed only at the start of the document.', getLineNumberForPosition(xmlData, i));
       } else if (xmlData[i] == '?' && xmlData[i + 1] == '>') {
@@ -9325,8 +8754,8 @@ function readCommentAndCDATA(xmlData, i) {
   return i;
 }
 
-var doubleQuote = '"';
-var singleQuote = "'";
+const doubleQuote = '"';
+const singleQuote = "'";
 
 /**
  * Keep reading xmlData until '<' is found outside the attribute value.
@@ -9343,7 +8772,6 @@ function readAttributeStr(xmlData, i) {
         startChar = xmlData[i];
       } else if (startChar !== xmlData[i]) {
         //if vaue is enclosed with double quote then single quotes are allowed inside the value and vice versa
-        continue;
       } else {
         startChar = '';
       }
@@ -9384,23 +8812,25 @@ function validateAttributeString(attrStr, options) {
   for (let i = 0; i < matches.length; i++) {
     if (matches[i][1].length === 0) {
       //nospace before attribute name: a="sd"b="saf"
-      return getErrorObject('InvalidAttr', "Attribute '"+matches[i][2]+"' has no space in starting.", getPositionFromMatch(attrStr, matches[i][0]))
+      return getErrorObject('InvalidAttr', "Attribute '"+matches[i][2]+"' has no space in starting.", getPositionFromMatch(matches[i]))
+    } else if (matches[i][3] !== undefined && matches[i][4] === undefined) {
+      return getErrorObject('InvalidAttr', "Attribute '"+matches[i][2]+"' is without value.", getPositionFromMatch(matches[i]));
     } else if (matches[i][3] === undefined && !options.allowBooleanAttributes) {
       //independent attribute: ab
-      return getErrorObject('InvalidAttr', "boolean attribute '"+matches[i][2]+"' is not allowed.", getPositionFromMatch(attrStr, matches[i][0]));
+      return getErrorObject('InvalidAttr', "boolean attribute '"+matches[i][2]+"' is not allowed.", getPositionFromMatch(matches[i]));
     }
     /* else if(matches[i][6] === undefined){//attribute without value: ab=
                     return { err: { code:"InvalidAttr",msg:"attribute " + matches[i][2] + " has no value assigned."}};
                 } */
     const attrName = matches[i][2];
     if (!validateAttrName(attrName)) {
-      return getErrorObject('InvalidAttr', "Attribute '"+attrName+"' is an invalid name.", getPositionFromMatch(attrStr, matches[i][0]));
+      return getErrorObject('InvalidAttr', "Attribute '"+attrName+"' is an invalid name.", getPositionFromMatch(matches[i]));
     }
     if (!attrNames.hasOwnProperty(attrName)) {
       //check for duplicate attribute.
       attrNames[attrName] = 1;
     } else {
-      return getErrorObject('InvalidAttr', "Attribute '"+attrName+"' is repeated.", getPositionFromMatch(attrStr, matches[i][0]));
+      return getErrorObject('InvalidAttr', "Attribute '"+attrName+"' is repeated.", getPositionFromMatch(matches[i]));
     }
   }
 
@@ -9447,7 +8877,8 @@ function getErrorObject(code, message, lineNumber) {
     err: {
       code: code,
       msg: message,
-      line: lineNumber,
+      line: lineNumber.line || lineNumber,
+      col: lineNumber.col,
     },
   };
 }
@@ -9464,52 +8895,587 @@ function validateTagName(tagname) {
 
 //this function returns the line number for the character at the given index
 function getLineNumberForPosition(xmlData, index) {
-  var lines = xmlData.substring(0, index).split(/\r?\n/);
-  return lines.length;
+  const lines = xmlData.substring(0, index).split(/\r?\n/);
+  return {
+    line: lines.length,
+
+    // column number is last line's length + 1, because column numbering starts at 1:
+    col: lines[lines.length - 1].length + 1
+  };
 }
 
-//this function returns the position of the last character of match within attrStr
-function getPositionFromMatch(attrStr, match) {
-  return attrStr.indexOf(match) + match.length;
+//this function returns the position of the first character of match within attrStr
+function getPositionFromMatch(match) {
+  return match.startIndex + match[1].length;
 }
 
 
 /***/ }),
 
-/***/ 9539:
-/***/ ((module) => {
+/***/ 660:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
+//parse Empty Node as self closing node
+const buildFromOrderedJs = __nccwpck_require__(2462);
 
-module.exports = function(tagname, parent, val) {
-  this.tagname = tagname;
-  this.parent = parent;
-  this.child = {}; //child tags
-  this.attrsMap = {}; //attributes map
-  this.val = val; //text only
-  this.addChild = function(child) {
-    if (Array.isArray(this.child[child.tagname])) {
-      //already presents
-      this.child[child.tagname].push(child);
-    } else {
-      this.child[child.tagname] = [child];
-    }
-  };
+const defaultOptions = {
+  attributeNamePrefix: '@_',
+  attributesGroupName: false,
+  textNodeName: '#text',
+  ignoreAttributes: true,
+  cdataPropName: false,
+  format: false,
+  indentBy: '  ',
+  suppressEmptyNode: false,
+  suppressUnpairedNode: true,
+  suppressBooleanAttributes: true,
+  tagValueProcessor: function(key, a) {
+    return a;
+  },
+  attributeValueProcessor: function(attrName, a) {
+    return a;
+  },
+  preserveOrder: false,
+  commentPropName: false,
+  unpairedTags: [],
+  entities: [
+    { regex: new RegExp("&", "g"), val: "&amp;" },//it must be on top
+    { regex: new RegExp(">", "g"), val: "&gt;" },
+    { regex: new RegExp("<", "g"), val: "&lt;" },
+    { regex: new RegExp("\'", "g"), val: "&apos;" },
+    { regex: new RegExp("\"", "g"), val: "&quot;" }
+  ],
+  processEntities: true,
+  stopNodes: [],
+  transformTagName: false,
 };
 
+function Builder(options) {
+  this.options = Object.assign({}, defaultOptions, options);
+  if (this.options.ignoreAttributes || this.options.attributesGroupName) {
+    this.isAttribute = function(/*a*/) {
+      return false;
+    };
+  } else {
+    this.attrPrefixLen = this.options.attributeNamePrefix.length;
+    this.isAttribute = isAttribute;
+  }
+
+  this.processTextOrObjNode = processTextOrObjNode
+
+  if (this.options.format) {
+    this.indentate = indentate;
+    this.tagEndChar = '>\n';
+    this.newLine = '\n';
+  } else {
+    this.indentate = function() {
+      return '';
+    };
+    this.tagEndChar = '>';
+    this.newLine = '';
+  }
+
+  if (this.options.suppressEmptyNode) {
+    this.buildTextNode = buildEmptyTextNode;
+    this.buildObjNode = buildEmptyObjNode;
+  } else {
+    this.buildTextNode = buildTextValNode;
+    this.buildObjNode = buildObjectNode;
+  }
+
+  this.buildTextValNode = buildTextValNode;
+  this.buildObjectNode = buildObjectNode;
+
+  this.replaceEntitiesValue = replaceEntitiesValue;
+  this.buildAttrPairStr = buildAttrPairStr;
+}
+
+Builder.prototype.build = function(jObj) {
+  if(this.options.preserveOrder){
+    return buildFromOrderedJs(jObj, this.options);
+  }else {
+    if(Array.isArray(jObj) && this.options.arrayNodeName && this.options.arrayNodeName.length > 1){
+      jObj = {
+        [this.options.arrayNodeName] : jObj
+      }
+    }
+    return this.j2x(jObj, 0).val;
+  }
+};
+
+Builder.prototype.j2x = function(jObj, level) {
+  let attrStr = '';
+  let val = '';
+  for (let key in jObj) {
+    if (typeof jObj[key] === 'undefined') {
+      // supress undefined node
+    } else if (jObj[key] === null) {
+      if(key[0] === "?") val += this.indentate(level) + '<' + key + '?' + this.tagEndChar;
+      else val += this.indentate(level) + '<' + key + '/' + this.tagEndChar;
+      // val += this.indentate(level) + '<' + key + '/' + this.tagEndChar;
+    } else if (jObj[key] instanceof Date) {
+      val += this.buildTextNode(jObj[key], key, '', level);
+    } else if (typeof jObj[key] !== 'object') {
+      //premitive type
+      const attr = this.isAttribute(key);
+      if (attr) {
+        attrStr += this.buildAttrPairStr(attr, '' + jObj[key]);
+      }else {
+        //tag value
+        if (key === this.options.textNodeName) {
+          let newval = this.options.tagValueProcessor(key, '' + jObj[key]);
+          val += this.replaceEntitiesValue(newval);
+        } else {
+          val += this.buildTextNode(jObj[key], key, '', level);
+        }
+      }
+    } else if (Array.isArray(jObj[key])) {
+      //repeated nodes
+      const arrLen = jObj[key].length;
+      for (let j = 0; j < arrLen; j++) {
+        const item = jObj[key][j];
+        if (typeof item === 'undefined') {
+          // supress undefined node
+        } else if (item === null) {
+          if(key[0] === "?") val += this.indentate(level) + '<' + key + '?' + this.tagEndChar;
+          else val += this.indentate(level) + '<' + key + '/' + this.tagEndChar;
+          // val += this.indentate(level) + '<' + key + '/' + this.tagEndChar;
+        } else if (typeof item === 'object') {
+          val += this.processTextOrObjNode(item, key, level)
+        } else {
+          val += this.buildTextNode(item, key, '', level);
+        }
+      }
+    } else {
+      //nested node
+      if (this.options.attributesGroupName && key === this.options.attributesGroupName) {
+        const Ks = Object.keys(jObj[key]);
+        const L = Ks.length;
+        for (let j = 0; j < L; j++) {
+          attrStr += this.buildAttrPairStr(Ks[j], '' + jObj[key][Ks[j]]);
+        }
+      } else {
+        val += this.processTextOrObjNode(jObj[key], key, level)
+      }
+    }
+  }
+  return {attrStr: attrStr, val: val};
+};
+
+function buildAttrPairStr(attrName, val){
+  val = this.options.attributeValueProcessor(attrName, '' + val);
+  val = this.replaceEntitiesValue(val);
+  if (this.options.suppressBooleanAttributes && val === "true") {
+    return ' ' + attrName;
+  } else return ' ' + attrName + '="' + val + '"';
+}
+
+function processTextOrObjNode (object, key, level) {
+  const result = this.j2x(object, level + 1);
+  if (object[this.options.textNodeName] !== undefined && Object.keys(object).length === 1) {
+    return this.buildTextNode(object[this.options.textNodeName], key, result.attrStr, level);
+  } else {
+    return this.buildObjNode(result.val, key, result.attrStr, level);
+  }
+}
+
+function buildObjectNode(val, key, attrStr, level) {
+  let tagEndExp = '</' + key + this.tagEndChar;
+  let piClosingChar = "";
+  
+  if(key[0] === "?") {
+    piClosingChar = "?";
+    tagEndExp = "";
+  }
+
+  if (attrStr && val.indexOf('<') === -1) {
+    return ( this.indentate(level) + '<' +  key + attrStr + piClosingChar + '>' + val + tagEndExp );
+  } else if (this.options.commentPropName !== false && key === this.options.commentPropName && piClosingChar.length === 0) {
+    return this.indentate(level) + `<!--${val}-->` + this.newLine;
+  }else {
+    return (
+      this.indentate(level) + '<' + key + attrStr + piClosingChar + this.tagEndChar +
+      val +
+      this.indentate(level) + tagEndExp    );
+  }
+}
+
+function buildEmptyObjNode(val, key, attrStr, level) {
+  if (val !== '') {
+    return this.buildObjectNode(val, key, attrStr, level);
+  } else {
+    if(key[0] === "?") return  this.indentate(level) + '<' + key + attrStr+ '?' + this.tagEndChar;
+    else return  this.indentate(level) + '<' + key + attrStr + '/' + this.tagEndChar;
+  }
+}
+
+function buildTextValNode(val, key, attrStr, level) {
+  if (this.options.cdataPropName !== false && key === this.options.cdataPropName) {
+    return this.indentate(level) + `<![CDATA[${val}]]>` +  this.newLine;
+  }else if (this.options.commentPropName !== false && key === this.options.commentPropName) {
+    return this.indentate(level) + `<!--${val}-->` +  this.newLine;
+  }else{
+    let textValue = this.options.tagValueProcessor(key, val);
+    textValue = this.replaceEntitiesValue(textValue);
+  
+    if( textValue === '' && this.options.unpairedTags.indexOf(key) !== -1){ //unpaired
+      if(this.options.suppressUnpairedNode){
+        return this.indentate(level) + '<' + key + this.tagEndChar;
+      }else{
+        return this.indentate(level) + '<' + key + "/" + this.tagEndChar;
+      }
+    } else{
+      return (
+        this.indentate(level) + '<' + key + attrStr + '>' +
+         textValue +
+        '</' + key + this.tagEndChar  );
+    }
+
+  }
+}
+
+function replaceEntitiesValue(textValue){
+  if(textValue && textValue.length > 0 && this.options.processEntities){
+    for (let i=0; i<this.options.entities.length; i++) {
+      const entity = this.options.entities[i];
+      textValue = textValue.replace(entity.regex, entity.val);
+    }
+  }
+  return textValue;
+}
+
+function buildEmptyTextNode(val, key, attrStr, level) {
+  if( val === '' && this.options.unpairedTags.indexOf(key) !== -1){ //unpaired
+    if(this.options.suppressUnpairedNode){
+      return this.indentate(level) + '<' + key + this.tagEndChar;
+    }else{
+      return this.indentate(level) + '<' + key + "/" + this.tagEndChar;
+    }
+  }else if (val !== '') { //empty
+    return this.buildTextValNode(val, key, attrStr, level);
+  } else {
+    if(key[0] === "?") return  this.indentate(level) + '<' + key + attrStr+ '?' + this.tagEndChar; //PI tag
+    else return  this.indentate(level) + '<' + key + attrStr + '/' + this.tagEndChar; //normal
+  }
+}
+
+function indentate(level) {
+  return this.options.indentBy.repeat(level);
+}
+
+function isAttribute(name /*, options*/) {
+  if (name.startsWith(this.options.attributeNamePrefix)) {
+    return name.substr(this.attrPrefixLen);
+  } else {
+    return false;
+  }
+}
+
+module.exports = Builder;
+
 
 /***/ }),
 
-/***/ 6712:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ 2462:
+/***/ ((module) => {
+
+const EOL = "\n";
+
+/**
+ * 
+ * @param {array} jArray 
+ * @param {any} options 
+ * @returns 
+ */
+function toXml(jArray, options){
+    return arrToStr( jArray, options, "", 0);
+}
+
+function arrToStr(arr, options, jPath, level){
+    let xmlStr = "";
+
+    let indentation = "";
+    if(options.format && options.indentBy.length > 0){//TODO: this logic can be avoided for each call
+        indentation = EOL + "" + options.indentBy.repeat(level);
+    }
+
+    for (let i = 0; i < arr.length; i++) {
+        const tagObj = arr[i];
+        const tagName = propName(tagObj);
+        let newJPath = "";
+        if(jPath.length === 0) newJPath = tagName
+        else newJPath = `${jPath}.${tagName}`;
+
+        if(tagName === options.textNodeName){
+            let tagText = tagObj[tagName];
+            if(!isStopNode(newJPath, options)){
+                tagText = options.tagValueProcessor( tagName, tagText);
+                tagText = replaceEntitiesValue(tagText, options);
+            }
+            xmlStr += indentation + tagText;
+            continue;
+        }else if( tagName === options.cdataPropName){
+            xmlStr += indentation + `<![CDATA[${tagObj[tagName][0][options.textNodeName]}]]>`;
+            continue;
+        }else if( tagName === options.commentPropName){
+            xmlStr += indentation + `<!--${tagObj[tagName][0][options.textNodeName]}-->`;
+            continue;
+        }else if( tagName[0] === "?"){
+            const attStr = attr_to_str(tagObj[":@"], options);
+            const tempInd = tagName === "?xml" ? "" : indentation;
+            let piTextNodeName = tagObj[tagName][0][options.textNodeName];
+            piTextNodeName = piTextNodeName.length !== 0 ? " " + piTextNodeName : ""; //remove extra spacing
+            xmlStr += tempInd + `<${tagName}${piTextNodeName}${attStr}?>`;
+            continue;
+        }
+        const attStr = attr_to_str(tagObj[":@"], options);
+        let tagStart =  indentation + `<${tagName}${attStr}`;
+        let tagValue = arrToStr(tagObj[tagName], options, newJPath, level + 1);
+        if(options.unpairedTags.indexOf(tagName) !== -1){
+            if(options.suppressUnpairedNode)  xmlStr += tagStart + ">"; 
+            else xmlStr += tagStart + "/>"; 
+        }else if( (!tagValue || tagValue.length === 0) && options.suppressEmptyNode){ 
+            xmlStr += tagStart + "/>"; 
+        }else{ 
+            //TODO: node with only text value should not parse the text value in next line
+            xmlStr += tagStart + `>${tagValue}${indentation}</${tagName}>` ;
+        }
+    }
+    
+    return xmlStr;
+}
+
+function propName(obj){
+    const keys = Object.keys(obj);
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      if(key !== ":@") return key;
+    }
+  }
+
+function attr_to_str(attrMap, options){
+    let attrStr = "";
+    if(attrMap && !options.ignoreAttributes){
+        for (let attr in attrMap){
+            let attrVal = options.attributeValueProcessor(attr, attrMap[attr]);
+            attrVal = replaceEntitiesValue(attrVal, options);
+            if(attrVal === true && options.suppressBooleanAttributes){
+                attrStr+= ` ${attr.substr(options.attributeNamePrefix.length)}`;
+            }else{
+                attrStr+= ` ${attr.substr(options.attributeNamePrefix.length)}="${attrVal}"`;
+            }
+        }
+    }
+    return attrStr;
+}
+
+function isStopNode(jPath, options){
+    jPath = jPath.substr(0,jPath.length - options.textNodeName.length - 1);
+    let tagName = jPath.substr(jPath.lastIndexOf(".") + 1);
+    for(let index in options.stopNodes){
+        if(options.stopNodes[index] === jPath || options.stopNodes[index] === "*."+tagName) return true;
+    }
+    return false;
+}
+
+function replaceEntitiesValue(textValue, options){
+    if(textValue && textValue.length > 0 && options.processEntities){
+      for (let i=0; i< options.entities.length; i++) {
+        const entity = options.entities[i];
+        textValue = textValue.replace(entity.regex, entity.val);
+      }
+    }
+    return textValue;
+  }
+module.exports = toXml;
+
+/***/ }),
+
+/***/ 6072:
+/***/ ((module) => {
+
+//TODO: handle comments
+function readDocType(xmlData, i){
+    
+    const entities = {};
+    if( xmlData[i + 3] === 'O' &&
+         xmlData[i + 4] === 'C' &&
+         xmlData[i + 5] === 'T' &&
+         xmlData[i + 6] === 'Y' &&
+         xmlData[i + 7] === 'P' &&
+         xmlData[i + 8] === 'E')
+    {    
+        i = i+9;
+        let angleBracketsCount = 1;
+        let hasBody = false, entity = false, comment = false;
+        let exp = "";
+        for(;i<xmlData.length;i++){
+            if (xmlData[i] === '<') {
+                if( hasBody && 
+                     xmlData[i+1] === '!' &&
+                     xmlData[i+2] === 'E' &&
+                     xmlData[i+3] === 'N' &&
+                     xmlData[i+4] === 'T' &&
+                     xmlData[i+5] === 'I' &&
+                     xmlData[i+6] === 'T' &&
+                     xmlData[i+7] === 'Y'
+                ){
+                    i += 7;
+                    entity = true;
+                }else if( hasBody && 
+                    xmlData[i+1] === '!' &&
+                     xmlData[i+2] === 'E' &&
+                     xmlData[i+3] === 'L' &&
+                     xmlData[i+4] === 'E' &&
+                     xmlData[i+5] === 'M' &&
+                     xmlData[i+6] === 'E' &&
+                     xmlData[i+7] === 'N' &&
+                     xmlData[i+8] === 'T'
+                ){
+                    //Not supported
+                    i += 8;
+                }else if( hasBody && 
+                    xmlData[i+1] === '!' &&
+                    xmlData[i+2] === 'A' &&
+                    xmlData[i+3] === 'T' &&
+                    xmlData[i+4] === 'T' &&
+                    xmlData[i+5] === 'L' &&
+                    xmlData[i+6] === 'I' &&
+                    xmlData[i+7] === 'S' &&
+                    xmlData[i+8] === 'T'
+                ){
+                    //Not supported
+                    i += 8;
+                }else if( hasBody && 
+                    xmlData[i+1] === '!' &&
+                    xmlData[i+2] === 'N' &&
+                    xmlData[i+3] === 'O' &&
+                    xmlData[i+4] === 'T' &&
+                    xmlData[i+5] === 'A' &&
+                    xmlData[i+6] === 'T' &&
+                    xmlData[i+7] === 'I' &&
+                    xmlData[i+8] === 'O' &&
+                    xmlData[i+9] === 'N'
+                ){
+                    //Not supported
+                    i += 9;
+                }else if( //comment
+                    xmlData[i+1] === '!' &&
+                    xmlData[i+2] === '-' &&
+                    xmlData[i+3] === '-'
+                ){
+                    comment = true;
+                }else{
+                    throw new Error("Invalid DOCTYPE");
+                }
+                angleBracketsCount++;
+                exp = "";
+            } else if (xmlData[i] === '>') {
+                if(comment){
+                    if( xmlData[i - 1] === "-" && xmlData[i - 2] === "-"){
+                        comment = false;
+                    }else{
+                        throw new Error(`Invalid XML comment in DOCTYPE`);
+                    }
+                }else if(entity){
+                    parseEntityExp(exp, entities);
+                    entity = false;
+                }
+                angleBracketsCount--;
+                if (angleBracketsCount === 0) {
+                  break;
+                }
+            }else if( xmlData[i] === '['){
+                hasBody = true;
+            }else{
+                exp += xmlData[i];
+            }
+        }
+        if(angleBracketsCount !== 0){
+            throw new Error(`Unclosed DOCTYPE`);
+        }
+    }else{
+        throw new Error(`Invalid Tag instead of DOCTYPE`);
+    }
+    return {entities, i};
+}
+
+const entityRegex = RegExp("^\\s([a-zA-z0-0]+)[ \t](['\"])([^&]+)\\2");
+function parseEntityExp(exp, entities){
+    const match = entityRegex.exec(exp);
+    if(match){
+        entities[ match[1] ] = {
+            regx : RegExp( `&${match[1]};`,"g"),
+            val: match[3]
+        };
+    }
+}
+module.exports = readDocType;
+
+/***/ }),
+
+/***/ 6993:
+/***/ ((__unused_webpack_module, exports) => {
+
+
+const defaultOptions = {
+    preserveOrder: false,
+    attributeNamePrefix: '@_',
+    attributesGroupName: false,
+    textNodeName: '#text',
+    ignoreAttributes: true,
+    removeNSPrefix: false, // remove NS from tag name or attribute name if true
+    allowBooleanAttributes: false, //a tag can have attributes without any value
+    //ignoreRootElement : false,
+    parseTagValue: true,
+    parseAttributeValue: false,
+    trimValues: true, //Trim string values of tag and attributes
+    cdataPropName: false,
+    numberParseOptions: {
+      hex: true,
+      leadingZeros: true
+    },
+    tagValueProcessor: function(tagName, val) {
+      return val;
+    },
+    attributeValueProcessor: function(attrName, val) {
+      return val;
+    },
+    stopNodes: [], //nested tags will not be parsed even for errors
+    alwaysCreateTextNode: false,
+    isArray: () => false,
+    commentPropName: false,
+    unpairedTags: [],
+    processEntities: true,
+    htmlEntities: false,
+    ignoreDeclaration: false,
+    ignorePiTags: false,
+    transformTagName: false,
+};
+   
+const buildOptions = function(options) {
+    return Object.assign({}, defaultOptions, options);
+};
+
+exports.buildOptions = buildOptions;
+exports.defaultOptions = defaultOptions;
+
+/***/ }),
+
+/***/ 5832:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
+///@ts-check
 
 const util = __nccwpck_require__(8280);
-const buildOptions = (__nccwpck_require__(8280).buildOptions);
-const xmlNode = __nccwpck_require__(9539);
+const xmlNode = __nccwpck_require__(7462);
+const readDocType = __nccwpck_require__(6072);
+const toNumber = __nccwpck_require__(4526);
+
 const regx =
   '<((!\\[CDATA\\[([\\s\\S]*?)(]]>))|((NAME:)?(NAME))([^>]*)>|((\\/)(NAME)\\s*>))([^<]*)'
   .replace(/NAME/g, util.nameRegexp);
@@ -9517,80 +9483,98 @@ const regx =
 //const tagsRegx = new RegExp("<(\\/?[\\w:\\-\._]+)([^>]*)>(\\s*"+cdataRegx+")*([^<]+)?","g");
 //const tagsRegx = new RegExp("<(\\/?)((\\w*:)?([\\w:\\-\._]+))([^>]*)>([^<]*)("+cdataRegx+"([^<]*))*([^<]+)?","g");
 
-//polyfill
-if (!Number.parseInt && window.parseInt) {
-  Number.parseInt = window.parseInt;
-}
-if (!Number.parseFloat && window.parseFloat) {
-  Number.parseFloat = window.parseFloat;
-}
-
-const defaultOptions = {
-  attributeNamePrefix: '@_',
-  attrNodeName: false,
-  textNodeName: '#text',
-  ignoreAttributes: true,
-  ignoreNameSpace: false,
-  allowBooleanAttributes: false, //a tag can have attributes without any value
-  //ignoreRootElement : false,
-  parseNodeValue: true,
-  parseAttributeValue: false,
-  arrayMode: false,
-  trimValues: true, //Trim string values of tag and attributes
-  cdataTagName: false,
-  cdataPositionChar: '\\c',
-  tagValueProcessor: function(a, tagName) {
-    return a;
-  },
-  attrValueProcessor: function(a, attrName) {
-    return a;
-  },
-  stopNodes: []
-  //decodeStrict: false,
-};
-
-exports.defaultOptions = defaultOptions;
-
-const props = [
-  'attributeNamePrefix',
-  'attrNodeName',
-  'textNodeName',
-  'ignoreAttributes',
-  'ignoreNameSpace',
-  'allowBooleanAttributes',
-  'parseNodeValue',
-  'parseAttributeValue',
-  'arrayMode',
-  'trimValues',
-  'cdataTagName',
-  'cdataPositionChar',
-  'tagValueProcessor',
-  'attrValueProcessor',
-  'parseTrueNumberOnly',
-  'stopNodes'
-];
-exports.props = props;
-
-/**
- * Trim -> valueProcessor -> parse value
- * @param {string} tagName
- * @param {string} val
- * @param {object} options
- */
-function processTagValue(tagName, val, options) {
-  if (val) {
-    if (options.trimValues) {
-      val = val.trim();
-    }
-    val = options.tagValueProcessor(val, tagName);
-    val = parseValue(val, options.parseNodeValue, options.parseTrueNumberOnly);
+class OrderedObjParser{
+  constructor(options){
+    this.options = options;
+    this.currentNode = null;
+    this.tagsNodeStack = [];
+    this.docTypeEntities = {};
+    this.lastEntities = {
+      "amp" : { regex: /&(amp|#38|#x26);/g, val : "&"},
+      "apos" : { regex: /&(apos|#39|#x27);/g, val : "'"},
+      "gt" : { regex: /&(gt|#62|#x3E);/g, val : ">"},
+      "lt" : { regex: /&(lt|#60|#x3C);/g, val : "<"},
+      "quot" : { regex: /&(quot|#34|#x22);/g, val : "\""},
+    };
+    this.htmlEntities = {
+      "space": { regex: /&(nbsp|#160);/g, val: " " },
+      // "lt" : { regex: /&(lt|#60);/g, val: "<" },
+      // "gt" : { regex: /&(gt|#62);/g, val: ">" },
+      // "amp" : { regex: /&(amp|#38);/g, val: "&" },
+      // "quot" : { regex: /&(quot|#34);/g, val: "\"" },
+      // "apos" : { regex: /&(apos|#39);/g, val: "'" },
+      "cent" : { regex: /&(cent|#162);/g, val: "¢" },
+      "pound" : { regex: /&(pound|#163);/g, val: "£" },
+      "yen" : { regex: /&(yen|#165);/g, val: "¥" },
+      "euro" : { regex: /&(euro|#8364);/g, val: "€" },
+      "copyright" : { regex: /&(copy|#169);/g, val: "©" },
+      "reg" : { regex: /&(reg|#174);/g, val: "®" },
+      "inr" : { regex: /&(inr|#8377);/g, val: "₹" },
+    };
+    this.addExternalEntities = addExternalEntities;
+    this.parseXml = parseXml;
+    this.parseTextData = parseTextData;
+    this.resolveNameSpace = resolveNameSpace;
+    this.buildAttributesMap = buildAttributesMap;
+    this.isItStopNode = isItStopNode;
+    this.replaceEntitiesValue = replaceEntitiesValue;
+    this.readStopNodeData = readStopNodeData;
+    this.saveTextToParentTag = saveTextToParentTag;
   }
 
-  return val;
 }
 
-function resolveNameSpace(tagname, options) {
-  if (options.ignoreNameSpace) {
+function addExternalEntities(externalEntities){
+  const entKeys = Object.keys(externalEntities);
+  for (let i = 0; i < entKeys.length; i++) {
+    const ent = entKeys[i];
+    this.lastEntities[ent] = {
+       regex: new RegExp("&"+ent+";","g"),
+       val : externalEntities[ent]
+    }
+  }
+}
+
+/**
+ * @param {string} val
+ * @param {string} tagName
+ * @param {string} jPath
+ * @param {boolean} dontTrim
+ * @param {boolean} hasAttributes
+ * @param {boolean} isLeafNode
+ * @param {boolean} escapeEntities
+ */
+function parseTextData(val, tagName, jPath, dontTrim, hasAttributes, isLeafNode, escapeEntities) {
+  if (val !== undefined) {
+    if (this.options.trimValues && !dontTrim) {
+      val = val.trim();
+    }
+    if(val.length > 0){
+      if(!escapeEntities) val = this.replaceEntitiesValue(val);
+      
+      const newval = this.options.tagValueProcessor(tagName, val, jPath, hasAttributes, isLeafNode);
+      if(newval === null || newval === undefined){
+        //don't parse
+        return val;
+      }else if(typeof newval !== typeof val || newval !== val){
+        //overwrite
+        return newval;
+      }else if(this.options.trimValues){
+        return parseValue(val, this.options.parseTagValue, this.options.numberParseOptions);
+      }else{
+        const trimmedVal = val.trim();
+        if(trimmedVal === val){
+          return parseValue(val, this.options.parseTagValue, this.options.numberParseOptions);
+        }else{
+          return val;
+        }
+      }
+    }
+  }
+}
+
+function resolveNameSpace(tagname) {
+  if (this.options.removeNSPrefix) {
     const tags = tagname.split(':');
     const prefix = tagname.charAt(0) === '/' ? '/' : '';
     if (tags[0] === 'xmlns') {
@@ -9603,232 +9587,334 @@ function resolveNameSpace(tagname, options) {
   return tagname;
 }
 
-function parseValue(val, shouldParse, parseTrueNumberOnly) {
-  if (shouldParse && typeof val === 'string') {
-    let parsed;
-    if (val.trim() === '' || isNaN(val)) {
-      parsed = val === 'true' ? true : val === 'false' ? false : val;
-    } else {
-      if (val.indexOf('0x') !== -1) {
-        //support hexa decimal
-        parsed = Number.parseInt(val, 16);
-      } else if (val.indexOf('.') !== -1) {
-        parsed = Number.parseFloat(val);
-        val = val.replace(/\.?0+$/, "");
-      } else {
-        parsed = Number.parseInt(val, 10);
-      }
-      if (parseTrueNumberOnly) {
-        parsed = String(parsed) === val ? parsed : val;
-      }
-    }
-    return parsed;
-  } else {
-    if (util.isExist(val)) {
-      return val;
-    } else {
-      return '';
-    }
-  }
-}
-
 //TODO: change regex to capture NS
 //const attrsRegx = new RegExp("([\\w\\-\\.\\:]+)\\s*=\\s*(['\"])((.|\n)*?)\\2","gm");
-const attrsRegx = new RegExp('([^\\s=]+)\\s*(=\\s*([\'"])(.*?)\\3)?', 'g');
+const attrsRegx = new RegExp('([^\\s=]+)\\s*(=\\s*([\'"])([\\s\\S]*?)\\3)?', 'gm');
 
-function buildAttributesMap(attrStr, options) {
-  if (!options.ignoreAttributes && typeof attrStr === 'string') {
-    attrStr = attrStr.replace(/\r?\n/g, ' ');
+function buildAttributesMap(attrStr, jPath) {
+  if (!this.options.ignoreAttributes && typeof attrStr === 'string') {
+    // attrStr = attrStr.replace(/\r?\n/g, ' ');
     //attrStr = attrStr || attrStr.trim();
 
     const matches = util.getAllMatches(attrStr, attrsRegx);
     const len = matches.length; //don't make it inline
     const attrs = {};
     for (let i = 0; i < len; i++) {
-      const attrName = resolveNameSpace(matches[i][1], options);
+      const attrName = this.resolveNameSpace(matches[i][1]);
+      let oldVal = matches[i][4];
+      const aName = this.options.attributeNamePrefix + attrName;
       if (attrName.length) {
-        if (matches[i][4] !== undefined) {
-          if (options.trimValues) {
-            matches[i][4] = matches[i][4].trim();
+        if (oldVal !== undefined) {
+          if (this.options.trimValues) {
+            oldVal = oldVal.trim();
           }
-          matches[i][4] = options.attrValueProcessor(matches[i][4], attrName);
-          attrs[options.attributeNamePrefix + attrName] = parseValue(
-            matches[i][4],
-            options.parseAttributeValue,
-            options.parseTrueNumberOnly
-          );
-        } else if (options.allowBooleanAttributes) {
-          attrs[options.attributeNamePrefix + attrName] = true;
+          oldVal = this.replaceEntitiesValue(oldVal);
+          const newVal = this.options.attributeValueProcessor(attrName, oldVal, jPath);
+          if(newVal === null || newVal === undefined){
+            //don't parse
+            attrs[aName] = oldVal;
+          }else if(typeof newVal !== typeof oldVal || newVal !== oldVal){
+            //overwrite
+            attrs[aName] = newVal;
+          }else{
+            //parse
+            attrs[aName] = parseValue(
+              oldVal,
+              this.options.parseAttributeValue,
+              this.options.numberParseOptions
+            );
+          }
+        } else if (this.options.allowBooleanAttributes) {
+          attrs[aName] = true;
         }
       }
     }
     if (!Object.keys(attrs).length) {
       return;
     }
-    if (options.attrNodeName) {
+    if (this.options.attributesGroupName) {
       const attrCollection = {};
-      attrCollection[options.attrNodeName] = attrs;
+      attrCollection[this.options.attributesGroupName] = attrs;
       return attrCollection;
     }
     return attrs;
   }
 }
 
-const getTraversalObj = function(xmlData, options) {
-  xmlData = xmlData.replace(/(\r\n)|\n/, " ");
-  options = buildOptions(options, defaultOptions, props);
+const parseXml = function(xmlData) {
+  xmlData = xmlData.replace(/\r\n?/g, "\n"); //TODO: remove this line
   const xmlObj = new xmlNode('!xml');
   let currentNode = xmlObj;
   let textData = "";
-
-//function match(xmlData){
-  for(let i=0; i< xmlData.length; i++){
+  let jPath = "";
+  for(let i=0; i< xmlData.length; i++){//for each char in XML data
     const ch = xmlData[i];
     if(ch === '<'){
+      // const nextIndex = i+1;
+      // const _2ndChar = xmlData[nextIndex];
       if( xmlData[i+1] === '/') {//Closing Tag
         const closeIndex = findClosingIndex(xmlData, ">", i, "Closing Tag is not closed.")
         let tagName = xmlData.substring(i+2,closeIndex).trim();
 
-        if(options.ignoreNameSpace){
+        if(this.options.removeNSPrefix){
           const colonIndex = tagName.indexOf(":");
           if(colonIndex !== -1){
             tagName = tagName.substr(colonIndex+1);
           }
         }
 
-        /* if (currentNode.parent) {
-          currentNode.parent.val = util.getValue(currentNode.parent.val) + '' + processTagValue2(tagName, textData , options);
-        } */
-        if(currentNode){
-          if(currentNode.val){
-            currentNode.val = util.getValue(currentNode.val) + '' + processTagValue(tagName, textData , options);
-          }else{
-            currentNode.val = processTagValue(tagName, textData , options);
-          }
+        if(this.options.transformTagName) {
+          tagName = this.options.transformTagName(tagName);
         }
 
-        if (options.stopNodes.length && options.stopNodes.includes(currentNode.tagname)) {
-          currentNode.child = []
-          if (currentNode.attrsMap == undefined) { currentNode.attrsMap = {}}
-          currentNode.val = xmlData.substr(currentNode.startIndex + 1, i - currentNode.startIndex - 1)
+        if(currentNode){
+          textData = this.saveTextToParentTag(textData, currentNode, jPath);
         }
-        currentNode = currentNode.parent;
+
+        jPath = jPath.substr(0, jPath.lastIndexOf("."));
+        
+        currentNode = this.tagsNodeStack.pop();//avoid recurssion, set the parent tag scope
         textData = "";
         i = closeIndex;
       } else if( xmlData[i+1] === '?') {
-        i = findClosingIndex(xmlData, "?>", i, "Pi Tag is not closed.")
-      } else if(xmlData.substr(i + 1, 3) === '!--') {
-        i = findClosingIndex(xmlData, "-->", i, "Comment is not closed.")
-      } else if( xmlData.substr(i + 1, 2) === '!D') {
-        const closeIndex = findClosingIndex(xmlData, ">", i, "DOCTYPE is not closed.")
-        const tagExp = xmlData.substring(i, closeIndex);
-        if(tagExp.indexOf("[") >= 0){
-          i = xmlData.indexOf("]>", i) + 1;
+
+        let tagData = readTagExp(xmlData,i, false, "?>");
+        if(!tagData) throw new Error("Pi Tag is not closed.");
+
+        textData = this.saveTextToParentTag(textData, currentNode, jPath);
+        if( (this.options.ignoreDeclaration && tagData.tagName === "?xml") || this.options.ignorePiTags){
+
         }else{
-          i = closeIndex;
+  
+          const childNode = new xmlNode(tagData.tagName);
+          childNode.add(this.options.textNodeName, "");
+          
+          if(tagData.tagName !== tagData.tagExp && tagData.attrExpPresent){
+            childNode[":@"] = this.buildAttributesMap(tagData.tagExp, jPath);
+          }
+          currentNode.addChild(childNode);
+
         }
+
+
+        i = tagData.closeIndex + 1;
+      } else if(xmlData.substr(i + 1, 3) === '!--') {
+        const endIndex = findClosingIndex(xmlData, "-->", i+4, "Comment is not closed.")
+        if(this.options.commentPropName){
+          const comment = xmlData.substring(i + 4, endIndex - 2);
+
+          textData = this.saveTextToParentTag(textData, currentNode, jPath);
+
+          currentNode.add(this.options.commentPropName, [ { [this.options.textNodeName] : comment } ]);
+        }
+        i = endIndex;
+      } else if( xmlData.substr(i + 1, 2) === '!D') {
+        const result = readDocType(xmlData, i);
+        this.docTypeEntities = result.entities;
+        i = result.i;
       }else if(xmlData.substr(i + 1, 2) === '![') {
-        const closeIndex = findClosingIndex(xmlData, "]]>", i, "CDATA is not closed.") - 2
+        const closeIndex = findClosingIndex(xmlData, "]]>", i, "CDATA is not closed.") - 2;
         const tagExp = xmlData.substring(i + 9,closeIndex);
 
-        //considerations
-        //1. CDATA will always have parent node
-        //2. A tag with CDATA is not a leaf node so it's value would be string type.
-        if(textData){
-          currentNode.val = util.getValue(currentNode.val) + '' + processTagValue(currentNode.tagname, textData , options);
-          textData = "";
-        }
+        textData = this.saveTextToParentTag(textData, currentNode, jPath);
 
-        if (options.cdataTagName) {
-          //add cdata node
-          const childNode = new xmlNode(options.cdataTagName, currentNode, tagExp);
-          currentNode.addChild(childNode);
-          //for backtracking
-          currentNode.val = util.getValue(currentNode.val) + options.cdataPositionChar;
-          //add rest value to parent node
-          if (tagExp) {
-            childNode.val = tagExp;
-          }
-        } else {
-          currentNode.val = (currentNode.val || '') + (tagExp || '');
+        //cdata should be set even if it is 0 length string
+        if(this.options.cdataPropName){
+          // let val = this.parseTextData(tagExp, this.options.cdataPropName, jPath + "." + this.options.cdataPropName, true, false, true);
+          // if(!val) val = "";
+          currentNode.add(this.options.cdataPropName, [ { [this.options.textNodeName] : tagExp } ]);
+        }else{
+          let val = this.parseTextData(tagExp, currentNode.tagname, jPath, true, false, true);
+          if(val == undefined) val = "";
+          currentNode.add(this.options.textNodeName, val);
         }
-
+        
         i = closeIndex + 2;
       }else {//Opening tag
-        const result = closingIndexForOpeningTag(xmlData, i+1)
-        let tagExp = result.data;
-        const closeIndex = result.index;
-        const separatorIndex = tagExp.indexOf(" ");
-        let tagName = tagExp;
-        if(separatorIndex !== -1){
-          tagName = tagExp.substr(0, separatorIndex).trimRight();
-          tagExp = tagExp.substr(separatorIndex + 1);
-        }
+        let result = readTagExp(xmlData,i, this. options.removeNSPrefix);
+        let tagName= result.tagName;
+        let tagExp = result.tagExp;
+        let attrExpPresent = result.attrExpPresent;
+        let closeIndex = result.closeIndex;
 
-        if(options.ignoreNameSpace){
-          const colonIndex = tagName.indexOf(":");
-          if(colonIndex !== -1){
-            tagName = tagName.substr(colonIndex+1);
-          }
+        if (this.options.transformTagName) {
+          tagName = this.options.transformTagName(tagName);
         }
-
-        //save text to parent node
+        
+        //save text as child node
         if (currentNode && textData) {
           if(currentNode.tagname !== '!xml'){
-            currentNode.val = util.getValue(currentNode.val) + '' + processTagValue( currentNode.tagname, textData, options);
+            //when nested tag is found
+            textData = this.saveTextToParentTag(textData, currentNode, jPath, false);
           }
         }
 
-        if(tagExp.length > 0 && tagExp.lastIndexOf("/") === tagExp.length - 1){//selfClosing tag
-
-          if(tagName[tagName.length - 1] === "/"){ //remove trailing '/'
-            tagName = tagName.substr(0, tagName.length - 1);
-            tagExp = tagName;
-          }else{
-            tagExp = tagExp.substr(0, tagExp.length - 1);
-          }
-
-          const childNode = new xmlNode(tagName, currentNode, '');
-          if(tagName !== tagExp){
-            childNode.attrsMap = buildAttributesMap(tagExp, options);
-          }
-          currentNode.addChild(childNode);
-        }else{//opening tag
-
-          const childNode = new xmlNode( tagName, currentNode );
-          if (options.stopNodes.length && options.stopNodes.includes(childNode.tagname)) {
-            childNode.startIndex=closeIndex;
-          }
-          if(tagName !== tagExp){
-            childNode.attrsMap = buildAttributesMap(tagExp, options);
-          }
-          currentNode.addChild(childNode);
-          currentNode = childNode;
+        if(tagName !== xmlObj.tagname){
+          jPath += jPath ? "." + tagName : tagName;
         }
-        textData = "";
-        i = closeIndex;
+
+        //check if last tag was unpaired tag
+        const lastTag = currentNode;
+        if(lastTag && this.options.unpairedTags.indexOf(lastTag.tagname) !== -1 ){
+          currentNode = this.tagsNodeStack.pop();
+        }
+
+        if (this.isItStopNode(this.options.stopNodes, jPath, tagName)) { //TODO: namespace
+          let tagContent = "";
+          //self-closing tag
+          if(tagExp.length > 0 && tagExp.lastIndexOf("/") === tagExp.length - 1){
+            i = result.closeIndex;
+          }
+          //boolean tag
+          else if(this.options.unpairedTags.indexOf(tagName) !== -1){
+            i = result.closeIndex;
+          }
+          //normal tag
+          else{
+            //read until closing tag is found
+            const result = this.readStopNodeData(xmlData, tagName, closeIndex + 1);
+            if(!result) throw new Error(`Unexpected end of ${tagName}`);
+            i = result.i;
+            tagContent = result.tagContent;
+          }
+
+          const childNode = new xmlNode(tagName);
+          if(tagName !== tagExp && attrExpPresent){
+            childNode[":@"] = this.buildAttributesMap(tagExp, jPath);
+          }
+          if(tagContent) {
+            tagContent = this.parseTextData(tagContent, tagName, jPath, true, attrExpPresent, true, true);
+          }
+          
+          jPath = jPath.substr(0, jPath.lastIndexOf("."));
+          childNode.add(this.options.textNodeName, tagContent);
+          
+          currentNode.addChild(childNode);
+        }else{
+  //selfClosing tag
+          if(tagExp.length > 0 && tagExp.lastIndexOf("/") === tagExp.length - 1){
+            if(tagName[tagName.length - 1] === "/"){ //remove trailing '/'
+              tagName = tagName.substr(0, tagName.length - 1);
+              tagExp = tagName;
+            }else{
+              tagExp = tagExp.substr(0, tagExp.length - 1);
+            }
+            
+            if(this.options.transformTagName) {
+              tagName = this.options.transformTagName(tagName);
+            }
+
+            const childNode = new xmlNode(tagName);
+            if(tagName !== tagExp && attrExpPresent){
+              childNode[":@"] = this.buildAttributesMap(tagExp, jPath);
+            }
+            jPath = jPath.substr(0, jPath.lastIndexOf("."));
+            currentNode.addChild(childNode);
+          }
+    //opening tag
+          else{
+            const childNode = new xmlNode( tagName);
+            this.tagsNodeStack.push(currentNode);
+            
+            if(tagName !== tagExp && attrExpPresent){
+              childNode[":@"] = this.buildAttributesMap(tagExp, jPath);
+            }
+            currentNode.addChild(childNode);
+            currentNode = childNode;
+          }
+          textData = "";
+          i = closeIndex;
+        }
       }
     }else{
       textData += xmlData[i];
     }
   }
-  return xmlObj;
+  return xmlObj.child;
 }
 
-function closingIndexForOpeningTag(data, i){
+const replaceEntitiesValue = function(val){
+  if(this.options.processEntities){
+    for(let entityName in this.docTypeEntities){
+      const entity = this.docTypeEntities[entityName];
+      val = val.replace( entity.regx, entity.val);
+    }
+    for(let entityName in this.lastEntities){
+      const entity = this.lastEntities[entityName];
+      val = val.replace( entity.regex, entity.val);
+    }
+    if(this.options.htmlEntities){
+      for(let entityName in this.htmlEntities){
+        const entity = this.htmlEntities[entityName];
+        val = val.replace( entity.regex, entity.val);
+      }
+    }
+  }
+  return val;
+}
+function saveTextToParentTag(textData, currentNode, jPath, isLeafNode) {
+  if (textData) { //store previously collected data as textNode
+    if(isLeafNode === undefined) isLeafNode = Object.keys(currentNode.child).length === 0
+    
+    textData = this.parseTextData(textData,
+      currentNode.tagname,
+      jPath,
+      false,
+      currentNode[":@"] ? Object.keys(currentNode[":@"]).length !== 0 : false,
+      isLeafNode);
+
+    if (textData !== undefined && textData !== "")
+      currentNode.add(this.options.textNodeName, textData);
+    textData = "";
+  }
+  return textData;
+}
+
+//TODO: use jPath to simplify the logic
+/**
+ * 
+ * @param {string[]} stopNodes 
+ * @param {string} jPath
+ * @param {string} currentTagName 
+ */
+function isItStopNode(stopNodes, jPath, currentTagName){
+  const allNodesExp = "*." + currentTagName;
+  for (const stopNodePath in stopNodes) {
+    const stopNodeExp = stopNodes[stopNodePath];
+    if( allNodesExp === stopNodeExp || jPath === stopNodeExp  ) return true;
+  }
+  return false;
+}
+
+/**
+ * Returns the tag Expression and where it is ending handling single-dobule quotes situation
+ * @param {string} xmlData 
+ * @param {number} i starting index
+ * @returns 
+ */
+function tagExpWithClosingIndex(xmlData, i, closingChar = ">"){
   let attrBoundary;
   let tagExp = "";
-  for (let index = i; index < data.length; index++) {
-    let ch = data[index];
+  for (let index = i; index < xmlData.length; index++) {
+    let ch = xmlData[index];
     if (attrBoundary) {
         if (ch === attrBoundary) attrBoundary = "";//reset
     } else if (ch === '"' || ch === "'") {
         attrBoundary = ch;
-    } else if (ch === '>') {
+    } else if (ch === closingChar[0]) {
+      if(closingChar[1]){
+        if(xmlData[index + 1] === closingChar[1]){
+          return {
+            data: tagExp,
+            index: index
+          }
+        }
+      }else{
         return {
           data: tagExp,
           index: index
         }
+      }
     } else if (ch === '\t') {
       ch = " "
     }
@@ -9845,8 +9931,304 @@ function findClosingIndex(xmlData, str, i, errMsg){
   }
 }
 
-exports.getTraversalObj = getTraversalObj;
+function readTagExp(xmlData,i, removeNSPrefix, closingChar = ">"){
+  const result = tagExpWithClosingIndex(xmlData, i+1, closingChar);
+  if(!result) return;
+  let tagExp = result.data;
+  const closeIndex = result.index;
+  const separatorIndex = tagExp.search(/\s/);
+  let tagName = tagExp;
+  let attrExpPresent = true;
+  if(separatorIndex !== -1){//separate tag name and attributes expression
+    tagName = tagExp.substr(0, separatorIndex).replace(/\s\s*$/, '');
+    tagExp = tagExp.substr(separatorIndex + 1);
+  }
 
+  if(removeNSPrefix){
+    const colonIndex = tagName.indexOf(":");
+    if(colonIndex !== -1){
+      tagName = tagName.substr(colonIndex+1);
+      attrExpPresent = tagName !== result.data.substr(colonIndex + 1);
+    }
+  }
+
+  return {
+    tagName: tagName,
+    tagExp: tagExp,
+    closeIndex: closeIndex,
+    attrExpPresent: attrExpPresent,
+  }
+}
+/**
+ * find paired tag for a stop node
+ * @param {string} xmlData 
+ * @param {string} tagName 
+ * @param {number} i 
+ */
+function readStopNodeData(xmlData, tagName, i){
+  const startIndex = i;
+  // Starting at 1 since we already have an open tag
+  let openTagCount = 1;
+
+  for (; i < xmlData.length; i++) {
+    if( xmlData[i] === "<"){ 
+      if (xmlData[i+1] === "/") {//close tag
+          const closeIndex = findClosingIndex(xmlData, ">", i, `${tagName} is not closed`);
+          let closeTagName = xmlData.substring(i+2,closeIndex).trim();
+          if(closeTagName === tagName){
+            openTagCount--;
+            if (openTagCount === 0) {
+              return {
+                tagContent: xmlData.substring(startIndex, i),
+                i : closeIndex
+              }
+            }
+          }
+          i=closeIndex;
+        } else if(xmlData[i+1] === '?') { 
+          const closeIndex = findClosingIndex(xmlData, "?>", i+1, "StopNode is not closed.")
+          i=closeIndex;
+        } else if(xmlData.substr(i + 1, 3) === '!--') { 
+          const closeIndex = findClosingIndex(xmlData, "-->", i+3, "StopNode is not closed.")
+          i=closeIndex;
+        } else if(xmlData.substr(i + 1, 2) === '![') { 
+          const closeIndex = findClosingIndex(xmlData, "]]>", i, "StopNode is not closed.") - 2;
+          i=closeIndex;
+        } else {
+          const tagData = readTagExp(xmlData, i, '>')
+
+          if (tagData) {
+            const openTagName = tagData && tagData.tagName;
+            if (openTagName === tagName && tagData.tagExp[tagData.tagExp.length-1] !== "/") {
+              openTagCount++;
+            }
+            i=tagData.closeIndex;
+          }
+        }
+      }
+  }//end for loop
+}
+
+function parseValue(val, shouldParse, options) {
+  if (shouldParse && typeof val === 'string') {
+    //console.log(options)
+    const newval = val.trim();
+    if(newval === 'true' ) return true;
+    else if(newval === 'false' ) return false;
+    else return toNumber(val, options);
+  } else {
+    if (util.isExist(val)) {
+      return val;
+    } else {
+      return '';
+    }
+  }
+}
+
+
+module.exports = OrderedObjParser;
+
+
+/***/ }),
+
+/***/ 2380:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const { buildOptions} = __nccwpck_require__(6993);
+const OrderedObjParser = __nccwpck_require__(5832);
+const { prettify} = __nccwpck_require__(2882);
+const validator = __nccwpck_require__(1739);
+
+class XMLParser{
+    
+    constructor(options){
+        this.externalEntities = {};
+        this.options = buildOptions(options);
+        
+    }
+    /**
+     * Parse XML dats to JS object 
+     * @param {string|Buffer} xmlData 
+     * @param {boolean|Object} validationOption 
+     */
+    parse(xmlData,validationOption){
+        if(typeof xmlData === "string"){
+        }else if( xmlData.toString){
+            xmlData = xmlData.toString();
+        }else{
+            throw new Error("XML data is accepted in String or Bytes[] form.")
+        }
+        if( validationOption){
+            if(validationOption === true) validationOption = {}; //validate with default options
+            
+            const result = validator.validate(xmlData, validationOption);
+            if (result !== true) {
+              throw Error( `${result.err.msg}:${result.err.line}:${result.err.col}` )
+            }
+          }
+        const orderedObjParser = new OrderedObjParser(this.options);
+        orderedObjParser.addExternalEntities(this.externalEntities);
+        const orderedResult = orderedObjParser.parseXml(xmlData);
+        if(this.options.preserveOrder || orderedResult === undefined) return orderedResult;
+        else return prettify(orderedResult, this.options);
+    }
+
+    /**
+     * Add Entity which is not by default supported by this library
+     * @param {string} key 
+     * @param {string} value 
+     */
+    addEntity(key, value){
+        if(value.indexOf("&") !== -1){
+            throw new Error("Entity value can't have '&'")
+        }else if(key.indexOf("&") !== -1 || key.indexOf(";") !== -1){
+            throw new Error("An entity must be set without '&' and ';'. Eg. use '#xD' for '&#xD;'")
+        }else{
+            this.externalEntities[key] = value;
+        }
+    }
+}
+
+module.exports = XMLParser;
+
+/***/ }),
+
+/***/ 2882:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+
+/**
+ * 
+ * @param {array} node 
+ * @param {any} options 
+ * @returns 
+ */
+function prettify(node, options){
+  return compress( node, options);
+}
+
+/**
+ * 
+ * @param {array} arr 
+ * @param {object} options 
+ * @param {string} jPath 
+ * @returns object
+ */
+function compress(arr, options, jPath){
+  let text;
+  const compressedObj = {};
+  for (let i = 0; i < arr.length; i++) {
+    const tagObj = arr[i];
+    const property = propName(tagObj);
+    let newJpath = "";
+    if(jPath === undefined) newJpath = property;
+    else newJpath = jPath + "." + property;
+
+    if(property === options.textNodeName){
+      if(text === undefined) text = tagObj[property];
+      else text += "" + tagObj[property];
+    }else if(property === undefined){
+      continue;
+    }else if(tagObj[property]){
+      
+      let val = compress(tagObj[property], options, newJpath);
+      const isLeaf = isLeafTag(val, options);
+
+      if(tagObj[":@"]){
+        assignAttributes( val, tagObj[":@"], newJpath, options);
+      }else if(Object.keys(val).length === 1 && val[options.textNodeName] !== undefined && !options.alwaysCreateTextNode){
+        val = val[options.textNodeName];
+      }else if(Object.keys(val).length === 0){
+        if(options.alwaysCreateTextNode) val[options.textNodeName] = "";
+        else val = "";
+      }
+
+      if(compressedObj[property] !== undefined && compressedObj.hasOwnProperty(property)) {
+        if(!Array.isArray(compressedObj[property])) {
+            compressedObj[property] = [ compressedObj[property] ];
+        }
+        compressedObj[property].push(val);
+      }else{
+        //TODO: if a node is not an array, then check if it should be an array
+        //also determine if it is a leaf node
+        if (options.isArray(property, newJpath, isLeaf )) {
+          compressedObj[property] = [val];
+        }else{
+          compressedObj[property] = val;
+        }
+      }
+    }
+    
+  }
+  // if(text && text.length > 0) compressedObj[options.textNodeName] = text;
+  if(typeof text === "string"){
+    if(text.length > 0) compressedObj[options.textNodeName] = text;
+  }else if(text !== undefined) compressedObj[options.textNodeName] = text;
+  return compressedObj;
+}
+
+function propName(obj){
+  const keys = Object.keys(obj);
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i];
+    if(key !== ":@") return key;
+  }
+}
+
+function assignAttributes(obj, attrMap, jpath, options){
+  if (attrMap) {
+    const keys = Object.keys(attrMap);
+    const len = keys.length; //don't make it inline
+    for (let i = 0; i < len; i++) {
+      const atrrName = keys[i];
+      if (options.isArray(atrrName, jpath + "." + atrrName, true, true)) {
+        obj[atrrName] = [ attrMap[atrrName] ];
+      } else {
+        obj[atrrName] = attrMap[atrrName];
+      }
+    }
+  }
+}
+
+function isLeafTag(obj, options){
+  const propCount = Object.keys(obj).length;
+  if( propCount === 0 || (propCount === 1 && obj[options.textNodeName]) ) return true;
+  return false;
+}
+exports.prettify = prettify;
+
+
+/***/ }),
+
+/***/ 7462:
+/***/ ((module) => {
+
+"use strict";
+
+
+class XmlNode{
+  constructor(tagname) {
+    this.tagname = tagname;
+    this.child = []; //nested tags, text, cdata, comments in order
+    this[":@"] = {}; //attributes map
+  }
+  add(key,val){
+    // this.child.push( {name : key, val: val, isCdata: isCdata });
+    this.child.push( {[key]: val });
+  }
+  addChild(node) {
+    if(node[":@"] && Object.keys(node[":@"]).length > 0){
+      this.child.push( { [node.tagname]: node.child, [":@"]: node[":@"] });
+    }else{
+      this.child.push( { [node.tagname]: node.child });
+    }
+  };
+};
+
+
+module.exports = XmlNode;
 
 /***/ }),
 
@@ -19338,6 +19720,137 @@ module.exports = function (x) {
 
 /***/ }),
 
+/***/ 4526:
+/***/ ((module) => {
+
+const hexRegex = /^[-+]?0x[a-fA-F0-9]+$/;
+const numRegex = /^([\-\+])?(0*)(\.[0-9]+([eE]\-?[0-9]+)?|[0-9]+(\.[0-9]+([eE]\-?[0-9]+)?)?)$/;
+// const octRegex = /0x[a-z0-9]+/;
+// const binRegex = /0x[a-z0-9]+/;
+
+
+//polyfill
+if (!Number.parseInt && window.parseInt) {
+    Number.parseInt = window.parseInt;
+}
+if (!Number.parseFloat && window.parseFloat) {
+    Number.parseFloat = window.parseFloat;
+}
+
+  
+const consider = {
+    hex :  true,
+    leadingZeros: true,
+    decimalPoint: "\.",
+    eNotation: true
+    //skipLike: /regex/
+};
+
+function toNumber(str, options = {}){
+    // const options = Object.assign({}, consider);
+    // if(opt.leadingZeros === false){
+    //     options.leadingZeros = false;
+    // }else if(opt.hex === false){
+    //     options.hex = false;
+    // }
+
+    options = Object.assign({}, consider, options );
+    if(!str || typeof str !== "string" ) return str;
+    
+    let trimmedStr  = str.trim();
+    // if(trimmedStr === "0.0") return 0;
+    // else if(trimmedStr === "+0.0") return 0;
+    // else if(trimmedStr === "-0.0") return -0;
+
+    if(options.skipLike !== undefined && options.skipLike.test(trimmedStr)) return str;
+    else if (options.hex && hexRegex.test(trimmedStr)) {
+        return Number.parseInt(trimmedStr, 16);
+    // } else if (options.parseOct && octRegex.test(str)) {
+    //     return Number.parseInt(val, 8);
+    // }else if (options.parseBin && binRegex.test(str)) {
+    //     return Number.parseInt(val, 2);
+    }else{
+        //separate negative sign, leading zeros, and rest number
+        const match = numRegex.exec(trimmedStr);
+        if(match){
+            const sign = match[1];
+            const leadingZeros = match[2];
+            let numTrimmedByZeros = trimZeros(match[3]); //complete num without leading zeros
+            //trim ending zeros for floating number
+            
+            const eNotation = match[4] || match[6];
+            if(!options.leadingZeros && leadingZeros.length > 0 && sign && trimmedStr[2] !== ".") return str; //-0123
+            else if(!options.leadingZeros && leadingZeros.length > 0 && !sign && trimmedStr[1] !== ".") return str; //0123
+            else{//no leading zeros or leading zeros are allowed
+                const num = Number(trimmedStr);
+                const numStr = "" + num;
+                if(numStr.search(/[eE]/) !== -1){ //given number is long and parsed to eNotation
+                    if(options.eNotation) return num;
+                    else return str;
+                }else if(eNotation){ //given number has enotation
+                    if(options.eNotation) return num;
+                    else return str;
+                }else if(trimmedStr.indexOf(".") !== -1){ //floating number
+                    // const decimalPart = match[5].substr(1);
+                    // const intPart = trimmedStr.substr(0,trimmedStr.indexOf("."));
+
+                    
+                    // const p = numStr.indexOf(".");
+                    // const givenIntPart = numStr.substr(0,p);
+                    // const givenDecPart = numStr.substr(p+1);
+                    if(numStr === "0" && (numTrimmedByZeros === "") ) return num; //0.0
+                    else if(numStr === numTrimmedByZeros) return num; //0.456. 0.79000
+                    else if( sign && numStr === "-"+numTrimmedByZeros) return num;
+                    else return str;
+                }
+                
+                if(leadingZeros){
+                    // if(numTrimmedByZeros === numStr){
+                    //     if(options.leadingZeros) return num;
+                    //     else return str;
+                    // }else return str;
+                    if(numTrimmedByZeros === numStr) return num;
+                    else if(sign+numTrimmedByZeros === numStr) return num;
+                    else return str;
+                }
+
+                if(trimmedStr === numStr) return num;
+                else if(trimmedStr === sign+numStr) return num;
+                // else{
+                //     //number with +/- sign
+                //     trimmedStr.test(/[-+][0-9]);
+
+                // }
+                return str;
+            }
+            // else if(!eNotation && trimmedStr && trimmedStr !== Number(trimmedStr) ) return str;
+            
+        }else{ //non-numeric string
+            return str;
+        }
+    }
+}
+
+/**
+ * 
+ * @param {string} numStr without leading zeros
+ * @returns 
+ */
+function trimZeros(numStr){
+    if(numStr && numStr.indexOf(".") !== -1){//float
+        numStr = numStr.replace(/0+$/, ""); //remove ending zeros
+        if(numStr === ".")  numStr = "0";
+        else if(numStr[0] === ".")  numStr = "0"+numStr;
+        else if(numStr[numStr.length-1] === ".")  numStr = numStr.substr(0,numStr.length-1);
+        return numStr;
+    }
+    return numStr;
+}
+module.exports = toNumber
+
+
+/***/ }),
+
 /***/ 4294:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -20516,5191 +21029,6 @@ function wrappy (fn, cb) {
     return ret
   }
 }
-
-
-/***/ }),
-
-/***/ 2839:
-/***/ (function(module) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  module.exports = {
-    Disconnected: 1,
-    Preceding: 2,
-    Following: 4,
-    Contains: 8,
-    ContainedBy: 16,
-    ImplementationSpecific: 32
-  };
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 9267:
-/***/ (function(module) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  module.exports = {
-    Element: 1,
-    Attribute: 2,
-    Text: 3,
-    CData: 4,
-    EntityReference: 5,
-    EntityDeclaration: 6,
-    ProcessingInstruction: 7,
-    Comment: 8,
-    Document: 9,
-    DocType: 10,
-    DocumentFragment: 11,
-    NotationDeclaration: 12,
-    // Numeric codes up to 200 are reserved to W3C for possible future use.
-    // Following are types internal to this library:
-    Declaration: 201,
-    Raw: 202,
-    AttributeDeclaration: 203,
-    ElementDeclaration: 204,
-    Dummy: 205
-  };
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 8229:
-/***/ (function(module) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  // Copies all enumerable own properties from `sources` to `target`
-  var assign, getValue, isArray, isEmpty, isFunction, isObject, isPlainObject,
-    hasProp = {}.hasOwnProperty;
-
-  assign = function(target, ...sources) {
-    var i, key, len, source;
-    if (isFunction(Object.assign)) {
-      Object.assign.apply(null, arguments);
-    } else {
-      for (i = 0, len = sources.length; i < len; i++) {
-        source = sources[i];
-        if (source != null) {
-          for (key in source) {
-            if (!hasProp.call(source, key)) continue;
-            target[key] = source[key];
-          }
-        }
-      }
-    }
-    return target;
-  };
-
-  // Determines if `val` is a Function object
-  isFunction = function(val) {
-    return !!val && Object.prototype.toString.call(val) === '[object Function]';
-  };
-
-  // Determines if `val` is an Object
-  isObject = function(val) {
-    var ref;
-    return !!val && ((ref = typeof val) === 'function' || ref === 'object');
-  };
-
-  // Determines if `val` is an Array
-  isArray = function(val) {
-    if (isFunction(Array.isArray)) {
-      return Array.isArray(val);
-    } else {
-      return Object.prototype.toString.call(val) === '[object Array]';
-    }
-  };
-
-  // Determines if `val` is an empty Array or an Object with no own properties
-  isEmpty = function(val) {
-    var key;
-    if (isArray(val)) {
-      return !val.length;
-    } else {
-      for (key in val) {
-        if (!hasProp.call(val, key)) continue;
-        return false;
-      }
-      return true;
-    }
-  };
-
-  // Determines if `val` is a plain Object
-  isPlainObject = function(val) {
-    var ctor, proto;
-    return isObject(val) && (proto = Object.getPrototypeOf(val)) && (ctor = proto.constructor) && (typeof ctor === 'function') && (ctor instanceof ctor) && (Function.prototype.toString.call(ctor) === Function.prototype.toString.call(Object));
-  };
-
-  // Gets the primitive value of an object
-  getValue = function(obj) {
-    if (isFunction(obj.valueOf)) {
-      return obj.valueOf();
-    } else {
-      return obj;
-    }
-  };
-
-  module.exports.assign = assign;
-
-  module.exports.isFunction = isFunction;
-
-  module.exports.isObject = isObject;
-
-  module.exports.isArray = isArray;
-
-  module.exports.isEmpty = isEmpty;
-
-  module.exports.isPlainObject = isPlainObject;
-
-  module.exports.getValue = getValue;
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 9766:
-/***/ (function(module) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  module.exports = {
-    None: 0,
-    OpenTag: 1,
-    InsideTag: 2,
-    CloseTag: 3
-  };
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 8376:
-/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  var NodeType, XMLAttribute, XMLNode;
-
-  NodeType = __nccwpck_require__(9267);
-
-  XMLNode = __nccwpck_require__(7608);
-
-  // Represents an attribute
-  module.exports = XMLAttribute = (function() {
-    class XMLAttribute {
-      // Initializes a new instance of `XMLAttribute`
-
-      // `parent` the parent node
-      // `name` attribute target
-      // `value` attribute value
-      constructor(parent, name, value) {
-        this.parent = parent;
-        if (this.parent) {
-          this.options = this.parent.options;
-          this.stringify = this.parent.stringify;
-        }
-        if (name == null) {
-          throw new Error("Missing attribute name. " + this.debugInfo(name));
-        }
-        this.name = this.stringify.name(name);
-        this.value = this.stringify.attValue(value);
-        this.type = NodeType.Attribute;
-        // DOM level 3
-        this.isId = false;
-        this.schemaTypeInfo = null;
-      }
-
-      // Creates and returns a deep clone of `this`
-      clone() {
-        return Object.create(this);
-      }
-
-      // Converts the XML fragment to string
-
-      // `options.pretty` pretty prints the result
-      // `options.indent` indentation for pretty print
-      // `options.offset` how many indentations to add to every line for pretty print
-      // `options.newline` newline sequence for pretty print
-      toString(options) {
-        return this.options.writer.attribute(this, this.options.writer.filterOptions(options));
-      }
-
-      
-      // Returns debug string for this node
-      debugInfo(name) {
-        name = name || this.name;
-        if (name == null) {
-          return "parent: <" + this.parent.name + ">";
-        } else {
-          return "attribute: {" + name + "}, parent: <" + this.parent.name + ">";
-        }
-      }
-
-      isEqualNode(node) {
-        if (node.namespaceURI !== this.namespaceURI) {
-          return false;
-        }
-        if (node.prefix !== this.prefix) {
-          return false;
-        }
-        if (node.localName !== this.localName) {
-          return false;
-        }
-        if (node.value !== this.value) {
-          return false;
-        }
-        return true;
-      }
-
-    };
-
-    // DOM level 1
-    Object.defineProperty(XMLAttribute.prototype, 'nodeType', {
-      get: function() {
-        return this.type;
-      }
-    });
-
-    Object.defineProperty(XMLAttribute.prototype, 'ownerElement', {
-      get: function() {
-        return this.parent;
-      }
-    });
-
-    // DOM level 3
-    Object.defineProperty(XMLAttribute.prototype, 'textContent', {
-      get: function() {
-        return this.value;
-      },
-      set: function(value) {
-        return this.value = value || '';
-      }
-    });
-
-    // DOM level 4
-    Object.defineProperty(XMLAttribute.prototype, 'namespaceURI', {
-      get: function() {
-        return '';
-      }
-    });
-
-    Object.defineProperty(XMLAttribute.prototype, 'prefix', {
-      get: function() {
-        return '';
-      }
-    });
-
-    Object.defineProperty(XMLAttribute.prototype, 'localName', {
-      get: function() {
-        return this.name;
-      }
-    });
-
-    Object.defineProperty(XMLAttribute.prototype, 'specified', {
-      get: function() {
-        return true;
-      }
-    });
-
-    return XMLAttribute;
-
-  }).call(this);
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 333:
-/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  var NodeType, XMLCData, XMLCharacterData;
-
-  NodeType = __nccwpck_require__(9267);
-
-  XMLCharacterData = __nccwpck_require__(7709);
-
-  // Represents a  CDATA node
-  module.exports = XMLCData = class XMLCData extends XMLCharacterData {
-    // Initializes a new instance of `XMLCData`
-
-    // `text` CDATA text
-    constructor(parent, text) {
-      super(parent);
-      if (text == null) {
-        throw new Error("Missing CDATA text. " + this.debugInfo());
-      }
-      this.name = "#cdata-section";
-      this.type = NodeType.CData;
-      this.value = this.stringify.cdata(text);
-    }
-
-    // Creates and returns a deep clone of `this`
-    clone() {
-      return Object.create(this);
-    }
-
-    // Converts the XML fragment to string
-
-    // `options.pretty` pretty prints the result
-    // `options.indent` indentation for pretty print
-    // `options.offset` how many indentations to add to every line for pretty print
-    // `options.newline` newline sequence for pretty print
-    toString(options) {
-      return this.options.writer.cdata(this, this.options.writer.filterOptions(options));
-    }
-
-  };
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 7709:
-/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  var XMLCharacterData, XMLNode;
-
-  XMLNode = __nccwpck_require__(7608);
-
-  // Represents a character data node
-  module.exports = XMLCharacterData = (function() {
-    class XMLCharacterData extends XMLNode {
-      // Initializes a new instance of `XMLCharacterData`
-
-      constructor(parent) {
-        super(parent);
-        this.value = '';
-      }
-
-      
-      // Creates and returns a deep clone of `this`
-      clone() {
-        return Object.create(this);
-      }
-
-      // DOM level 1 functions to be implemented later
-      substringData(offset, count) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      appendData(arg) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      insertData(offset, arg) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      deleteData(offset, count) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      replaceData(offset, count, arg) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      isEqualNode(node) {
-        if (!super.isEqualNode(node)) {
-          return false;
-        }
-        if (node.data !== this.data) {
-          return false;
-        }
-        return true;
-      }
-
-    };
-
-    // DOM level 1
-    Object.defineProperty(XMLCharacterData.prototype, 'data', {
-      get: function() {
-        return this.value;
-      },
-      set: function(value) {
-        return this.value = value || '';
-      }
-    });
-
-    Object.defineProperty(XMLCharacterData.prototype, 'length', {
-      get: function() {
-        return this.value.length;
-      }
-    });
-
-    // DOM level 3
-    Object.defineProperty(XMLCharacterData.prototype, 'textContent', {
-      get: function() {
-        return this.value;
-      },
-      set: function(value) {
-        return this.value = value || '';
-      }
-    });
-
-    return XMLCharacterData;
-
-  }).call(this);
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 4407:
-/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  var NodeType, XMLCharacterData, XMLComment;
-
-  NodeType = __nccwpck_require__(9267);
-
-  XMLCharacterData = __nccwpck_require__(7709);
-
-  // Represents a comment node
-  module.exports = XMLComment = class XMLComment extends XMLCharacterData {
-    // Initializes a new instance of `XMLComment`
-
-    // `text` comment text
-    constructor(parent, text) {
-      super(parent);
-      if (text == null) {
-        throw new Error("Missing comment text. " + this.debugInfo());
-      }
-      this.name = "#comment";
-      this.type = NodeType.Comment;
-      this.value = this.stringify.comment(text);
-    }
-
-    // Creates and returns a deep clone of `this`
-    clone() {
-      return Object.create(this);
-    }
-
-    // Converts the XML fragment to string
-
-    // `options.pretty` pretty prints the result
-    // `options.indent` indentation for pretty print
-    // `options.offset` how many indentations to add to every line for pretty print
-    // `options.newline` newline sequence for pretty print
-    toString(options) {
-      return this.options.writer.comment(this, this.options.writer.filterOptions(options));
-    }
-
-  };
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 7465:
-/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  var XMLDOMConfiguration, XMLDOMErrorHandler, XMLDOMStringList;
-
-  XMLDOMErrorHandler = __nccwpck_require__(6744);
-
-  XMLDOMStringList = __nccwpck_require__(7028);
-
-  // Implements the DOMConfiguration interface
-  module.exports = XMLDOMConfiguration = (function() {
-    class XMLDOMConfiguration {
-      constructor() {
-        var clonedSelf;
-        this.defaultParams = {
-          "canonical-form": false,
-          "cdata-sections": false,
-          "comments": false,
-          "datatype-normalization": false,
-          "element-content-whitespace": true,
-          "entities": true,
-          "error-handler": new XMLDOMErrorHandler(),
-          "infoset": true,
-          "validate-if-schema": false,
-          "namespaces": true,
-          "namespace-declarations": true,
-          "normalize-characters": false,
-          "schema-location": '',
-          "schema-type": '',
-          "split-cdata-sections": true,
-          "validate": false,
-          "well-formed": true
-        };
-        this.params = clonedSelf = Object.create(this.defaultParams);
-      }
-
-      // Gets the value of a parameter.
-
-      // `name` name of the parameter
-      getParameter(name) {
-        if (this.params.hasOwnProperty(name)) {
-          return this.params[name];
-        } else {
-          return null;
-        }
-      }
-
-      // Checks if setting a parameter to a specific value is supported.
-
-      // `name` name of the parameter
-      // `value` parameter value
-      canSetParameter(name, value) {
-        return true;
-      }
-
-      // Sets the value of a parameter.
-
-      // `name` name of the parameter
-      // `value` new value or null if the user wishes to unset the parameter
-      setParameter(name, value) {
-        if (value != null) {
-          return this.params[name] = value;
-        } else {
-          return delete this.params[name];
-        }
-      }
-
-    };
-
-    // Returns the list of parameter names
-    Object.defineProperty(XMLDOMConfiguration.prototype, 'parameterNames', {
-      get: function() {
-        return new XMLDOMStringList(Object.keys(this.defaultParams));
-      }
-    });
-
-    return XMLDOMConfiguration;
-
-  }).call(this);
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 6744:
-/***/ (function(module) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  // Represents the error handler for DOM operations
-  var XMLDOMErrorHandler;
-
-  module.exports = XMLDOMErrorHandler = class XMLDOMErrorHandler {
-    // Initializes a new instance of `XMLDOMErrorHandler`
-
-    constructor() {}
-
-    // Called on the error handler when an error occurs.
-
-    // `error` the error message as a string
-    handleError(error) {
-      throw new Error(error);
-    }
-
-  };
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 8310:
-/***/ (function(module) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  // Implements the DOMImplementation interface
-  var XMLDOMImplementation;
-
-  module.exports = XMLDOMImplementation = class XMLDOMImplementation {
-    // Tests if the DOM implementation implements a specific feature.
-
-    // `feature` package name of the feature to test. In Level 1, the
-    //           legal values are "HTML" and "XML" (case-insensitive).
-    // `version` version number of the package name to test. 
-    //           In Level 1, this is the string "1.0". If the version is 
-    //           not specified, supporting any version of the feature will 
-    //           cause the method to return true.
-    hasFeature(feature, version) {
-      return true;
-    }
-
-    // Creates a new document type declaration.
-
-    // `qualifiedName` qualified name of the document type to be created
-    // `publicId` public identifier of the external subset
-    // `systemId` system identifier of the external subset
-    createDocumentType(qualifiedName, publicId, systemId) {
-      throw new Error("This DOM method is not implemented.");
-    }
-
-    // Creates a new document.
-
-    // `namespaceURI` namespace URI of the document element to create
-    // `qualifiedName` the qualified name of the document to be created
-    // `doctype` the type of document to be created or null
-    createDocument(namespaceURI, qualifiedName, doctype) {
-      throw new Error("This DOM method is not implemented.");
-    }
-
-    // Creates a new HTML document.
-
-    // `title` document title
-    createHTMLDocument(title) {
-      throw new Error("This DOM method is not implemented.");
-    }
-
-    // Returns a specialized object which implements the specialized APIs 
-    // of the specified feature and version.
-
-    // `feature` name of the feature requested.
-    // `version` version number of the feature to test
-    getFeature(feature, version) {
-      throw new Error("This DOM method is not implemented.");
-    }
-
-  };
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 7028:
-/***/ (function(module) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  // Represents a list of string entries
-  var XMLDOMStringList;
-
-  module.exports = XMLDOMStringList = (function() {
-    class XMLDOMStringList {
-      // Initializes a new instance of `XMLDOMStringList`
-      // This is just a wrapper around an ordinary
-      // JS array.
-
-      // `arr` the array of string values
-      constructor(arr) {
-        this.arr = arr || [];
-      }
-
-      // Returns the indexth item in the collection.
-
-      // `index` index into the collection
-      item(index) {
-        return this.arr[index] || null;
-      }
-
-      // Test if a string is part of this DOMStringList.
-
-      // `str` the string to look for
-      contains(str) {
-        return this.arr.indexOf(str) !== -1;
-      }
-
-    };
-
-    // Returns the number of strings in the list.
-    Object.defineProperty(XMLDOMStringList.prototype, 'length', {
-      get: function() {
-        return this.arr.length;
-      }
-    });
-
-    return XMLDOMStringList;
-
-  }).call(this);
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 1015:
-/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  var NodeType, XMLDTDAttList, XMLNode;
-
-  XMLNode = __nccwpck_require__(7608);
-
-  NodeType = __nccwpck_require__(9267);
-
-  // Represents an attribute list
-  module.exports = XMLDTDAttList = class XMLDTDAttList extends XMLNode {
-    // Initializes a new instance of `XMLDTDAttList`
-
-    // `parent` the parent `XMLDocType` element
-    // `elementName` the name of the element containing this attribute
-    // `attributeName` attribute name
-    // `attributeType` type of the attribute
-    // `defaultValueType` default value type (either #REQUIRED, #IMPLIED,
-    //                    #FIXED or #DEFAULT)
-    // `defaultValue` default value of the attribute
-    //                (only used for #FIXED or #DEFAULT)
-    constructor(parent, elementName, attributeName, attributeType, defaultValueType, defaultValue) {
-      super(parent);
-      if (elementName == null) {
-        throw new Error("Missing DTD element name. " + this.debugInfo());
-      }
-      if (attributeName == null) {
-        throw new Error("Missing DTD attribute name. " + this.debugInfo(elementName));
-      }
-      if (!attributeType) {
-        throw new Error("Missing DTD attribute type. " + this.debugInfo(elementName));
-      }
-      if (!defaultValueType) {
-        throw new Error("Missing DTD attribute default. " + this.debugInfo(elementName));
-      }
-      if (defaultValueType.indexOf('#') !== 0) {
-        defaultValueType = '#' + defaultValueType;
-      }
-      if (!defaultValueType.match(/^(#REQUIRED|#IMPLIED|#FIXED|#DEFAULT)$/)) {
-        throw new Error("Invalid default value type; expected: #REQUIRED, #IMPLIED, #FIXED or #DEFAULT. " + this.debugInfo(elementName));
-      }
-      if (defaultValue && !defaultValueType.match(/^(#FIXED|#DEFAULT)$/)) {
-        throw new Error("Default value only applies to #FIXED or #DEFAULT. " + this.debugInfo(elementName));
-      }
-      this.elementName = this.stringify.name(elementName);
-      this.type = NodeType.AttributeDeclaration;
-      this.attributeName = this.stringify.name(attributeName);
-      this.attributeType = this.stringify.dtdAttType(attributeType);
-      if (defaultValue) {
-        this.defaultValue = this.stringify.dtdAttDefault(defaultValue);
-      }
-      this.defaultValueType = defaultValueType;
-    }
-
-    // Converts the XML fragment to string
-
-    // `options.pretty` pretty prints the result
-    // `options.indent` indentation for pretty print
-    // `options.offset` how many indentations to add to every line for pretty print
-    // `options.newline` newline sequence for pretty print
-    toString(options) {
-      return this.options.writer.dtdAttList(this, this.options.writer.filterOptions(options));
-    }
-
-  };
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 2421:
-/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  var NodeType, XMLDTDElement, XMLNode;
-
-  XMLNode = __nccwpck_require__(7608);
-
-  NodeType = __nccwpck_require__(9267);
-
-  // Represents an attribute
-  module.exports = XMLDTDElement = class XMLDTDElement extends XMLNode {
-    // Initializes a new instance of `XMLDTDElement`
-
-    // `parent` the parent `XMLDocType` element
-    // `name` element name
-    // `value` element content (defaults to #PCDATA)
-    constructor(parent, name, value) {
-      super(parent);
-      if (name == null) {
-        throw new Error("Missing DTD element name. " + this.debugInfo());
-      }
-      if (!value) {
-        value = '(#PCDATA)';
-      }
-      if (Array.isArray(value)) {
-        value = '(' + value.join(',') + ')';
-      }
-      this.name = this.stringify.name(name);
-      this.type = NodeType.ElementDeclaration;
-      this.value = this.stringify.dtdElementValue(value);
-    }
-
-    // Converts the XML fragment to string
-
-    // `options.pretty` pretty prints the result
-    // `options.indent` indentation for pretty print
-    // `options.offset` how many indentations to add to every line for pretty print
-    // `options.newline` newline sequence for pretty print
-    toString(options) {
-      return this.options.writer.dtdElement(this, this.options.writer.filterOptions(options));
-    }
-
-  };
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 53:
-/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  var NodeType, XMLDTDEntity, XMLNode, isObject;
-
-  ({isObject} = __nccwpck_require__(8229));
-
-  XMLNode = __nccwpck_require__(7608);
-
-  NodeType = __nccwpck_require__(9267);
-
-  // Represents an entity declaration in the DTD
-  module.exports = XMLDTDEntity = (function() {
-    class XMLDTDEntity extends XMLNode {
-      // Initializes a new instance of `XMLDTDEntity`
-
-      // `parent` the parent `XMLDocType` element
-      // `pe` whether this is a parameter entity or a general entity
-      //      defaults to `false` (general entity)
-      // `name` the name of the entity
-      // `value` internal entity value or an object with external entity details
-      // `value.pubID` public identifier
-      // `value.sysID` system identifier
-      // `value.nData` notation declaration
-      constructor(parent, pe, name, value) {
-        super(parent);
-        if (name == null) {
-          throw new Error("Missing DTD entity name. " + this.debugInfo(name));
-        }
-        if (value == null) {
-          throw new Error("Missing DTD entity value. " + this.debugInfo(name));
-        }
-        this.pe = !!pe;
-        this.name = this.stringify.name(name);
-        this.type = NodeType.EntityDeclaration;
-        if (!isObject(value)) {
-          this.value = this.stringify.dtdEntityValue(value);
-          this.internal = true;
-        } else {
-          if (!value.pubID && !value.sysID) {
-            throw new Error("Public and/or system identifiers are required for an external entity. " + this.debugInfo(name));
-          }
-          if (value.pubID && !value.sysID) {
-            throw new Error("System identifier is required for a public external entity. " + this.debugInfo(name));
-          }
-          this.internal = false;
-          if (value.pubID != null) {
-            this.pubID = this.stringify.dtdPubID(value.pubID);
-          }
-          if (value.sysID != null) {
-            this.sysID = this.stringify.dtdSysID(value.sysID);
-          }
-          if (value.nData != null) {
-            this.nData = this.stringify.dtdNData(value.nData);
-          }
-          if (this.pe && this.nData) {
-            throw new Error("Notation declaration is not allowed in a parameter entity. " + this.debugInfo(name));
-          }
-        }
-      }
-
-      // Converts the XML fragment to string
-
-      // `options.pretty` pretty prints the result
-      // `options.indent` indentation for pretty print
-      // `options.offset` how many indentations to add to every line for pretty print
-      // `options.newline` newline sequence for pretty print
-      toString(options) {
-        return this.options.writer.dtdEntity(this, this.options.writer.filterOptions(options));
-      }
-
-    };
-
-    // DOM level 1
-    Object.defineProperty(XMLDTDEntity.prototype, 'publicId', {
-      get: function() {
-        return this.pubID;
-      }
-    });
-
-    Object.defineProperty(XMLDTDEntity.prototype, 'systemId', {
-      get: function() {
-        return this.sysID;
-      }
-    });
-
-    Object.defineProperty(XMLDTDEntity.prototype, 'notationName', {
-      get: function() {
-        return this.nData || null;
-      }
-    });
-
-    // DOM level 3
-    Object.defineProperty(XMLDTDEntity.prototype, 'inputEncoding', {
-      get: function() {
-        return null;
-      }
-    });
-
-    Object.defineProperty(XMLDTDEntity.prototype, 'xmlEncoding', {
-      get: function() {
-        return null;
-      }
-    });
-
-    Object.defineProperty(XMLDTDEntity.prototype, 'xmlVersion', {
-      get: function() {
-        return null;
-      }
-    });
-
-    return XMLDTDEntity;
-
-  }).call(this);
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 2837:
-/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  var NodeType, XMLDTDNotation, XMLNode;
-
-  XMLNode = __nccwpck_require__(7608);
-
-  NodeType = __nccwpck_require__(9267);
-
-  // Represents a NOTATION entry in the DTD
-  module.exports = XMLDTDNotation = (function() {
-    class XMLDTDNotation extends XMLNode {
-      // Initializes a new instance of `XMLDTDNotation`
-
-      // `parent` the parent `XMLDocType` element
-      // `name` the name of the notation
-      // `value` an object with external entity details
-      // `value.pubID` public identifier
-      // `value.sysID` system identifier
-      constructor(parent, name, value) {
-        super(parent);
-        if (name == null) {
-          throw new Error("Missing DTD notation name. " + this.debugInfo(name));
-        }
-        if (!value.pubID && !value.sysID) {
-          throw new Error("Public or system identifiers are required for an external entity. " + this.debugInfo(name));
-        }
-        this.name = this.stringify.name(name);
-        this.type = NodeType.NotationDeclaration;
-        if (value.pubID != null) {
-          this.pubID = this.stringify.dtdPubID(value.pubID);
-        }
-        if (value.sysID != null) {
-          this.sysID = this.stringify.dtdSysID(value.sysID);
-        }
-      }
-
-      // Converts the XML fragment to string
-
-      // `options.pretty` pretty prints the result
-      // `options.indent` indentation for pretty print
-      // `options.offset` how many indentations to add to every line for pretty print
-      // `options.newline` newline sequence for pretty print
-      toString(options) {
-        return this.options.writer.dtdNotation(this, this.options.writer.filterOptions(options));
-      }
-
-    };
-
-    // DOM level 1
-    Object.defineProperty(XMLDTDNotation.prototype, 'publicId', {
-      get: function() {
-        return this.pubID;
-      }
-    });
-
-    Object.defineProperty(XMLDTDNotation.prototype, 'systemId', {
-      get: function() {
-        return this.sysID;
-      }
-    });
-
-    return XMLDTDNotation;
-
-  }).call(this);
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 6364:
-/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  var NodeType, XMLDeclaration, XMLNode, isObject;
-
-  ({isObject} = __nccwpck_require__(8229));
-
-  XMLNode = __nccwpck_require__(7608);
-
-  NodeType = __nccwpck_require__(9267);
-
-  // Represents the XML declaration
-  module.exports = XMLDeclaration = class XMLDeclaration extends XMLNode {
-    // Initializes a new instance of `XMLDeclaration`
-
-    // `parent` the document object
-
-    // `version` A version number string, e.g. 1.0
-    // `encoding` Encoding declaration, e.g. UTF-8
-    // `standalone` standalone document declaration: true or false
-    constructor(parent, version, encoding, standalone) {
-      super(parent);
-      // arguments may also be passed as an object
-      if (isObject(version)) {
-        ({version, encoding, standalone} = version);
-      }
-      if (!version) {
-        version = '1.0';
-      }
-      this.type = NodeType.Declaration;
-      this.version = this.stringify.xmlVersion(version);
-      if (encoding != null) {
-        this.encoding = this.stringify.xmlEncoding(encoding);
-      }
-      if (standalone != null) {
-        this.standalone = this.stringify.xmlStandalone(standalone);
-      }
-    }
-
-    // Converts to string
-
-    // `options.pretty` pretty prints the result
-    // `options.indent` indentation for pretty print
-    // `options.offset` how many indentations to add to every line for pretty print
-    // `options.newline` newline sequence for pretty print
-    toString(options) {
-      return this.options.writer.declaration(this, this.options.writer.filterOptions(options));
-    }
-
-  };
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 1801:
-/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  var NodeType, XMLDTDAttList, XMLDTDElement, XMLDTDEntity, XMLDTDNotation, XMLDocType, XMLNamedNodeMap, XMLNode, isObject;
-
-  ({isObject} = __nccwpck_require__(8229));
-
-  XMLNode = __nccwpck_require__(7608);
-
-  NodeType = __nccwpck_require__(9267);
-
-  XMLDTDAttList = __nccwpck_require__(1015);
-
-  XMLDTDEntity = __nccwpck_require__(53);
-
-  XMLDTDElement = __nccwpck_require__(2421);
-
-  XMLDTDNotation = __nccwpck_require__(2837);
-
-  XMLNamedNodeMap = __nccwpck_require__(4361);
-
-  // Represents doctype declaration
-  module.exports = XMLDocType = (function() {
-    class XMLDocType extends XMLNode {
-      // Initializes a new instance of `XMLDocType`
-
-      // `parent` the document object
-
-      // `pubID` public identifier of the external subset
-      // `sysID` system identifier of the external subset
-      constructor(parent, pubID, sysID) {
-        var child, i, len, ref;
-        super(parent);
-        this.type = NodeType.DocType;
-        // set DTD name to the name of the root node
-        if (parent.children) {
-          ref = parent.children;
-          for (i = 0, len = ref.length; i < len; i++) {
-            child = ref[i];
-            if (child.type === NodeType.Element) {
-              this.name = child.name;
-              break;
-            }
-          }
-        }
-        this.documentObject = parent;
-        // arguments may also be passed as an object
-        if (isObject(pubID)) {
-          ({pubID, sysID} = pubID);
-        }
-        if (sysID == null) {
-          [sysID, pubID] = [pubID, sysID];
-        }
-        if (pubID != null) {
-          this.pubID = this.stringify.dtdPubID(pubID);
-        }
-        if (sysID != null) {
-          this.sysID = this.stringify.dtdSysID(sysID);
-        }
-      }
-
-      // Creates an element type declaration
-
-      // `name` element name
-      // `value` element content (defaults to #PCDATA)
-      element(name, value) {
-        var child;
-        child = new XMLDTDElement(this, name, value);
-        this.children.push(child);
-        return this;
-      }
-
-      // Creates an attribute declaration
-
-      // `elementName` the name of the element containing this attribute
-      // `attributeName` attribute name
-      // `attributeType` type of the attribute (defaults to CDATA)
-      // `defaultValueType` default value type (either #REQUIRED, #IMPLIED, #FIXED or
-      //                    #DEFAULT) (defaults to #IMPLIED)
-      // `defaultValue` default value of the attribute
-      //                (only used for #FIXED or #DEFAULT)
-      attList(elementName, attributeName, attributeType, defaultValueType, defaultValue) {
-        var child;
-        child = new XMLDTDAttList(this, elementName, attributeName, attributeType, defaultValueType, defaultValue);
-        this.children.push(child);
-        return this;
-      }
-
-      // Creates a general entity declaration
-
-      // `name` the name of the entity
-      // `value` internal entity value or an object with external entity details
-      // `value.pubID` public identifier
-      // `value.sysID` system identifier
-      // `value.nData` notation declaration
-      entity(name, value) {
-        var child;
-        child = new XMLDTDEntity(this, false, name, value);
-        this.children.push(child);
-        return this;
-      }
-
-      // Creates a parameter entity declaration
-
-      // `name` the name of the entity
-      // `value` internal entity value or an object with external entity details
-      // `value.pubID` public identifier
-      // `value.sysID` system identifier
-      pEntity(name, value) {
-        var child;
-        child = new XMLDTDEntity(this, true, name, value);
-        this.children.push(child);
-        return this;
-      }
-
-      // Creates a NOTATION declaration
-
-      // `name` the name of the notation
-      // `value` an object with external entity details
-      // `value.pubID` public identifier
-      // `value.sysID` system identifier
-      notation(name, value) {
-        var child;
-        child = new XMLDTDNotation(this, name, value);
-        this.children.push(child);
-        return this;
-      }
-
-      // Converts to string
-
-      // `options.pretty` pretty prints the result
-      // `options.indent` indentation for pretty print
-      // `options.offset` how many indentations to add to every line for pretty print
-      // `options.newline` newline sequence for pretty print
-      toString(options) {
-        return this.options.writer.docType(this, this.options.writer.filterOptions(options));
-      }
-
-      // Aliases
-      ele(name, value) {
-        return this.element(name, value);
-      }
-
-      att(elementName, attributeName, attributeType, defaultValueType, defaultValue) {
-        return this.attList(elementName, attributeName, attributeType, defaultValueType, defaultValue);
-      }
-
-      ent(name, value) {
-        return this.entity(name, value);
-      }
-
-      pent(name, value) {
-        return this.pEntity(name, value);
-      }
-
-      not(name, value) {
-        return this.notation(name, value);
-      }
-
-      up() {
-        return this.root() || this.documentObject;
-      }
-
-      isEqualNode(node) {
-        if (!super.isEqualNode(node)) {
-          return false;
-        }
-        if (node.name !== this.name) {
-          return false;
-        }
-        if (node.publicId !== this.publicId) {
-          return false;
-        }
-        if (node.systemId !== this.systemId) {
-          return false;
-        }
-        return true;
-      }
-
-    };
-
-    // DOM level 1
-    Object.defineProperty(XMLDocType.prototype, 'entities', {
-      get: function() {
-        var child, i, len, nodes, ref;
-        nodes = {};
-        ref = this.children;
-        for (i = 0, len = ref.length; i < len; i++) {
-          child = ref[i];
-          if ((child.type === NodeType.EntityDeclaration) && !child.pe) {
-            nodes[child.name] = child;
-          }
-        }
-        return new XMLNamedNodeMap(nodes);
-      }
-    });
-
-    Object.defineProperty(XMLDocType.prototype, 'notations', {
-      get: function() {
-        var child, i, len, nodes, ref;
-        nodes = {};
-        ref = this.children;
-        for (i = 0, len = ref.length; i < len; i++) {
-          child = ref[i];
-          if (child.type === NodeType.NotationDeclaration) {
-            nodes[child.name] = child;
-          }
-        }
-        return new XMLNamedNodeMap(nodes);
-      }
-    });
-
-    // DOM level 2
-    Object.defineProperty(XMLDocType.prototype, 'publicId', {
-      get: function() {
-        return this.pubID;
-      }
-    });
-
-    Object.defineProperty(XMLDocType.prototype, 'systemId', {
-      get: function() {
-        return this.sysID;
-      }
-    });
-
-    Object.defineProperty(XMLDocType.prototype, 'internalSubset', {
-      get: function() {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-    });
-
-    return XMLDocType;
-
-  }).call(this);
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 3730:
-/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  var NodeType, XMLDOMConfiguration, XMLDOMImplementation, XMLDocument, XMLNode, XMLStringWriter, XMLStringifier, isPlainObject;
-
-  ({isPlainObject} = __nccwpck_require__(8229));
-
-  XMLDOMImplementation = __nccwpck_require__(8310);
-
-  XMLDOMConfiguration = __nccwpck_require__(7465);
-
-  XMLNode = __nccwpck_require__(7608);
-
-  NodeType = __nccwpck_require__(9267);
-
-  XMLStringifier = __nccwpck_require__(8594);
-
-  XMLStringWriter = __nccwpck_require__(5913);
-
-  // Represents an XML builder
-  module.exports = XMLDocument = (function() {
-    class XMLDocument extends XMLNode {
-      // Initializes a new instance of `XMLDocument`
-
-      // `options.keepNullNodes` whether nodes with null values will be kept
-      //     or ignored: true or false
-      // `options.keepNullAttributes` whether attributes with null values will be
-      //     kept or ignored: true or false
-      // `options.ignoreDecorators` whether decorator strings will be ignored when
-      //     converting JS objects: true or false
-      // `options.separateArrayItems` whether array items are created as separate
-      //     nodes when passed as an object value: true or false
-      // `options.noDoubleEncoding` whether existing html entities are encoded:
-      //     true or false
-      // `options.stringify` a set of functions to use for converting values to
-      //     strings
-      // `options.writer` the default XML writer to use for converting nodes to
-      //     string. If the default writer is not set, the built-in XMLStringWriter
-      //     will be used instead.
-      constructor(options) {
-        super(null);
-        this.name = "#document";
-        this.type = NodeType.Document;
-        this.documentURI = null;
-        this.domConfig = new XMLDOMConfiguration();
-        options || (options = {});
-        if (!options.writer) {
-          options.writer = new XMLStringWriter();
-        }
-        this.options = options;
-        this.stringify = new XMLStringifier(options);
-      }
-
-      // Ends the document and passes it to the given XML writer
-
-      // `writer` is either an XML writer or a plain object to pass to the
-      // constructor of the default XML writer. The default writer is assigned when
-      // creating the XML document. Following flags are recognized by the
-      // built-in XMLStringWriter:
-      //   `writer.pretty` pretty prints the result
-      //   `writer.indent` indentation for pretty print
-      //   `writer.offset` how many indentations to add to every line for pretty print
-      //   `writer.newline` newline sequence for pretty print
-      end(writer) {
-        var writerOptions;
-        writerOptions = {};
-        if (!writer) {
-          writer = this.options.writer;
-        } else if (isPlainObject(writer)) {
-          writerOptions = writer;
-          writer = this.options.writer;
-        }
-        return writer.document(this, writer.filterOptions(writerOptions));
-      }
-
-      // Converts the XML document to string
-
-      // `options.pretty` pretty prints the result
-      // `options.indent` indentation for pretty print
-      // `options.offset` how many indentations to add to every line for pretty print
-      // `options.newline` newline sequence for pretty print
-      toString(options) {
-        return this.options.writer.document(this, this.options.writer.filterOptions(options));
-      }
-
-      // DOM level 1 functions to be implemented later
-      createElement(tagName) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      createDocumentFragment() {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      createTextNode(data) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      createComment(data) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      createCDATASection(data) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      createProcessingInstruction(target, data) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      createAttribute(name) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      createEntityReference(name) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      getElementsByTagName(tagname) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      // DOM level 2 functions to be implemented later
-      importNode(importedNode, deep) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      createElementNS(namespaceURI, qualifiedName) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      createAttributeNS(namespaceURI, qualifiedName) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      getElementsByTagNameNS(namespaceURI, localName) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      getElementById(elementId) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      // DOM level 3 functions to be implemented later
-      adoptNode(source) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      normalizeDocument() {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      renameNode(node, namespaceURI, qualifiedName) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      // DOM level 4 functions to be implemented later
-      getElementsByClassName(classNames) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      createEvent(eventInterface) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      createRange() {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      createNodeIterator(root, whatToShow, filter) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      createTreeWalker(root, whatToShow, filter) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-    };
-
-    // DOM level 1
-    Object.defineProperty(XMLDocument.prototype, 'implementation', {
-      value: new XMLDOMImplementation()
-    });
-
-    Object.defineProperty(XMLDocument.prototype, 'doctype', {
-      get: function() {
-        var child, i, len, ref;
-        ref = this.children;
-        for (i = 0, len = ref.length; i < len; i++) {
-          child = ref[i];
-          if (child.type === NodeType.DocType) {
-            return child;
-          }
-        }
-        return null;
-      }
-    });
-
-    Object.defineProperty(XMLDocument.prototype, 'documentElement', {
-      get: function() {
-        return this.rootObject || null;
-      }
-    });
-
-    // DOM level 3
-    Object.defineProperty(XMLDocument.prototype, 'inputEncoding', {
-      get: function() {
-        return null;
-      }
-    });
-
-    Object.defineProperty(XMLDocument.prototype, 'strictErrorChecking', {
-      get: function() {
-        return false;
-      }
-    });
-
-    Object.defineProperty(XMLDocument.prototype, 'xmlEncoding', {
-      get: function() {
-        if (this.children.length !== 0 && this.children[0].type === NodeType.Declaration) {
-          return this.children[0].encoding;
-        } else {
-          return null;
-        }
-      }
-    });
-
-    Object.defineProperty(XMLDocument.prototype, 'xmlStandalone', {
-      get: function() {
-        if (this.children.length !== 0 && this.children[0].type === NodeType.Declaration) {
-          return this.children[0].standalone === 'yes';
-        } else {
-          return false;
-        }
-      }
-    });
-
-    Object.defineProperty(XMLDocument.prototype, 'xmlVersion', {
-      get: function() {
-        if (this.children.length !== 0 && this.children[0].type === NodeType.Declaration) {
-          return this.children[0].version;
-        } else {
-          return "1.0";
-        }
-      }
-    });
-
-    // DOM level 4
-    Object.defineProperty(XMLDocument.prototype, 'URL', {
-      get: function() {
-        return this.documentURI;
-      }
-    });
-
-    Object.defineProperty(XMLDocument.prototype, 'origin', {
-      get: function() {
-        return null;
-      }
-    });
-
-    Object.defineProperty(XMLDocument.prototype, 'compatMode', {
-      get: function() {
-        return null;
-      }
-    });
-
-    Object.defineProperty(XMLDocument.prototype, 'characterSet', {
-      get: function() {
-        return null;
-      }
-    });
-
-    Object.defineProperty(XMLDocument.prototype, 'contentType', {
-      get: function() {
-        return null;
-      }
-    });
-
-    return XMLDocument;
-
-  }).call(this);
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 7356:
-/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  var NodeType, WriterState, XMLAttribute, XMLCData, XMLComment, XMLDTDAttList, XMLDTDElement, XMLDTDEntity, XMLDTDNotation, XMLDeclaration, XMLDocType, XMLDocument, XMLDocumentCB, XMLElement, XMLProcessingInstruction, XMLRaw, XMLStringWriter, XMLStringifier, XMLText, getValue, isFunction, isObject, isPlainObject,
-    hasProp = {}.hasOwnProperty;
-
-  ({isObject, isFunction, isPlainObject, getValue} = __nccwpck_require__(8229));
-
-  NodeType = __nccwpck_require__(9267);
-
-  XMLDocument = __nccwpck_require__(3730);
-
-  XMLElement = __nccwpck_require__(9437);
-
-  XMLCData = __nccwpck_require__(333);
-
-  XMLComment = __nccwpck_require__(4407);
-
-  XMLRaw = __nccwpck_require__(6329);
-
-  XMLText = __nccwpck_require__(1318);
-
-  XMLProcessingInstruction = __nccwpck_require__(6939);
-
-  XMLDeclaration = __nccwpck_require__(6364);
-
-  XMLDocType = __nccwpck_require__(1801);
-
-  XMLDTDAttList = __nccwpck_require__(1015);
-
-  XMLDTDEntity = __nccwpck_require__(53);
-
-  XMLDTDElement = __nccwpck_require__(2421);
-
-  XMLDTDNotation = __nccwpck_require__(2837);
-
-  XMLAttribute = __nccwpck_require__(8376);
-
-  XMLStringifier = __nccwpck_require__(8594);
-
-  XMLStringWriter = __nccwpck_require__(5913);
-
-  WriterState = __nccwpck_require__(9766);
-
-  // Represents an XML builder
-  module.exports = XMLDocumentCB = class XMLDocumentCB {
-    // Initializes a new instance of `XMLDocumentCB`
-
-    // `options.keepNullNodes` whether nodes with null values will be kept
-    //     or ignored: true or false
-    // `options.keepNullAttributes` whether attributes with null values will be
-    //     kept or ignored: true or false
-    // `options.ignoreDecorators` whether decorator strings will be ignored when
-    //     converting JS objects: true or false
-    // `options.separateArrayItems` whether array items are created as separate
-    //     nodes when passed as an object value: true or false
-    // `options.noDoubleEncoding` whether existing html entities are encoded:
-    //     true or false
-    // `options.stringify` a set of functions to use for converting values to
-    //     strings
-    // `options.writer` the default XML writer to use for converting nodes to
-    //     string. If the default writer is not set, the built-in XMLStringWriter
-    //     will be used instead.
-
-    // `onData` the function to be called when a new chunk of XML is output. The
-    //          string containing the XML chunk is passed to `onData` as its first
-    //          argument, and the current indentation level as its second argument.
-    // `onEnd`  the function to be called when the XML document is completed with
-    //          `end`. `onEnd` does not receive any arguments.
-    constructor(options, onData, onEnd) {
-      var writerOptions;
-      this.name = "?xml";
-      this.type = NodeType.Document;
-      options || (options = {});
-      writerOptions = {};
-      if (!options.writer) {
-        options.writer = new XMLStringWriter();
-      } else if (isPlainObject(options.writer)) {
-        writerOptions = options.writer;
-        options.writer = new XMLStringWriter();
-      }
-      this.options = options;
-      this.writer = options.writer;
-      this.writerOptions = this.writer.filterOptions(writerOptions);
-      this.stringify = new XMLStringifier(options);
-      this.onDataCallback = onData || function() {};
-      this.onEndCallback = onEnd || function() {};
-      this.currentNode = null;
-      this.currentLevel = -1;
-      this.openTags = {};
-      this.documentStarted = false;
-      this.documentCompleted = false;
-      this.root = null;
-    }
-
-    // Creates a child element node from the given XMLNode
-
-    // `node` the child node
-    createChildNode(node) {
-      var att, attName, attributes, child, i, len, ref, ref1;
-      switch (node.type) {
-        case NodeType.CData:
-          this.cdata(node.value);
-          break;
-        case NodeType.Comment:
-          this.comment(node.value);
-          break;
-        case NodeType.Element:
-          attributes = {};
-          ref = node.attribs;
-          for (attName in ref) {
-            if (!hasProp.call(ref, attName)) continue;
-            att = ref[attName];
-            attributes[attName] = att.value;
-          }
-          this.node(node.name, attributes);
-          break;
-        case NodeType.Dummy:
-          this.dummy();
-          break;
-        case NodeType.Raw:
-          this.raw(node.value);
-          break;
-        case NodeType.Text:
-          this.text(node.value);
-          break;
-        case NodeType.ProcessingInstruction:
-          this.instruction(node.target, node.value);
-          break;
-        default:
-          throw new Error("This XML node type is not supported in a JS object: " + node.constructor.name);
-      }
-      ref1 = node.children;
-      // write child nodes recursively
-      for (i = 0, len = ref1.length; i < len; i++) {
-        child = ref1[i];
-        this.createChildNode(child);
-        if (child.type === NodeType.Element) {
-          this.up();
-        }
-      }
-      return this;
-    }
-
-    // Creates a dummy node
-
-    dummy() {
-      // no-op, just return this
-      return this;
-    }
-
-    // Creates a node
-
-    // `name` name of the node
-    // `attributes` an object containing name/value pairs of attributes
-    // `text` element text
-    node(name, attributes, text) {
-      if (name == null) {
-        throw new Error("Missing node name.");
-      }
-      if (this.root && this.currentLevel === -1) {
-        throw new Error("Document can only have one root node. " + this.debugInfo(name));
-      }
-      this.openCurrent();
-      name = getValue(name);
-      if (attributes == null) {
-        attributes = {};
-      }
-      attributes = getValue(attributes);
-      // swap argument order: text <-> attributes
-      if (!isObject(attributes)) {
-        [text, attributes] = [attributes, text];
-      }
-      this.currentNode = new XMLElement(this, name, attributes);
-      this.currentNode.children = false;
-      this.currentLevel++;
-      this.openTags[this.currentLevel] = this.currentNode;
-      if (text != null) {
-        this.text(text);
-      }
-      return this;
-    }
-
-    // Creates a child element node or an element type declaration when called
-    // inside the DTD
-
-    // `name` name of the node
-    // `attributes` an object containing name/value pairs of attributes
-    // `text` element text
-    element(name, attributes, text) {
-      var child, i, len, oldValidationFlag, ref, root;
-      if (this.currentNode && this.currentNode.type === NodeType.DocType) {
-        this.dtdElement(...arguments);
-      } else {
-        if (Array.isArray(name) || isObject(name) || isFunction(name)) {
-          oldValidationFlag = this.options.noValidation;
-          this.options.noValidation = true;
-          root = new XMLDocument(this.options).element('TEMP_ROOT');
-          root.element(name);
-          this.options.noValidation = oldValidationFlag;
-          ref = root.children;
-          for (i = 0, len = ref.length; i < len; i++) {
-            child = ref[i];
-            this.createChildNode(child);
-            if (child.type === NodeType.Element) {
-              this.up();
-            }
-          }
-        } else {
-          this.node(name, attributes, text);
-        }
-      }
-      return this;
-    }
-
-    // Adds or modifies an attribute
-
-    // `name` attribute name
-    // `value` attribute value
-    attribute(name, value) {
-      var attName, attValue;
-      if (!this.currentNode || this.currentNode.children) {
-        throw new Error("att() can only be used immediately after an ele() call in callback mode. " + this.debugInfo(name));
-      }
-      if (name != null) {
-        name = getValue(name);
-      }
-      if (isObject(name)) { // expand if object
-        for (attName in name) {
-          if (!hasProp.call(name, attName)) continue;
-          attValue = name[attName];
-          this.attribute(attName, attValue);
-        }
-      } else {
-        if (isFunction(value)) {
-          value = value.apply();
-        }
-        if (this.options.keepNullAttributes && (value == null)) {
-          this.currentNode.attribs[name] = new XMLAttribute(this, name, "");
-        } else if (value != null) {
-          this.currentNode.attribs[name] = new XMLAttribute(this, name, value);
-        }
-      }
-      return this;
-    }
-
-    // Creates a text node
-
-    // `value` element text
-    text(value) {
-      var node;
-      this.openCurrent();
-      node = new XMLText(this, value);
-      this.onData(this.writer.text(node, this.writerOptions, this.currentLevel + 1), this.currentLevel + 1);
-      return this;
-    }
-
-    // Creates a CDATA node
-
-    // `value` element text without CDATA delimiters
-    cdata(value) {
-      var node;
-      this.openCurrent();
-      node = new XMLCData(this, value);
-      this.onData(this.writer.cdata(node, this.writerOptions, this.currentLevel + 1), this.currentLevel + 1);
-      return this;
-    }
-
-    // Creates a comment node
-
-    // `value` comment text
-    comment(value) {
-      var node;
-      this.openCurrent();
-      node = new XMLComment(this, value);
-      this.onData(this.writer.comment(node, this.writerOptions, this.currentLevel + 1), this.currentLevel + 1);
-      return this;
-    }
-
-    // Adds unescaped raw text
-
-    // `value` text
-    raw(value) {
-      var node;
-      this.openCurrent();
-      node = new XMLRaw(this, value);
-      this.onData(this.writer.raw(node, this.writerOptions, this.currentLevel + 1), this.currentLevel + 1);
-      return this;
-    }
-
-    // Adds a processing instruction
-
-    // `target` instruction target
-    // `value` instruction value
-    instruction(target, value) {
-      var i, insTarget, insValue, len, node;
-      this.openCurrent();
-      if (target != null) {
-        target = getValue(target);
-      }
-      if (value != null) {
-        value = getValue(value);
-      }
-      if (Array.isArray(target)) { // expand if array
-        for (i = 0, len = target.length; i < len; i++) {
-          insTarget = target[i];
-          this.instruction(insTarget);
-        }
-      } else if (isObject(target)) { // expand if object
-        for (insTarget in target) {
-          if (!hasProp.call(target, insTarget)) continue;
-          insValue = target[insTarget];
-          this.instruction(insTarget, insValue);
-        }
-      } else {
-        if (isFunction(value)) {
-          value = value.apply();
-        }
-        node = new XMLProcessingInstruction(this, target, value);
-        this.onData(this.writer.processingInstruction(node, this.writerOptions, this.currentLevel + 1), this.currentLevel + 1);
-      }
-      return this;
-    }
-
-    // Creates the xml declaration
-
-    // `version` A version number string, e.g. 1.0
-    // `encoding` Encoding declaration, e.g. UTF-8
-    // `standalone` standalone document declaration: true or false
-    declaration(version, encoding, standalone) {
-      var node;
-      this.openCurrent();
-      if (this.documentStarted) {
-        throw new Error("declaration() must be the first node.");
-      }
-      node = new XMLDeclaration(this, version, encoding, standalone);
-      this.onData(this.writer.declaration(node, this.writerOptions, this.currentLevel + 1), this.currentLevel + 1);
-      return this;
-    }
-
-    // Creates the document type declaration
-
-    // `root`  the name of the root node
-    // `pubID` the public identifier of the external subset
-    // `sysID` the system identifier of the external subset
-    doctype(root, pubID, sysID) {
-      this.openCurrent();
-      if (root == null) {
-        throw new Error("Missing root node name.");
-      }
-      if (this.root) {
-        throw new Error("dtd() must come before the root node.");
-      }
-      this.currentNode = new XMLDocType(this, pubID, sysID);
-      this.currentNode.rootNodeName = root;
-      this.currentNode.children = false;
-      this.currentLevel++;
-      this.openTags[this.currentLevel] = this.currentNode;
-      return this;
-    }
-
-    // Creates an element type declaration
-
-    // `name` element name
-    // `value` element content (defaults to #PCDATA)
-    dtdElement(name, value) {
-      var node;
-      this.openCurrent();
-      node = new XMLDTDElement(this, name, value);
-      this.onData(this.writer.dtdElement(node, this.writerOptions, this.currentLevel + 1), this.currentLevel + 1);
-      return this;
-    }
-
-    // Creates an attribute declaration
-
-    // `elementName` the name of the element containing this attribute
-    // `attributeName` attribute name
-    // `attributeType` type of the attribute (defaults to CDATA)
-    // `defaultValueType` default value type (either #REQUIRED, #IMPLIED, #FIXED or
-    //                    #DEFAULT) (defaults to #IMPLIED)
-    // `defaultValue` default value of the attribute
-    //                (only used for #FIXED or #DEFAULT)
-    attList(elementName, attributeName, attributeType, defaultValueType, defaultValue) {
-      var node;
-      this.openCurrent();
-      node = new XMLDTDAttList(this, elementName, attributeName, attributeType, defaultValueType, defaultValue);
-      this.onData(this.writer.dtdAttList(node, this.writerOptions, this.currentLevel + 1), this.currentLevel + 1);
-      return this;
-    }
-
-    // Creates a general entity declaration
-
-    // `name` the name of the entity
-    // `value` internal entity value or an object with external entity details
-    // `value.pubID` public identifier
-    // `value.sysID` system identifier
-    // `value.nData` notation declaration
-    entity(name, value) {
-      var node;
-      this.openCurrent();
-      node = new XMLDTDEntity(this, false, name, value);
-      this.onData(this.writer.dtdEntity(node, this.writerOptions, this.currentLevel + 1), this.currentLevel + 1);
-      return this;
-    }
-
-    // Creates a parameter entity declaration
-
-    // `name` the name of the entity
-    // `value` internal entity value or an object with external entity details
-    // `value.pubID` public identifier
-    // `value.sysID` system identifier
-    pEntity(name, value) {
-      var node;
-      this.openCurrent();
-      node = new XMLDTDEntity(this, true, name, value);
-      this.onData(this.writer.dtdEntity(node, this.writerOptions, this.currentLevel + 1), this.currentLevel + 1);
-      return this;
-    }
-
-    // Creates a NOTATION declaration
-
-    // `name` the name of the notation
-    // `value` an object with external entity details
-    // `value.pubID` public identifier
-    // `value.sysID` system identifier
-    notation(name, value) {
-      var node;
-      this.openCurrent();
-      node = new XMLDTDNotation(this, name, value);
-      this.onData(this.writer.dtdNotation(node, this.writerOptions, this.currentLevel + 1), this.currentLevel + 1);
-      return this;
-    }
-
-    // Gets the parent node
-    up() {
-      if (this.currentLevel < 0) {
-        throw new Error("The document node has no parent.");
-      }
-      if (this.currentNode) {
-        if (this.currentNode.children) {
-          this.closeNode(this.currentNode);
-        } else {
-          this.openNode(this.currentNode);
-        }
-        this.currentNode = null;
-      } else {
-        this.closeNode(this.openTags[this.currentLevel]);
-      }
-      delete this.openTags[this.currentLevel];
-      this.currentLevel--;
-      return this;
-    }
-
-    // Ends the document
-    end() {
-      while (this.currentLevel >= 0) {
-        this.up();
-      }
-      return this.onEnd();
-    }
-
-    // Opens the current parent node
-    openCurrent() {
-      if (this.currentNode) {
-        this.currentNode.children = true;
-        return this.openNode(this.currentNode);
-      }
-    }
-
-    // Writes the opening tag of the current node or the entire node if it has
-    // no child nodes
-    openNode(node) {
-      var att, chunk, name, ref;
-      if (!node.isOpen) {
-        if (!this.root && this.currentLevel === 0 && node.type === NodeType.Element) {
-          this.root = node;
-        }
-        chunk = '';
-        if (node.type === NodeType.Element) {
-          this.writerOptions.state = WriterState.OpenTag;
-          chunk = this.writer.indent(node, this.writerOptions, this.currentLevel) + '<' + node.name;
-          ref = node.attribs;
-          for (name in ref) {
-            if (!hasProp.call(ref, name)) continue;
-            att = ref[name];
-            chunk += this.writer.attribute(att, this.writerOptions, this.currentLevel);
-          }
-          chunk += (node.children ? '>' : '/>') + this.writer.endline(node, this.writerOptions, this.currentLevel);
-          this.writerOptions.state = WriterState.InsideTag; // if node.type is NodeType.DocType
-        } else {
-          this.writerOptions.state = WriterState.OpenTag;
-          chunk = this.writer.indent(node, this.writerOptions, this.currentLevel) + '<!DOCTYPE ' + node.rootNodeName;
-          
-          // external identifier
-          if (node.pubID && node.sysID) {
-            chunk += ' PUBLIC "' + node.pubID + '" "' + node.sysID + '"';
-          } else if (node.sysID) {
-            chunk += ' SYSTEM "' + node.sysID + '"';
-          }
-          
-          // internal subset
-          if (node.children) {
-            chunk += ' [';
-            this.writerOptions.state = WriterState.InsideTag;
-          } else {
-            this.writerOptions.state = WriterState.CloseTag;
-            chunk += '>';
-          }
-          chunk += this.writer.endline(node, this.writerOptions, this.currentLevel);
-        }
-        this.onData(chunk, this.currentLevel);
-        return node.isOpen = true;
-      }
-    }
-
-    // Writes the closing tag of the current node
-    closeNode(node) {
-      var chunk;
-      if (!node.isClosed) {
-        chunk = '';
-        this.writerOptions.state = WriterState.CloseTag;
-        if (node.type === NodeType.Element) {
-          chunk = this.writer.indent(node, this.writerOptions, this.currentLevel) + '</' + node.name + '>' + this.writer.endline(node, this.writerOptions, this.currentLevel); // if node.type is NodeType.DocType
-        } else {
-          chunk = this.writer.indent(node, this.writerOptions, this.currentLevel) + ']>' + this.writer.endline(node, this.writerOptions, this.currentLevel);
-        }
-        this.writerOptions.state = WriterState.None;
-        this.onData(chunk, this.currentLevel);
-        return node.isClosed = true;
-      }
-    }
-
-    // Called when a new chunk of XML is output
-
-    // `chunk` a string containing the XML chunk
-    // `level` current indentation level
-    onData(chunk, level) {
-      this.documentStarted = true;
-      return this.onDataCallback(chunk, level + 1);
-    }
-
-    // Called when the XML document is completed
-    onEnd() {
-      this.documentCompleted = true;
-      return this.onEndCallback();
-    }
-
-    // Returns debug string
-    debugInfo(name) {
-      if (name == null) {
-        return "";
-      } else {
-        return "node: <" + name + ">";
-      }
-    }
-
-    // Node aliases
-    ele() {
-      return this.element(...arguments);
-    }
-
-    nod(name, attributes, text) {
-      return this.node(name, attributes, text);
-    }
-
-    txt(value) {
-      return this.text(value);
-    }
-
-    dat(value) {
-      return this.cdata(value);
-    }
-
-    com(value) {
-      return this.comment(value);
-    }
-
-    ins(target, value) {
-      return this.instruction(target, value);
-    }
-
-    dec(version, encoding, standalone) {
-      return this.declaration(version, encoding, standalone);
-    }
-
-    dtd(root, pubID, sysID) {
-      return this.doctype(root, pubID, sysID);
-    }
-
-    e(name, attributes, text) {
-      return this.element(name, attributes, text);
-    }
-
-    n(name, attributes, text) {
-      return this.node(name, attributes, text);
-    }
-
-    t(value) {
-      return this.text(value);
-    }
-
-    d(value) {
-      return this.cdata(value);
-    }
-
-    c(value) {
-      return this.comment(value);
-    }
-
-    r(value) {
-      return this.raw(value);
-    }
-
-    i(target, value) {
-      return this.instruction(target, value);
-    }
-
-    // Attribute aliases
-    att() {
-      if (this.currentNode && this.currentNode.type === NodeType.DocType) {
-        return this.attList(...arguments);
-      } else {
-        return this.attribute(...arguments);
-      }
-    }
-
-    a() {
-      if (this.currentNode && this.currentNode.type === NodeType.DocType) {
-        return this.attList(...arguments);
-      } else {
-        return this.attribute(...arguments);
-      }
-    }
-
-    // DTD aliases
-    // att() and ele() are defined above
-    ent(name, value) {
-      return this.entity(name, value);
-    }
-
-    pent(name, value) {
-      return this.pEntity(name, value);
-    }
-
-    not(name, value) {
-      return this.notation(name, value);
-    }
-
-  };
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 3590:
-/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  var NodeType, XMLDummy, XMLNode;
-
-  XMLNode = __nccwpck_require__(7608);
-
-  NodeType = __nccwpck_require__(9267);
-
-  // Represents a  raw node
-  module.exports = XMLDummy = class XMLDummy extends XMLNode {
-    // Initializes a new instance of `XMLDummy`
-
-    // `XMLDummy` is a special node representing a node with 
-    // a null value. Dummy nodes are created while recursively
-    // building the XML tree. Simply skipping null values doesn't
-    // work because that would break the recursive chain.
-    constructor(parent) {
-      super(parent);
-      this.type = NodeType.Dummy;
-    }
-
-    // Creates and returns a deep clone of `this`
-    clone() {
-      return Object.create(this);
-    }
-
-    // Converts the XML fragment to string
-
-    // `options.pretty` pretty prints the result
-    // `options.indent` indentation for pretty print
-    // `options.offset` how many indentations to add to every line for pretty print
-    // `options.newline` newline sequence for pretty print
-    toString(options) {
-      return '';
-    }
-
-  };
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 9437:
-/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  var NodeType, XMLAttribute, XMLElement, XMLNamedNodeMap, XMLNode, getValue, isFunction, isObject,
-    hasProp = {}.hasOwnProperty;
-
-  ({isObject, isFunction, getValue} = __nccwpck_require__(8229));
-
-  XMLNode = __nccwpck_require__(7608);
-
-  NodeType = __nccwpck_require__(9267);
-
-  XMLAttribute = __nccwpck_require__(8376);
-
-  XMLNamedNodeMap = __nccwpck_require__(4361);
-
-  // Represents an element of the XML document
-  module.exports = XMLElement = (function() {
-    class XMLElement extends XMLNode {
-      // Initializes a new instance of `XMLElement`
-
-      // `parent` the parent node
-      // `name` element name
-      // `attributes` an object containing name/value pairs of attributes
-      constructor(parent, name, attributes) {
-        var child, j, len, ref;
-        super(parent);
-        if (name == null) {
-          throw new Error("Missing element name. " + this.debugInfo());
-        }
-        this.name = this.stringify.name(name);
-        this.type = NodeType.Element;
-        this.attribs = {};
-        this.schemaTypeInfo = null;
-        if (attributes != null) {
-          this.attribute(attributes);
-        }
-        // set properties if this is the root node
-        if (parent.type === NodeType.Document) {
-          this.isRoot = true;
-          this.documentObject = parent;
-          parent.rootObject = this;
-          // set dtd name
-          if (parent.children) {
-            ref = parent.children;
-            for (j = 0, len = ref.length; j < len; j++) {
-              child = ref[j];
-              if (child.type === NodeType.DocType) {
-                child.name = this.name;
-                break;
-              }
-            }
-          }
-        }
-      }
-
-      // Creates and returns a deep clone of `this`
-
-      clone() {
-        var att, attName, clonedSelf, ref;
-        clonedSelf = Object.create(this);
-        // remove document element
-        if (clonedSelf.isRoot) {
-          clonedSelf.documentObject = null;
-        }
-        // clone attributes
-        clonedSelf.attribs = {};
-        ref = this.attribs;
-        for (attName in ref) {
-          if (!hasProp.call(ref, attName)) continue;
-          att = ref[attName];
-          clonedSelf.attribs[attName] = att.clone();
-        }
-        // clone child nodes
-        clonedSelf.children = [];
-        this.children.forEach(function(child) {
-          var clonedChild;
-          clonedChild = child.clone();
-          clonedChild.parent = clonedSelf;
-          return clonedSelf.children.push(clonedChild);
-        });
-        return clonedSelf;
-      }
-
-      // Adds or modifies an attribute
-
-      // `name` attribute name
-      // `value` attribute value
-      attribute(name, value) {
-        var attName, attValue;
-        if (name != null) {
-          name = getValue(name);
-        }
-        if (isObject(name)) { // expand if object
-          for (attName in name) {
-            if (!hasProp.call(name, attName)) continue;
-            attValue = name[attName];
-            this.attribute(attName, attValue);
-          }
-        } else {
-          if (isFunction(value)) {
-            value = value.apply();
-          }
-          if (this.options.keepNullAttributes && (value == null)) {
-            this.attribs[name] = new XMLAttribute(this, name, "");
-          } else if (value != null) {
-            this.attribs[name] = new XMLAttribute(this, name, value);
-          }
-        }
-        return this;
-      }
-
-      // Removes an attribute
-
-      // `name` attribute name
-      removeAttribute(name) {
-        var attName, j, len;
-        // Also defined in DOM level 1
-        // removeAttribute(name) removes an attribute by name.
-        if (name == null) {
-          throw new Error("Missing attribute name. " + this.debugInfo());
-        }
-        name = getValue(name);
-        if (Array.isArray(name)) { // expand if array
-          for (j = 0, len = name.length; j < len; j++) {
-            attName = name[j];
-            delete this.attribs[attName];
-          }
-        } else {
-          delete this.attribs[name];
-        }
-        return this;
-      }
-
-      // Converts the XML fragment to string
-
-      // `options.pretty` pretty prints the result
-      // `options.indent` indentation for pretty print
-      // `options.offset` how many indentations to add to every line for pretty print
-      // `options.newline` newline sequence for pretty print
-      // `options.allowEmpty` do not self close empty element tags
-      toString(options) {
-        return this.options.writer.element(this, this.options.writer.filterOptions(options));
-      }
-
-      // Aliases
-      att(name, value) {
-        return this.attribute(name, value);
-      }
-
-      a(name, value) {
-        return this.attribute(name, value);
-      }
-
-      // DOM Level 1
-      getAttribute(name) {
-        if (this.attribs.hasOwnProperty(name)) {
-          return this.attribs[name].value;
-        } else {
-          return null;
-        }
-      }
-
-      setAttribute(name, value) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      getAttributeNode(name) {
-        if (this.attribs.hasOwnProperty(name)) {
-          return this.attribs[name];
-        } else {
-          return null;
-        }
-      }
-
-      setAttributeNode(newAttr) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      removeAttributeNode(oldAttr) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      getElementsByTagName(name) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      // DOM Level 2
-      getAttributeNS(namespaceURI, localName) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      setAttributeNS(namespaceURI, qualifiedName, value) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      removeAttributeNS(namespaceURI, localName) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      getAttributeNodeNS(namespaceURI, localName) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      setAttributeNodeNS(newAttr) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      getElementsByTagNameNS(namespaceURI, localName) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      hasAttribute(name) {
-        return this.attribs.hasOwnProperty(name);
-      }
-
-      hasAttributeNS(namespaceURI, localName) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      // DOM Level 3
-      setIdAttribute(name, isId) {
-        if (this.attribs.hasOwnProperty(name)) {
-          return this.attribs[name].isId;
-        } else {
-          return isId;
-        }
-      }
-
-      setIdAttributeNS(namespaceURI, localName, isId) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      setIdAttributeNode(idAttr, isId) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      // DOM Level 4
-      getElementsByTagName(tagname) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      getElementsByTagNameNS(namespaceURI, localName) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      getElementsByClassName(classNames) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      isEqualNode(node) {
-        var i, j, ref;
-        if (!super.isEqualNode(node)) {
-          return false;
-        }
-        if (node.namespaceURI !== this.namespaceURI) {
-          return false;
-        }
-        if (node.prefix !== this.prefix) {
-          return false;
-        }
-        if (node.localName !== this.localName) {
-          return false;
-        }
-        if (node.attribs.length !== this.attribs.length) {
-          return false;
-        }
-        for (i = j = 0, ref = this.attribs.length - 1; (0 <= ref ? j <= ref : j >= ref); i = 0 <= ref ? ++j : --j) {
-          if (!this.attribs[i].isEqualNode(node.attribs[i])) {
-            return false;
-          }
-        }
-        return true;
-      }
-
-    };
-
-    // DOM level 1
-    Object.defineProperty(XMLElement.prototype, 'tagName', {
-      get: function() {
-        return this.name;
-      }
-    });
-
-    // DOM level 4
-    Object.defineProperty(XMLElement.prototype, 'namespaceURI', {
-      get: function() {
-        return '';
-      }
-    });
-
-    Object.defineProperty(XMLElement.prototype, 'prefix', {
-      get: function() {
-        return '';
-      }
-    });
-
-    Object.defineProperty(XMLElement.prototype, 'localName', {
-      get: function() {
-        return this.name;
-      }
-    });
-
-    Object.defineProperty(XMLElement.prototype, 'id', {
-      get: function() {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-    });
-
-    Object.defineProperty(XMLElement.prototype, 'className', {
-      get: function() {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-    });
-
-    Object.defineProperty(XMLElement.prototype, 'classList', {
-      get: function() {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-    });
-
-    Object.defineProperty(XMLElement.prototype, 'attributes', {
-      get: function() {
-        if (!this.attributeMap || !this.attributeMap.nodes) {
-          this.attributeMap = new XMLNamedNodeMap(this.attribs);
-        }
-        return this.attributeMap;
-      }
-    });
-
-    return XMLElement;
-
-  }).call(this);
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 4361:
-/***/ (function(module) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  // Represents a map of nodes accessed by a string key
-  var XMLNamedNodeMap;
-
-  module.exports = XMLNamedNodeMap = (function() {
-    class XMLNamedNodeMap {
-      // Initializes a new instance of `XMLNamedNodeMap`
-      // This is just a wrapper around an ordinary
-      // JS object.
-
-      // `nodes` the object containing nodes.
-      constructor(nodes) {
-        this.nodes = nodes;
-      }
-
-      // Creates and returns a deep clone of `this`
-
-      clone() {
-        // this class should not be cloned since it wraps
-        // around a given object. The calling function should check
-        // whether the wrapped object is null and supply a new object
-        // (from the clone).
-        return this.nodes = null;
-      }
-
-      // DOM Level 1
-      getNamedItem(name) {
-        return this.nodes[name];
-      }
-
-      setNamedItem(node) {
-        var oldNode;
-        oldNode = this.nodes[node.nodeName];
-        this.nodes[node.nodeName] = node;
-        return oldNode || null;
-      }
-
-      removeNamedItem(name) {
-        var oldNode;
-        oldNode = this.nodes[name];
-        delete this.nodes[name];
-        return oldNode || null;
-      }
-
-      item(index) {
-        return this.nodes[Object.keys(this.nodes)[index]] || null;
-      }
-
-      // DOM level 2 functions to be implemented later
-      getNamedItemNS(namespaceURI, localName) {
-        throw new Error("This DOM method is not implemented.");
-      }
-
-      setNamedItemNS(node) {
-        throw new Error("This DOM method is not implemented.");
-      }
-
-      removeNamedItemNS(namespaceURI, localName) {
-        throw new Error("This DOM method is not implemented.");
-      }
-
-    };
-
-    
-    // DOM level 1
-    Object.defineProperty(XMLNamedNodeMap.prototype, 'length', {
-      get: function() {
-        return Object.keys(this.nodes).length || 0;
-      }
-    });
-
-    return XMLNamedNodeMap;
-
-  }).call(this);
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 7608:
-/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  var DocumentPosition, NodeType, XMLCData, XMLComment, XMLDeclaration, XMLDocType, XMLDummy, XMLElement, XMLNamedNodeMap, XMLNode, XMLNodeList, XMLProcessingInstruction, XMLRaw, XMLText, getValue, isEmpty, isFunction, isObject,
-    hasProp = {}.hasOwnProperty,
-    splice = [].splice;
-
-  ({isObject, isFunction, isEmpty, getValue} = __nccwpck_require__(8229));
-
-  XMLElement = null;
-
-  XMLCData = null;
-
-  XMLComment = null;
-
-  XMLDeclaration = null;
-
-  XMLDocType = null;
-
-  XMLRaw = null;
-
-  XMLText = null;
-
-  XMLProcessingInstruction = null;
-
-  XMLDummy = null;
-
-  NodeType = null;
-
-  XMLNodeList = null;
-
-  XMLNamedNodeMap = null;
-
-  DocumentPosition = null;
-
-  // Represents a generic XMl element
-  module.exports = XMLNode = (function() {
-    class XMLNode {
-      // Initializes a new instance of `XMLNode`
-
-      // `parent` the parent node
-      constructor(parent1) {
-        this.parent = parent1;
-        if (this.parent) {
-          this.options = this.parent.options;
-          this.stringify = this.parent.stringify;
-        }
-        this.value = null;
-        this.children = [];
-        this.baseURI = null;
-        // first execution, load dependencies that are otherwise
-        // circular (so we can't load them at the top)
-        if (!XMLElement) {
-          XMLElement = __nccwpck_require__(9437);
-          XMLCData = __nccwpck_require__(333);
-          XMLComment = __nccwpck_require__(4407);
-          XMLDeclaration = __nccwpck_require__(6364);
-          XMLDocType = __nccwpck_require__(1801);
-          XMLRaw = __nccwpck_require__(6329);
-          XMLText = __nccwpck_require__(1318);
-          XMLProcessingInstruction = __nccwpck_require__(6939);
-          XMLDummy = __nccwpck_require__(3590);
-          NodeType = __nccwpck_require__(9267);
-          XMLNodeList = __nccwpck_require__(6768);
-          XMLNamedNodeMap = __nccwpck_require__(4361);
-          DocumentPosition = __nccwpck_require__(2839);
-        }
-      }
-
-      
-      // Sets the parent node of this node and its children recursively
-
-      // `parent` the parent node
-      setParent(parent) {
-        var child, j, len, ref1, results;
-        this.parent = parent;
-        if (parent) {
-          this.options = parent.options;
-          this.stringify = parent.stringify;
-        }
-        ref1 = this.children;
-        results = [];
-        for (j = 0, len = ref1.length; j < len; j++) {
-          child = ref1[j];
-          results.push(child.setParent(this));
-        }
-        return results;
-      }
-
-      // Creates a child element node
-
-      // `name` node name or an object describing the XML tree
-      // `attributes` an object containing name/value pairs of attributes
-      // `text` element text
-      element(name, attributes, text) {
-        var childNode, item, j, k, key, lastChild, len, len1, val;
-        lastChild = null;
-        if (attributes === null && (text == null)) {
-          [attributes, text] = [{}, null];
-        }
-        if (attributes == null) {
-          attributes = {};
-        }
-        attributes = getValue(attributes);
-        // swap argument order: text <-> attributes
-        if (!isObject(attributes)) {
-          [text, attributes] = [attributes, text];
-        }
-        if (name != null) {
-          name = getValue(name);
-        }
-        // expand if array
-        if (Array.isArray(name)) {
-          for (j = 0, len = name.length; j < len; j++) {
-            item = name[j];
-            lastChild = this.element(item);
-          }
-        // evaluate if function
-        } else if (isFunction(name)) {
-          lastChild = this.element(name.apply());
-        // expand if object
-        } else if (isObject(name)) {
-          for (key in name) {
-            if (!hasProp.call(name, key)) continue;
-            val = name[key];
-            if (isFunction(val)) {
-              // evaluate if function
-              val = val.apply();
-            }
-            // assign attributes
-            if (!this.options.ignoreDecorators && this.stringify.convertAttKey && key.indexOf(this.stringify.convertAttKey) === 0) {
-              lastChild = this.attribute(key.substr(this.stringify.convertAttKey.length), val);
-            // skip empty arrays
-            } else if (!this.options.separateArrayItems && Array.isArray(val) && isEmpty(val)) {
-              lastChild = this.dummy();
-            // empty objects produce one node
-            } else if (isObject(val) && isEmpty(val)) {
-              lastChild = this.element(key);
-            // skip null and undefined nodes
-            } else if (!this.options.keepNullNodes && (val == null)) {
-              lastChild = this.dummy();
-            
-            // expand list by creating child nodes
-            } else if (!this.options.separateArrayItems && Array.isArray(val)) {
-              for (k = 0, len1 = val.length; k < len1; k++) {
-                item = val[k];
-                childNode = {};
-                childNode[key] = item;
-                lastChild = this.element(childNode);
-              }
-            
-            // expand child nodes under parent
-            } else if (isObject(val)) {
-              // if the key is #text expand child nodes under this node to support mixed content
-              if (!this.options.ignoreDecorators && this.stringify.convertTextKey && key.indexOf(this.stringify.convertTextKey) === 0) {
-                lastChild = this.element(val);
-              } else {
-                lastChild = this.element(key);
-                lastChild.element(val);
-              }
-            } else {
-              
-              // text node
-              lastChild = this.element(key, val);
-            }
-          }
-        // skip null nodes
-        } else if (!this.options.keepNullNodes && text === null) {
-          lastChild = this.dummy();
-        } else {
-          // text node
-          if (!this.options.ignoreDecorators && this.stringify.convertTextKey && name.indexOf(this.stringify.convertTextKey) === 0) {
-            lastChild = this.text(text);
-          // cdata node
-          } else if (!this.options.ignoreDecorators && this.stringify.convertCDataKey && name.indexOf(this.stringify.convertCDataKey) === 0) {
-            lastChild = this.cdata(text);
-          // comment node
-          } else if (!this.options.ignoreDecorators && this.stringify.convertCommentKey && name.indexOf(this.stringify.convertCommentKey) === 0) {
-            lastChild = this.comment(text);
-          // raw text node
-          } else if (!this.options.ignoreDecorators && this.stringify.convertRawKey && name.indexOf(this.stringify.convertRawKey) === 0) {
-            lastChild = this.raw(text);
-          // processing instruction
-          } else if (!this.options.ignoreDecorators && this.stringify.convertPIKey && name.indexOf(this.stringify.convertPIKey) === 0) {
-            lastChild = this.instruction(name.substr(this.stringify.convertPIKey.length), text);
-          } else {
-            // element node
-            lastChild = this.node(name, attributes, text);
-          }
-        }
-        if (lastChild == null) {
-          throw new Error("Could not create any elements with: " + name + ". " + this.debugInfo());
-        }
-        return lastChild;
-      }
-
-      // Creates a child element node before the current node
-
-      // `name` node name or an object describing the XML tree
-      // `attributes` an object containing name/value pairs of attributes
-      // `text` element text
-      insertBefore(name, attributes, text) {
-        var child, i, newChild, refChild, removed;
-        // DOM level 1
-        // insertBefore(newChild, refChild) inserts the child node newChild before refChild
-        if (name != null ? name.type : void 0) {
-          newChild = name;
-          refChild = attributes;
-          newChild.setParent(this);
-          if (refChild) {
-            // temporarily remove children starting *with* refChild
-            i = children.indexOf(refChild);
-            removed = children.splice(i);
-            
-            // add the new child
-            children.push(newChild);
-            
-            // add back removed children after new child
-            Array.prototype.push.apply(children, removed);
-          } else {
-            children.push(newChild);
-          }
-          return newChild;
-        } else {
-          if (this.isRoot) {
-            throw new Error("Cannot insert elements at root level. " + this.debugInfo(name));
-          }
-          
-          // temporarily remove children starting *with* this
-          i = this.parent.children.indexOf(this);
-          removed = this.parent.children.splice(i);
-          
-          // add the new child
-          child = this.parent.element(name, attributes, text);
-          
-          // add back removed children after new child
-          Array.prototype.push.apply(this.parent.children, removed);
-          return child;
-        }
-      }
-
-      // Creates a child element node after the current node
-
-      // `name` node name or an object describing the XML tree
-      // `attributes` an object containing name/value pairs of attributes
-      // `text` element text
-      insertAfter(name, attributes, text) {
-        var child, i, removed;
-        if (this.isRoot) {
-          throw new Error("Cannot insert elements at root level. " + this.debugInfo(name));
-        }
-        
-        // temporarily remove children starting *after* this
-        i = this.parent.children.indexOf(this);
-        removed = this.parent.children.splice(i + 1);
-        
-        // add the new child
-        child = this.parent.element(name, attributes, text);
-        
-        // add back removed children after new child
-        Array.prototype.push.apply(this.parent.children, removed);
-        return child;
-      }
-
-      // Deletes a child element node
-
-      remove() {
-        var i, ref1;
-        if (this.isRoot) {
-          throw new Error("Cannot remove the root element. " + this.debugInfo());
-        }
-        i = this.parent.children.indexOf(this);
-        splice.apply(this.parent.children, [i, i - i + 1].concat(ref1 = [])), ref1;
-        return this.parent;
-      }
-
-      // Creates a node
-
-      // `name` name of the node
-      // `attributes` an object containing name/value pairs of attributes
-      // `text` element text
-      node(name, attributes, text) {
-        var child;
-        if (name != null) {
-          name = getValue(name);
-        }
-        attributes || (attributes = {});
-        attributes = getValue(attributes);
-        // swap argument order: text <-> attributes
-        if (!isObject(attributes)) {
-          [text, attributes] = [attributes, text];
-        }
-        child = new XMLElement(this, name, attributes);
-        if (text != null) {
-          child.text(text);
-        }
-        this.children.push(child);
-        return child;
-      }
-
-      // Creates a text node
-
-      // `value` element text
-      text(value) {
-        var child;
-        if (isObject(value)) {
-          this.element(value);
-        }
-        child = new XMLText(this, value);
-        this.children.push(child);
-        return this;
-      }
-
-      // Creates a CDATA node
-
-      // `value` element text without CDATA delimiters
-      cdata(value) {
-        var child;
-        child = new XMLCData(this, value);
-        this.children.push(child);
-        return this;
-      }
-
-      // Creates a comment node
-
-      // `value` comment text
-      comment(value) {
-        var child;
-        child = new XMLComment(this, value);
-        this.children.push(child);
-        return this;
-      }
-
-      // Creates a comment node before the current node
-
-      // `value` comment text
-      commentBefore(value) {
-        var child, i, removed;
-        // temporarily remove children starting *with* this
-        i = this.parent.children.indexOf(this);
-        removed = this.parent.children.splice(i);
-        // add the new child
-        child = this.parent.comment(value);
-        // add back removed children after new child
-        Array.prototype.push.apply(this.parent.children, removed);
-        return this;
-      }
-
-      // Creates a comment node after the current node
-
-      // `value` comment text
-      commentAfter(value) {
-        var child, i, removed;
-        // temporarily remove children starting *after* this
-        i = this.parent.children.indexOf(this);
-        removed = this.parent.children.splice(i + 1);
-        // add the new child
-        child = this.parent.comment(value);
-        // add back removed children after new child
-        Array.prototype.push.apply(this.parent.children, removed);
-        return this;
-      }
-
-      // Adds unescaped raw text
-
-      // `value` text
-      raw(value) {
-        var child;
-        child = new XMLRaw(this, value);
-        this.children.push(child);
-        return this;
-      }
-
-      // Adds a dummy node
-      dummy() {
-        var child;
-        child = new XMLDummy(this);
-        // Normally when a new node is created it is added to the child node collection.
-        // However, dummy nodes are never added to the XML tree. They are created while
-        // converting JS objects to XML nodes in order not to break the recursive function
-        // chain. They can be thought of as invisible nodes. They can be traversed through
-        // by using prev(), next(), up(), etc. functions but they do not exists in the tree.
-
-        // @children.push child
-        return child;
-      }
-
-      // Adds a processing instruction
-
-      // `target` instruction target
-      // `value` instruction value
-      instruction(target, value) {
-        var insTarget, insValue, instruction, j, len;
-        if (target != null) {
-          target = getValue(target);
-        }
-        if (value != null) {
-          value = getValue(value);
-        }
-        if (Array.isArray(target)) { // expand if array
-          for (j = 0, len = target.length; j < len; j++) {
-            insTarget = target[j];
-            this.instruction(insTarget);
-          }
-        } else if (isObject(target)) { // expand if object
-          for (insTarget in target) {
-            if (!hasProp.call(target, insTarget)) continue;
-            insValue = target[insTarget];
-            this.instruction(insTarget, insValue);
-          }
-        } else {
-          if (isFunction(value)) {
-            value = value.apply();
-          }
-          instruction = new XMLProcessingInstruction(this, target, value);
-          this.children.push(instruction);
-        }
-        return this;
-      }
-
-      // Creates a processing instruction node before the current node
-
-      // `target` instruction target
-      // `value` instruction value
-      instructionBefore(target, value) {
-        var child, i, removed;
-        // temporarily remove children starting *with* this
-        i = this.parent.children.indexOf(this);
-        removed = this.parent.children.splice(i);
-        // add the new child
-        child = this.parent.instruction(target, value);
-        // add back removed children after new child
-        Array.prototype.push.apply(this.parent.children, removed);
-        return this;
-      }
-
-      // Creates a processing instruction node after the current node
-
-      // `target` instruction target
-      // `value` instruction value
-      instructionAfter(target, value) {
-        var child, i, removed;
-        // temporarily remove children starting *after* this
-        i = this.parent.children.indexOf(this);
-        removed = this.parent.children.splice(i + 1);
-        // add the new child
-        child = this.parent.instruction(target, value);
-        // add back removed children after new child
-        Array.prototype.push.apply(this.parent.children, removed);
-        return this;
-      }
-
-      // Creates the xml declaration
-
-      // `version` A version number string, e.g. 1.0
-      // `encoding` Encoding declaration, e.g. UTF-8
-      // `standalone` standalone document declaration: true or false
-      declaration(version, encoding, standalone) {
-        var doc, xmldec;
-        doc = this.document();
-        xmldec = new XMLDeclaration(doc, version, encoding, standalone);
-        // Replace XML declaration if exists, otherwise insert at top
-        if (doc.children.length === 0) {
-          doc.children.unshift(xmldec);
-        } else if (doc.children[0].type === NodeType.Declaration) {
-          doc.children[0] = xmldec;
-        } else {
-          doc.children.unshift(xmldec);
-        }
-        return doc.root() || doc;
-      }
-
-      // Creates the document type declaration
-
-      // `pubID` the public identifier of the external subset
-      // `sysID` the system identifier of the external subset
-      dtd(pubID, sysID) {
-        var child, doc, doctype, i, j, k, len, len1, ref1, ref2;
-        doc = this.document();
-        doctype = new XMLDocType(doc, pubID, sysID);
-        ref1 = doc.children;
-        // Replace DTD if exists
-        for (i = j = 0, len = ref1.length; j < len; i = ++j) {
-          child = ref1[i];
-          if (child.type === NodeType.DocType) {
-            doc.children[i] = doctype;
-            return doctype;
-          }
-        }
-        ref2 = doc.children;
-        // insert before root node if the root node exists
-        for (i = k = 0, len1 = ref2.length; k < len1; i = ++k) {
-          child = ref2[i];
-          if (child.isRoot) {
-            doc.children.splice(i, 0, doctype);
-            return doctype;
-          }
-        }
-        // otherwise append to end
-        doc.children.push(doctype);
-        return doctype;
-      }
-
-      // Gets the parent node
-      up() {
-        if (this.isRoot) {
-          throw new Error("The root node has no parent. Use doc() if you need to get the document object.");
-        }
-        return this.parent;
-      }
-
-      // Gets the root node
-      root() {
-        var node;
-        node = this;
-        while (node) {
-          if (node.type === NodeType.Document) {
-            return node.rootObject;
-          } else if (node.isRoot) {
-            return node;
-          } else {
-            node = node.parent;
-          }
-        }
-      }
-
-      // Gets the node representing the XML document
-      document() {
-        var node;
-        node = this;
-        while (node) {
-          if (node.type === NodeType.Document) {
-            return node;
-          } else {
-            node = node.parent;
-          }
-        }
-      }
-
-      // Ends the document and converts string
-      end(options) {
-        return this.document().end(options);
-      }
-
-      // Gets the previous node
-      prev() {
-        var i;
-        i = this.parent.children.indexOf(this);
-        if (i < 1) {
-          throw new Error("Already at the first node. " + this.debugInfo());
-        }
-        return this.parent.children[i - 1];
-      }
-
-      // Gets the next node
-      next() {
-        var i;
-        i = this.parent.children.indexOf(this);
-        if (i === -1 || i === this.parent.children.length - 1) {
-          throw new Error("Already at the last node. " + this.debugInfo());
-        }
-        return this.parent.children[i + 1];
-      }
-
-      // Imports cloned root from another XML document
-
-      // `doc` the XML document to insert nodes from
-      importDocument(doc) {
-        var child, clonedRoot, j, len, ref1;
-        clonedRoot = doc.root().clone();
-        clonedRoot.parent = this;
-        clonedRoot.isRoot = false;
-        this.children.push(clonedRoot);
-        // set properties if imported element becomes the root node
-        if (this.type === NodeType.Document) {
-          clonedRoot.isRoot = true;
-          clonedRoot.documentObject = this;
-          this.rootObject = clonedRoot;
-          // set dtd name
-          if (this.children) {
-            ref1 = this.children;
-            for (j = 0, len = ref1.length; j < len; j++) {
-              child = ref1[j];
-              if (child.type === NodeType.DocType) {
-                child.name = clonedRoot.name;
-                break;
-              }
-            }
-          }
-        }
-        return this;
-      }
-
-      
-      // Returns debug string for this node
-      debugInfo(name) {
-        var ref1, ref2;
-        name = name || this.name;
-        if ((name == null) && !((ref1 = this.parent) != null ? ref1.name : void 0)) {
-          return "";
-        } else if (name == null) {
-          return "parent: <" + this.parent.name + ">";
-        } else if (!((ref2 = this.parent) != null ? ref2.name : void 0)) {
-          return "node: <" + name + ">";
-        } else {
-          return "node: <" + name + ">, parent: <" + this.parent.name + ">";
-        }
-      }
-
-      // Aliases
-      ele(name, attributes, text) {
-        return this.element(name, attributes, text);
-      }
-
-      nod(name, attributes, text) {
-        return this.node(name, attributes, text);
-      }
-
-      txt(value) {
-        return this.text(value);
-      }
-
-      dat(value) {
-        return this.cdata(value);
-      }
-
-      com(value) {
-        return this.comment(value);
-      }
-
-      ins(target, value) {
-        return this.instruction(target, value);
-      }
-
-      doc() {
-        return this.document();
-      }
-
-      dec(version, encoding, standalone) {
-        return this.declaration(version, encoding, standalone);
-      }
-
-      e(name, attributes, text) {
-        return this.element(name, attributes, text);
-      }
-
-      n(name, attributes, text) {
-        return this.node(name, attributes, text);
-      }
-
-      t(value) {
-        return this.text(value);
-      }
-
-      d(value) {
-        return this.cdata(value);
-      }
-
-      c(value) {
-        return this.comment(value);
-      }
-
-      r(value) {
-        return this.raw(value);
-      }
-
-      i(target, value) {
-        return this.instruction(target, value);
-      }
-
-      u() {
-        return this.up();
-      }
-
-      // can be deprecated in a future release
-      importXMLBuilder(doc) {
-        return this.importDocument(doc);
-      }
-
-      // Adds or modifies an attribute.
-
-      // `name` attribute name
-      // `value` attribute value
-      attribute(name, value) {
-        throw new Error("attribute() applies to element nodes only.");
-      }
-
-      att(name, value) {
-        return this.attribute(name, value);
-      }
-
-      a(name, value) {
-        return this.attribute(name, value);
-      }
-
-      // Removes an attribute
-
-      // `name` attribute name
-      removeAttribute(name) {
-        throw new Error("attribute() applies to element nodes only.");
-      }
-
-      // DOM level 1 functions to be implemented later
-      replaceChild(newChild, oldChild) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      removeChild(oldChild) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      appendChild(newChild) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      hasChildNodes() {
-        return this.children.length !== 0;
-      }
-
-      cloneNode(deep) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      normalize() {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      // DOM level 2
-      isSupported(feature, version) {
-        return true;
-      }
-
-      hasAttributes() {
-        return this.attribs.length !== 0;
-      }
-
-      // DOM level 3 functions to be implemented later
-      compareDocumentPosition(other) {
-        var ref, res;
-        ref = this;
-        if (ref === other) {
-          return 0;
-        } else if (this.document() !== other.document()) {
-          res = DocumentPosition.Disconnected | DocumentPosition.ImplementationSpecific;
-          if (Math.random() < 0.5) {
-            res |= DocumentPosition.Preceding;
-          } else {
-            res |= DocumentPosition.Following;
-          }
-          return res;
-        } else if (ref.isAncestor(other)) {
-          return DocumentPosition.Contains | DocumentPosition.Preceding;
-        } else if (ref.isDescendant(other)) {
-          return DocumentPosition.Contains | DocumentPosition.Following;
-        } else if (ref.isPreceding(other)) {
-          return DocumentPosition.Preceding;
-        } else {
-          return DocumentPosition.Following;
-        }
-      }
-
-      isSameNode(other) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      lookupPrefix(namespaceURI) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      isDefaultNamespace(namespaceURI) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      lookupNamespaceURI(prefix) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      isEqualNode(node) {
-        var i, j, ref1;
-        if (node.nodeType !== this.nodeType) {
-          return false;
-        }
-        if (node.children.length !== this.children.length) {
-          return false;
-        }
-        for (i = j = 0, ref1 = this.children.length - 1; (0 <= ref1 ? j <= ref1 : j >= ref1); i = 0 <= ref1 ? ++j : --j) {
-          if (!this.children[i].isEqualNode(node.children[i])) {
-            return false;
-          }
-        }
-        return true;
-      }
-
-      getFeature(feature, version) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      setUserData(key, data, handler) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      getUserData(key) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      // Returns true if other is an inclusive descendant of node,
-      // and false otherwise.
-      contains(other) {
-        if (!other) {
-          return false;
-        }
-        return other === this || this.isDescendant(other);
-      }
-
-      // An object A is called a descendant of an object B, if either A is 
-      // a child of B or A is a child of an object C that is a descendant of B.
-      isDescendant(node) {
-        var child, isDescendantChild, j, len, ref1;
-        ref1 = this.children;
-        for (j = 0, len = ref1.length; j < len; j++) {
-          child = ref1[j];
-          if (node === child) {
-            return true;
-          }
-          isDescendantChild = child.isDescendant(node);
-          if (isDescendantChild) {
-            return true;
-          }
-        }
-        return false;
-      }
-
-      // An object A is called an ancestor of an object B if and only if
-      // B is a descendant of A.
-      isAncestor(node) {
-        return node.isDescendant(this);
-      }
-
-      // An object A is preceding an object B if A and B are in the 
-      // same tree and A comes before B in tree order.
-      isPreceding(node) {
-        var nodePos, thisPos;
-        nodePos = this.treePosition(node);
-        thisPos = this.treePosition(this);
-        if (nodePos === -1 || thisPos === -1) {
-          return false;
-        } else {
-          return nodePos < thisPos;
-        }
-      }
-
-      // An object A is folllowing an object B if A and B are in the 
-      // same tree and A comes after B in tree order.
-      isFollowing(node) {
-        var nodePos, thisPos;
-        nodePos = this.treePosition(node);
-        thisPos = this.treePosition(this);
-        if (nodePos === -1 || thisPos === -1) {
-          return false;
-        } else {
-          return nodePos > thisPos;
-        }
-      }
-
-      // Returns the preorder position of the given node in the tree, or -1
-      // if the node is not in the tree.
-      treePosition(node) {
-        var found, pos;
-        pos = 0;
-        found = false;
-        this.foreachTreeNode(this.document(), function(childNode) {
-          pos++;
-          if (!found && childNode === node) {
-            return found = true;
-          }
-        });
-        if (found) {
-          return pos;
-        } else {
-          return -1;
-        }
-      }
-
-      
-      // Depth-first preorder traversal through the XML tree
-      foreachTreeNode(node, func) {
-        var child, j, len, ref1, res;
-        node || (node = this.document());
-        ref1 = node.children;
-        for (j = 0, len = ref1.length; j < len; j++) {
-          child = ref1[j];
-          if (res = func(child)) {
-            return res;
-          } else {
-            res = this.foreachTreeNode(child, func);
-            if (res) {
-              return res;
-            }
-          }
-        }
-      }
-
-    };
-
-    // DOM level 1
-    Object.defineProperty(XMLNode.prototype, 'nodeName', {
-      get: function() {
-        return this.name;
-      }
-    });
-
-    Object.defineProperty(XMLNode.prototype, 'nodeType', {
-      get: function() {
-        return this.type;
-      }
-    });
-
-    Object.defineProperty(XMLNode.prototype, 'nodeValue', {
-      get: function() {
-        return this.value;
-      }
-    });
-
-    Object.defineProperty(XMLNode.prototype, 'parentNode', {
-      get: function() {
-        return this.parent;
-      }
-    });
-
-    Object.defineProperty(XMLNode.prototype, 'childNodes', {
-      get: function() {
-        if (!this.childNodeList || !this.childNodeList.nodes) {
-          this.childNodeList = new XMLNodeList(this.children);
-        }
-        return this.childNodeList;
-      }
-    });
-
-    Object.defineProperty(XMLNode.prototype, 'firstChild', {
-      get: function() {
-        return this.children[0] || null;
-      }
-    });
-
-    Object.defineProperty(XMLNode.prototype, 'lastChild', {
-      get: function() {
-        return this.children[this.children.length - 1] || null;
-      }
-    });
-
-    Object.defineProperty(XMLNode.prototype, 'previousSibling', {
-      get: function() {
-        var i;
-        i = this.parent.children.indexOf(this);
-        return this.parent.children[i - 1] || null;
-      }
-    });
-
-    Object.defineProperty(XMLNode.prototype, 'nextSibling', {
-      get: function() {
-        var i;
-        i = this.parent.children.indexOf(this);
-        return this.parent.children[i + 1] || null;
-      }
-    });
-
-    Object.defineProperty(XMLNode.prototype, 'ownerDocument', {
-      get: function() {
-        return this.document() || null;
-      }
-    });
-
-    // DOM level 3
-    Object.defineProperty(XMLNode.prototype, 'textContent', {
-      get: function() {
-        var child, j, len, ref1, str;
-        if (this.nodeType === NodeType.Element || this.nodeType === NodeType.DocumentFragment) {
-          str = '';
-          ref1 = this.children;
-          for (j = 0, len = ref1.length; j < len; j++) {
-            child = ref1[j];
-            if (child.textContent) {
-              str += child.textContent;
-            }
-          }
-          return str;
-        } else {
-          return null;
-        }
-      },
-      set: function(value) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-    });
-
-    return XMLNode;
-
-  }).call(this);
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 6768:
-/***/ (function(module) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  // Represents a list of nodes
-  var XMLNodeList;
-
-  module.exports = XMLNodeList = (function() {
-    class XMLNodeList {
-      // Initializes a new instance of `XMLNodeList`
-      // This is just a wrapper around an ordinary
-      // JS array.
-
-      // `nodes` the array containing nodes.
-      constructor(nodes) {
-        this.nodes = nodes;
-      }
-
-      // Creates and returns a deep clone of `this`
-
-      clone() {
-        // this class should not be cloned since it wraps
-        // around a given array. The calling function should check
-        // whether the wrapped array is null and supply a new array
-        // (from the clone).
-        return this.nodes = null;
-      }
-
-      // DOM Level 1
-      item(index) {
-        return this.nodes[index] || null;
-      }
-
-    };
-
-    // DOM level 1
-    Object.defineProperty(XMLNodeList.prototype, 'length', {
-      get: function() {
-        return this.nodes.length || 0;
-      }
-    });
-
-    return XMLNodeList;
-
-  }).call(this);
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 6939:
-/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  var NodeType, XMLCharacterData, XMLProcessingInstruction;
-
-  NodeType = __nccwpck_require__(9267);
-
-  XMLCharacterData = __nccwpck_require__(7709);
-
-  // Represents a processing instruction
-  module.exports = XMLProcessingInstruction = class XMLProcessingInstruction extends XMLCharacterData {
-    // Initializes a new instance of `XMLProcessingInstruction`
-
-    // `parent` the parent node
-    // `target` instruction target
-    // `value` instruction value
-    constructor(parent, target, value) {
-      super(parent);
-      if (target == null) {
-        throw new Error("Missing instruction target. " + this.debugInfo());
-      }
-      this.type = NodeType.ProcessingInstruction;
-      this.target = this.stringify.insTarget(target);
-      this.name = this.target;
-      if (value) {
-        this.value = this.stringify.insValue(value);
-      }
-    }
-
-    // Creates and returns a deep clone of `this`
-    clone() {
-      return Object.create(this);
-    }
-
-    // Converts the XML fragment to string
-
-    // `options.pretty` pretty prints the result
-    // `options.indent` indentation for pretty print
-    // `options.offset` how many indentations to add to every line for pretty print
-    // `options.newline` newline sequence for pretty print
-    toString(options) {
-      return this.options.writer.processingInstruction(this, this.options.writer.filterOptions(options));
-    }
-
-    isEqualNode(node) {
-      if (!super.isEqualNode(node)) {
-        return false;
-      }
-      if (node.target !== this.target) {
-        return false;
-      }
-      return true;
-    }
-
-  };
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 6329:
-/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  var NodeType, XMLNode, XMLRaw;
-
-  NodeType = __nccwpck_require__(9267);
-
-  XMLNode = __nccwpck_require__(7608);
-
-  // Represents a  raw node
-  module.exports = XMLRaw = class XMLRaw extends XMLNode {
-    // Initializes a new instance of `XMLRaw`
-
-    // `text` raw text
-    constructor(parent, text) {
-      super(parent);
-      if (text == null) {
-        throw new Error("Missing raw text. " + this.debugInfo());
-      }
-      this.type = NodeType.Raw;
-      this.value = this.stringify.raw(text);
-    }
-
-    // Creates and returns a deep clone of `this`
-    clone() {
-      return Object.create(this);
-    }
-
-    // Converts the XML fragment to string
-
-    // `options.pretty` pretty prints the result
-    // `options.indent` indentation for pretty print
-    // `options.offset` how many indentations to add to every line for pretty print
-    // `options.newline` newline sequence for pretty print
-    toString(options) {
-      return this.options.writer.raw(this, this.options.writer.filterOptions(options));
-    }
-
-  };
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 8601:
-/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  var NodeType, WriterState, XMLStreamWriter, XMLWriterBase,
-    hasProp = {}.hasOwnProperty;
-
-  NodeType = __nccwpck_require__(9267);
-
-  XMLWriterBase = __nccwpck_require__(6752);
-
-  WriterState = __nccwpck_require__(9766);
-
-  // Prints XML nodes to a stream
-  module.exports = XMLStreamWriter = class XMLStreamWriter extends XMLWriterBase {
-    // Initializes a new instance of `XMLStreamWriter`
-
-    // `stream` output stream
-    // `options.pretty` pretty prints the result
-    // `options.indent` indentation string
-    // `options.newline` newline sequence
-    // `options.offset` a fixed number of indentations to add to every line
-    // `options.allowEmpty` do not self close empty element tags
-    // 'options.dontPrettyTextNodes' if any text is present in node, don't indent or LF
-    // `options.spaceBeforeSlash` add a space before the closing slash of empty elements
-    constructor(stream, options) {
-      super(options);
-      this.stream = stream;
-    }
-
-    endline(node, options, level) {
-      if (node.isLastRootNode && options.state === WriterState.CloseTag) {
-        return '';
-      } else {
-        return super.endline(node, options, level);
-      }
-    }
-
-    document(doc, options) {
-      var child, i, j, k, len1, len2, ref, ref1, results;
-      ref = doc.children;
-      // set a flag so that we don't insert a newline after the last root level node 
-      for (i = j = 0, len1 = ref.length; j < len1; i = ++j) {
-        child = ref[i];
-        child.isLastRootNode = i === doc.children.length - 1;
-      }
-      options = this.filterOptions(options);
-      ref1 = doc.children;
-      results = [];
-      for (k = 0, len2 = ref1.length; k < len2; k++) {
-        child = ref1[k];
-        results.push(this.writeChildNode(child, options, 0));
-      }
-      return results;
-    }
-
-    cdata(node, options, level) {
-      return this.stream.write(super.cdata(node, options, level));
-    }
-
-    comment(node, options, level) {
-      return this.stream.write(super.comment(node, options, level));
-    }
-
-    declaration(node, options, level) {
-      return this.stream.write(super.declaration(node, options, level));
-    }
-
-    docType(node, options, level) {
-      var child, j, len1, ref;
-      level || (level = 0);
-      this.openNode(node, options, level);
-      options.state = WriterState.OpenTag;
-      this.stream.write(this.indent(node, options, level));
-      this.stream.write('<!DOCTYPE ' + node.root().name);
-      // external identifier
-      if (node.pubID && node.sysID) {
-        this.stream.write(' PUBLIC "' + node.pubID + '" "' + node.sysID + '"');
-      } else if (node.sysID) {
-        this.stream.write(' SYSTEM "' + node.sysID + '"');
-      }
-      // internal subset
-      if (node.children.length > 0) {
-        this.stream.write(' [');
-        this.stream.write(this.endline(node, options, level));
-        options.state = WriterState.InsideTag;
-        ref = node.children;
-        for (j = 0, len1 = ref.length; j < len1; j++) {
-          child = ref[j];
-          this.writeChildNode(child, options, level + 1);
-        }
-        options.state = WriterState.CloseTag;
-        this.stream.write(']');
-      }
-      // close tag
-      options.state = WriterState.CloseTag;
-      this.stream.write(options.spaceBeforeSlash + '>');
-      this.stream.write(this.endline(node, options, level));
-      options.state = WriterState.None;
-      return this.closeNode(node, options, level);
-    }
-
-    element(node, options, level) {
-      var att, attLen, child, childNodeCount, firstChildNode, j, len, len1, name, prettySuppressed, r, ratt, ref, ref1, ref2, rline;
-      level || (level = 0);
-      // open tag
-      this.openNode(node, options, level);
-      options.state = WriterState.OpenTag;
-      r = this.indent(node, options, level) + '<' + node.name;
-      // attributes
-      if (options.pretty && options.width > 0) {
-        len = r.length;
-        ref = node.attribs;
-        for (name in ref) {
-          if (!hasProp.call(ref, name)) continue;
-          att = ref[name];
-          ratt = this.attribute(att, options, level);
-          attLen = ratt.length;
-          if (len + attLen > options.width) {
-            rline = this.indent(node, options, level + 1) + ratt;
-            r += this.endline(node, options, level) + rline;
-            len = rline.length;
-          } else {
-            rline = ' ' + ratt;
-            r += rline;
-            len += rline.length;
-          }
-        }
-      } else {
-        ref1 = node.attribs;
-        for (name in ref1) {
-          if (!hasProp.call(ref1, name)) continue;
-          att = ref1[name];
-          r += this.attribute(att, options, level);
-        }
-      }
-      this.stream.write(r);
-      childNodeCount = node.children.length;
-      firstChildNode = childNodeCount === 0 ? null : node.children[0];
-      if (childNodeCount === 0 || node.children.every(function(e) {
-        return (e.type === NodeType.Text || e.type === NodeType.Raw) && e.value === '';
-      })) {
-        // empty element
-        if (options.allowEmpty) {
-          this.stream.write('>');
-          options.state = WriterState.CloseTag;
-          this.stream.write('</' + node.name + '>');
-        } else {
-          options.state = WriterState.CloseTag;
-          this.stream.write(options.spaceBeforeSlash + '/>');
-        }
-      } else if (options.pretty && childNodeCount === 1 && (firstChildNode.type === NodeType.Text || firstChildNode.type === NodeType.Raw) && (firstChildNode.value != null)) {
-        // do not indent text-only nodes
-        this.stream.write('>');
-        options.state = WriterState.InsideTag;
-        options.suppressPrettyCount++;
-        prettySuppressed = true;
-        this.writeChildNode(firstChildNode, options, level + 1);
-        options.suppressPrettyCount--;
-        prettySuppressed = false;
-        options.state = WriterState.CloseTag;
-        this.stream.write('</' + node.name + '>');
-      } else {
-        this.stream.write('>' + this.endline(node, options, level));
-        options.state = WriterState.InsideTag;
-        ref2 = node.children;
-        // inner tags
-        for (j = 0, len1 = ref2.length; j < len1; j++) {
-          child = ref2[j];
-          this.writeChildNode(child, options, level + 1);
-        }
-        // close tag
-        options.state = WriterState.CloseTag;
-        this.stream.write(this.indent(node, options, level) + '</' + node.name + '>');
-      }
-      this.stream.write(this.endline(node, options, level));
-      options.state = WriterState.None;
-      return this.closeNode(node, options, level);
-    }
-
-    processingInstruction(node, options, level) {
-      return this.stream.write(super.processingInstruction(node, options, level));
-    }
-
-    raw(node, options, level) {
-      return this.stream.write(super.raw(node, options, level));
-    }
-
-    text(node, options, level) {
-      return this.stream.write(super.text(node, options, level));
-    }
-
-    dtdAttList(node, options, level) {
-      return this.stream.write(super.dtdAttList(node, options, level));
-    }
-
-    dtdElement(node, options, level) {
-      return this.stream.write(super.dtdElement(node, options, level));
-    }
-
-    dtdEntity(node, options, level) {
-      return this.stream.write(super.dtdEntity(node, options, level));
-    }
-
-    dtdNotation(node, options, level) {
-      return this.stream.write(super.dtdNotation(node, options, level));
-    }
-
-  };
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 5913:
-/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  var XMLStringWriter, XMLWriterBase;
-
-  XMLWriterBase = __nccwpck_require__(6752);
-
-  // Prints XML nodes as plain text
-  module.exports = XMLStringWriter = class XMLStringWriter extends XMLWriterBase {
-    // Initializes a new instance of `XMLStringWriter`
-
-    // `options.pretty` pretty prints the result
-    // `options.indent` indentation string
-    // `options.newline` newline sequence
-    // `options.offset` a fixed number of indentations to add to every line
-    // `options.allowEmpty` do not self close empty element tags
-    // 'options.dontPrettyTextNodes' if any text is present in node, don't indent or LF
-    // `options.spaceBeforeSlash` add a space before the closing slash of empty elements
-    constructor(options) {
-      super(options);
-    }
-
-    document(doc, options) {
-      var child, i, len, r, ref;
-      options = this.filterOptions(options);
-      r = '';
-      ref = doc.children;
-      for (i = 0, len = ref.length; i < len; i++) {
-        child = ref[i];
-        r += this.writeChildNode(child, options, 0);
-      }
-      // remove trailing newline
-      if (options.pretty && r.slice(-options.newline.length) === options.newline) {
-        r = r.slice(0, -options.newline.length);
-      }
-      return r;
-    }
-
-  };
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 8594:
-/***/ (function(module) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  // Converts values to strings
-  var XMLStringifier,
-    hasProp = {}.hasOwnProperty;
-
-  module.exports = XMLStringifier = (function() {
-    class XMLStringifier {
-      // Initializes a new instance of `XMLStringifier`
-
-      // `options.version` The version number string of the XML spec to validate against, e.g. 1.0
-      // `options.noDoubleEncoding` whether existing html entities are encoded: true or false
-      // `options.stringify` a set of functions to use for converting values to strings
-      // `options.noValidation` whether values will be validated and escaped or returned as is
-      constructor(options) {
-        var key, ref, value;
-        // Checks whether the given string contains legal characters
-        // Fails with an exception on error
-
-        // `str` the string to check
-        this.assertLegalChar = this.assertLegalChar.bind(this);
-        // Checks whether the given string contains legal characters for a name
-        // Fails with an exception on error
-
-        // `str` the string to check
-        this.assertLegalName = this.assertLegalName.bind(this);
-        options || (options = {});
-        this.options = options;
-        if (!this.options.version) {
-          this.options.version = '1.0';
-        }
-        ref = options.stringify || {};
-        for (key in ref) {
-          if (!hasProp.call(ref, key)) continue;
-          value = ref[key];
-          this[key] = value;
-        }
-      }
-
-      // Defaults
-      name(val) {
-        if (this.options.noValidation) {
-          return val;
-        }
-        return this.assertLegalName('' + val || '');
-      }
-
-      text(val) {
-        if (this.options.noValidation) {
-          return val;
-        }
-        return this.assertLegalChar(this.textEscape('' + val || ''));
-      }
-
-      cdata(val) {
-        if (this.options.noValidation) {
-          return val;
-        }
-        val = '' + val || '';
-        val = val.replace(']]>', ']]]]><![CDATA[>');
-        return this.assertLegalChar(val);
-      }
-
-      comment(val) {
-        if (this.options.noValidation) {
-          return val;
-        }
-        val = '' + val || '';
-        if (val.match(/--/)) {
-          throw new Error("Comment text cannot contain double-hypen: " + val);
-        }
-        return this.assertLegalChar(val);
-      }
-
-      raw(val) {
-        if (this.options.noValidation) {
-          return val;
-        }
-        return '' + val || '';
-      }
-
-      attValue(val) {
-        if (this.options.noValidation) {
-          return val;
-        }
-        return this.assertLegalChar(this.attEscape(val = '' + val || ''));
-      }
-
-      insTarget(val) {
-        if (this.options.noValidation) {
-          return val;
-        }
-        return this.assertLegalChar('' + val || '');
-      }
-
-      insValue(val) {
-        if (this.options.noValidation) {
-          return val;
-        }
-        val = '' + val || '';
-        if (val.match(/\?>/)) {
-          throw new Error("Invalid processing instruction value: " + val);
-        }
-        return this.assertLegalChar(val);
-      }
-
-      xmlVersion(val) {
-        if (this.options.noValidation) {
-          return val;
-        }
-        val = '' + val || '';
-        if (!val.match(/1\.[0-9]+/)) {
-          throw new Error("Invalid version number: " + val);
-        }
-        return val;
-      }
-
-      xmlEncoding(val) {
-        if (this.options.noValidation) {
-          return val;
-        }
-        val = '' + val || '';
-        if (!val.match(/^[A-Za-z](?:[A-Za-z0-9._-])*$/)) {
-          throw new Error("Invalid encoding: " + val);
-        }
-        return this.assertLegalChar(val);
-      }
-
-      xmlStandalone(val) {
-        if (this.options.noValidation) {
-          return val;
-        }
-        if (val) {
-          return "yes";
-        } else {
-          return "no";
-        }
-      }
-
-      dtdPubID(val) {
-        if (this.options.noValidation) {
-          return val;
-        }
-        return this.assertLegalChar('' + val || '');
-      }
-
-      dtdSysID(val) {
-        if (this.options.noValidation) {
-          return val;
-        }
-        return this.assertLegalChar('' + val || '');
-      }
-
-      dtdElementValue(val) {
-        if (this.options.noValidation) {
-          return val;
-        }
-        return this.assertLegalChar('' + val || '');
-      }
-
-      dtdAttType(val) {
-        if (this.options.noValidation) {
-          return val;
-        }
-        return this.assertLegalChar('' + val || '');
-      }
-
-      dtdAttDefault(val) {
-        if (this.options.noValidation) {
-          return val;
-        }
-        return this.assertLegalChar('' + val || '');
-      }
-
-      dtdEntityValue(val) {
-        if (this.options.noValidation) {
-          return val;
-        }
-        return this.assertLegalChar('' + val || '');
-      }
-
-      dtdNData(val) {
-        if (this.options.noValidation) {
-          return val;
-        }
-        return this.assertLegalChar('' + val || '');
-      }
-
-      assertLegalChar(str) {
-        var regex, res;
-        if (this.options.noValidation) {
-          return str;
-        }
-        regex = '';
-        if (this.options.version === '1.0') {
-          // Valid characters from https://www.w3.org/TR/xml/#charsets
-          // any Unicode character, excluding the surrogate blocks, FFFE, and FFFF.
-          // #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF]
-          // This ES5 compatible Regexp has been generated using the "regenerate" NPM module:
-          //   let xml_10_InvalidChars = regenerate()
-          //     .addRange(0x0000, 0x0008)
-          //     .add(0x000B, 0x000C)
-          //     .addRange(0x000E, 0x001F)
-          //     .addRange(0xD800, 0xDFFF)
-          //     .addRange(0xFFFE, 0xFFFF)
-          regex = /[\0-\x08\x0B\f\x0E-\x1F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF]/;
-          if (res = str.match(regex)) {
-            throw new Error(`Invalid character in string: ${str} at index ${res.index}`);
-          }
-        } else if (this.options.version === '1.1') {
-          // Valid characters from https://www.w3.org/TR/xml11/#charsets
-          // any Unicode character, excluding the surrogate blocks, FFFE, and FFFF.
-          // [#x1-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF]
-          // This ES5 compatible Regexp has been generated using the "regenerate" NPM module:
-          //   let xml_11_InvalidChars = regenerate()
-          //     .add(0x0000)
-          //     .addRange(0xD800, 0xDFFF)
-          //     .addRange(0xFFFE, 0xFFFF)
-          regex = /[\0\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF]/;
-          if (res = str.match(regex)) {
-            throw new Error(`Invalid character in string: ${str} at index ${res.index}`);
-          }
-        }
-        return str;
-      }
-
-      assertLegalName(str) {
-        var regex;
-        if (this.options.noValidation) {
-          return str;
-        }
-        this.assertLegalChar(str);
-        regex = /^([:A-Z_a-z\xC0-\xD6\xD8-\xF6\xF8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD]|[\uD800-\uDB7F][\uDC00-\uDFFF])([\x2D\.0-:A-Z_a-z\xB7\xC0-\xD6\xD8-\xF6\xF8-\u037D\u037F-\u1FFF\u200C\u200D\u203F\u2040\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD]|[\uD800-\uDB7F][\uDC00-\uDFFF])*$/;
-        if (!str.match(regex)) {
-          throw new Error("Invalid character in name");
-        }
-        return str;
-      }
-
-      // Escapes special characters in text
-
-      // See http://www.w3.org/TR/2000/WD-xml-c14n-20000119.html#charescaping
-
-      // `str` the string to escape
-      textEscape(str) {
-        var ampregex;
-        if (this.options.noValidation) {
-          return str;
-        }
-        ampregex = this.options.noDoubleEncoding ? /(?!&\S+;)&/g : /&/g;
-        return str.replace(ampregex, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\r/g, '&#xD;');
-      }
-
-      // Escapes special characters in attribute values
-
-      // See http://www.w3.org/TR/2000/WD-xml-c14n-20000119.html#charescaping
-
-      // `str` the string to escape
-      attEscape(str) {
-        var ampregex;
-        if (this.options.noValidation) {
-          return str;
-        }
-        ampregex = this.options.noDoubleEncoding ? /(?!&\S+;)&/g : /&/g;
-        return str.replace(ampregex, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;').replace(/\t/g, '&#x9;').replace(/\n/g, '&#xA;').replace(/\r/g, '&#xD;');
-      }
-
-    };
-
-    // strings to match while converting from JS objects
-    XMLStringifier.prototype.convertAttKey = '@';
-
-    XMLStringifier.prototype.convertPIKey = '?';
-
-    XMLStringifier.prototype.convertTextKey = '#text';
-
-    XMLStringifier.prototype.convertCDataKey = '#cdata';
-
-    XMLStringifier.prototype.convertCommentKey = '#comment';
-
-    XMLStringifier.prototype.convertRawKey = '#raw';
-
-    return XMLStringifier;
-
-  }).call(this);
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 1318:
-/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  var NodeType, XMLCharacterData, XMLText;
-
-  NodeType = __nccwpck_require__(9267);
-
-  XMLCharacterData = __nccwpck_require__(7709);
-
-  // Represents a text node
-  module.exports = XMLText = (function() {
-    class XMLText extends XMLCharacterData {
-      // Initializes a new instance of `XMLText`
-
-      // `text` element text
-      constructor(parent, text) {
-        super(parent);
-        if (text == null) {
-          throw new Error("Missing element text. " + this.debugInfo());
-        }
-        this.name = "#text";
-        this.type = NodeType.Text;
-        this.value = this.stringify.text(text);
-      }
-
-      // Creates and returns a deep clone of `this`
-      clone() {
-        return Object.create(this);
-      }
-
-      // Converts the XML fragment to string
-
-      // `options.pretty` pretty prints the result
-      // `options.indent` indentation for pretty print
-      // `options.offset` how many indentations to add to every line for pretty print
-      // `options.newline` newline sequence for pretty print
-      toString(options) {
-        return this.options.writer.text(this, this.options.writer.filterOptions(options));
-      }
-
-      // DOM level 1 functions to be implemented later
-      splitText(offset) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-      // DOM level 3 functions to be implemented later
-      replaceWholeText(content) {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-
-    };
-
-    // DOM level 3
-    Object.defineProperty(XMLText.prototype, 'isElementContentWhitespace', {
-      get: function() {
-        throw new Error("This DOM method is not implemented." + this.debugInfo());
-      }
-    });
-
-    Object.defineProperty(XMLText.prototype, 'wholeText', {
-      get: function() {
-        var next, prev, str;
-        str = '';
-        prev = this.previousSibling;
-        while (prev) {
-          str = prev.data + str;
-          prev = prev.previousSibling;
-        }
-        str += this.data;
-        next = this.nextSibling;
-        while (next) {
-          str = str + next.data;
-          next = next.nextSibling;
-        }
-        return str;
-      }
-    });
-
-    return XMLText;
-
-  }).call(this);
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 6752:
-/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  var NodeType, WriterState, XMLCData, XMLComment, XMLDTDAttList, XMLDTDElement, XMLDTDEntity, XMLDTDNotation, XMLDeclaration, XMLDocType, XMLDummy, XMLElement, XMLProcessingInstruction, XMLRaw, XMLText, XMLWriterBase, assign,
-    hasProp = {}.hasOwnProperty;
-
-  ({assign} = __nccwpck_require__(8229));
-
-  NodeType = __nccwpck_require__(9267);
-
-  XMLDeclaration = __nccwpck_require__(6364);
-
-  XMLDocType = __nccwpck_require__(1801);
-
-  XMLCData = __nccwpck_require__(333);
-
-  XMLComment = __nccwpck_require__(4407);
-
-  XMLElement = __nccwpck_require__(9437);
-
-  XMLRaw = __nccwpck_require__(6329);
-
-  XMLText = __nccwpck_require__(1318);
-
-  XMLProcessingInstruction = __nccwpck_require__(6939);
-
-  XMLDummy = __nccwpck_require__(3590);
-
-  XMLDTDAttList = __nccwpck_require__(1015);
-
-  XMLDTDElement = __nccwpck_require__(2421);
-
-  XMLDTDEntity = __nccwpck_require__(53);
-
-  XMLDTDNotation = __nccwpck_require__(2837);
-
-  WriterState = __nccwpck_require__(9766);
-
-  // Base class for XML writers
-  module.exports = XMLWriterBase = class XMLWriterBase {
-    // Initializes a new instance of `XMLWriterBase`
-
-    // `options.pretty` pretty prints the result
-    // `options.indent` indentation string
-    // `options.newline` newline sequence
-    // `options.offset` a fixed number of indentations to add to every line
-    // `options.width` maximum column width
-    // `options.allowEmpty` do not self close empty element tags
-    // 'options.dontPrettyTextNodes' if any text is present in node, don't indent or LF
-    // `options.spaceBeforeSlash` add a space before the closing slash of empty elements
-    constructor(options) {
-      var key, ref, value;
-      options || (options = {});
-      this.options = options;
-      ref = options.writer || {};
-      for (key in ref) {
-        if (!hasProp.call(ref, key)) continue;
-        value = ref[key];
-        this["_" + key] = this[key];
-        this[key] = value;
-      }
-    }
-
-    // Filters writer options and provides defaults
-
-    // `options` writer options
-    filterOptions(options) {
-      var filteredOptions, ref, ref1, ref2, ref3, ref4, ref5, ref6, ref7;
-      options || (options = {});
-      options = assign({}, this.options, options);
-      filteredOptions = {
-        writer: this
-      };
-      filteredOptions.pretty = options.pretty || false;
-      filteredOptions.allowEmpty = options.allowEmpty || false;
-      filteredOptions.indent = (ref = options.indent) != null ? ref : '  ';
-      filteredOptions.newline = (ref1 = options.newline) != null ? ref1 : '\n';
-      filteredOptions.offset = (ref2 = options.offset) != null ? ref2 : 0;
-      filteredOptions.width = (ref3 = options.width) != null ? ref3 : 0;
-      filteredOptions.dontPrettyTextNodes = (ref4 = (ref5 = options.dontPrettyTextNodes) != null ? ref5 : options.dontprettytextnodes) != null ? ref4 : 0;
-      filteredOptions.spaceBeforeSlash = (ref6 = (ref7 = options.spaceBeforeSlash) != null ? ref7 : options.spacebeforeslash) != null ? ref6 : '';
-      if (filteredOptions.spaceBeforeSlash === true) {
-        filteredOptions.spaceBeforeSlash = ' ';
-      }
-      filteredOptions.suppressPrettyCount = 0;
-      filteredOptions.user = {};
-      filteredOptions.state = WriterState.None;
-      return filteredOptions;
-    }
-
-    // Returns the indentation string for the current level
-
-    // `node` current node
-    // `options` writer options
-    // `level` current indentation level
-    indent(node, options, level) {
-      var indentLevel;
-      if (!options.pretty || options.suppressPrettyCount) {
-        return '';
-      } else if (options.pretty) {
-        indentLevel = (level || 0) + options.offset + 1;
-        if (indentLevel > 0) {
-          return new Array(indentLevel).join(options.indent);
-        }
-      }
-      return '';
-    }
-
-    // Returns the newline string
-
-    // `node` current node
-    // `options` writer options
-    // `level` current indentation level
-    endline(node, options, level) {
-      if (!options.pretty || options.suppressPrettyCount) {
-        return '';
-      } else {
-        return options.newline;
-      }
-    }
-
-    attribute(att, options, level) {
-      var r;
-      this.openAttribute(att, options, level);
-      if (options.pretty && options.width > 0) {
-        r = att.name + '="' + att.value + '"';
-      } else {
-        r = ' ' + att.name + '="' + att.value + '"';
-      }
-      this.closeAttribute(att, options, level);
-      return r;
-    }
-
-    cdata(node, options, level) {
-      var r;
-      this.openNode(node, options, level);
-      options.state = WriterState.OpenTag;
-      r = this.indent(node, options, level) + '<![CDATA[';
-      options.state = WriterState.InsideTag;
-      r += node.value;
-      options.state = WriterState.CloseTag;
-      r += ']]>' + this.endline(node, options, level);
-      options.state = WriterState.None;
-      this.closeNode(node, options, level);
-      return r;
-    }
-
-    comment(node, options, level) {
-      var r;
-      this.openNode(node, options, level);
-      options.state = WriterState.OpenTag;
-      r = this.indent(node, options, level) + '<!-- ';
-      options.state = WriterState.InsideTag;
-      r += node.value;
-      options.state = WriterState.CloseTag;
-      r += ' -->' + this.endline(node, options, level);
-      options.state = WriterState.None;
-      this.closeNode(node, options, level);
-      return r;
-    }
-
-    declaration(node, options, level) {
-      var r;
-      this.openNode(node, options, level);
-      options.state = WriterState.OpenTag;
-      r = this.indent(node, options, level) + '<?xml';
-      options.state = WriterState.InsideTag;
-      r += ' version="' + node.version + '"';
-      if (node.encoding != null) {
-        r += ' encoding="' + node.encoding + '"';
-      }
-      if (node.standalone != null) {
-        r += ' standalone="' + node.standalone + '"';
-      }
-      options.state = WriterState.CloseTag;
-      r += options.spaceBeforeSlash + '?>';
-      r += this.endline(node, options, level);
-      options.state = WriterState.None;
-      this.closeNode(node, options, level);
-      return r;
-    }
-
-    docType(node, options, level) {
-      var child, i, len1, r, ref;
-      level || (level = 0);
-      this.openNode(node, options, level);
-      options.state = WriterState.OpenTag;
-      r = this.indent(node, options, level);
-      r += '<!DOCTYPE ' + node.root().name;
-      // external identifier
-      if (node.pubID && node.sysID) {
-        r += ' PUBLIC "' + node.pubID + '" "' + node.sysID + '"';
-      } else if (node.sysID) {
-        r += ' SYSTEM "' + node.sysID + '"';
-      }
-      // internal subset
-      if (node.children.length > 0) {
-        r += ' [';
-        r += this.endline(node, options, level);
-        options.state = WriterState.InsideTag;
-        ref = node.children;
-        for (i = 0, len1 = ref.length; i < len1; i++) {
-          child = ref[i];
-          r += this.writeChildNode(child, options, level + 1);
-        }
-        options.state = WriterState.CloseTag;
-        r += ']';
-      }
-      // close tag
-      options.state = WriterState.CloseTag;
-      r += options.spaceBeforeSlash + '>';
-      r += this.endline(node, options, level);
-      options.state = WriterState.None;
-      this.closeNode(node, options, level);
-      return r;
-    }
-
-    element(node, options, level) {
-      var att, attLen, child, childNodeCount, firstChildNode, i, j, len, len1, len2, name, prettySuppressed, r, ratt, ref, ref1, ref2, ref3, rline;
-      level || (level = 0);
-      prettySuppressed = false;
-      // open tag
-      this.openNode(node, options, level);
-      options.state = WriterState.OpenTag;
-      r = this.indent(node, options, level) + '<' + node.name;
-      // attributes
-      if (options.pretty && options.width > 0) {
-        len = r.length;
-        ref = node.attribs;
-        for (name in ref) {
-          if (!hasProp.call(ref, name)) continue;
-          att = ref[name];
-          ratt = this.attribute(att, options, level);
-          attLen = ratt.length;
-          if (len + attLen > options.width) {
-            rline = this.indent(node, options, level + 1) + ratt;
-            r += this.endline(node, options, level) + rline;
-            len = rline.length;
-          } else {
-            rline = ' ' + ratt;
-            r += rline;
-            len += rline.length;
-          }
-        }
-      } else {
-        ref1 = node.attribs;
-        for (name in ref1) {
-          if (!hasProp.call(ref1, name)) continue;
-          att = ref1[name];
-          r += this.attribute(att, options, level);
-        }
-      }
-      childNodeCount = node.children.length;
-      firstChildNode = childNodeCount === 0 ? null : node.children[0];
-      if (childNodeCount === 0 || node.children.every(function(e) {
-        return (e.type === NodeType.Text || e.type === NodeType.Raw) && e.value === '';
-      })) {
-        // empty element
-        if (options.allowEmpty) {
-          r += '>';
-          options.state = WriterState.CloseTag;
-          r += '</' + node.name + '>' + this.endline(node, options, level);
-        } else {
-          options.state = WriterState.CloseTag;
-          r += options.spaceBeforeSlash + '/>' + this.endline(node, options, level);
-        }
-      } else if (options.pretty && childNodeCount === 1 && (firstChildNode.type === NodeType.Text || firstChildNode.type === NodeType.Raw) && (firstChildNode.value != null)) {
-        // do not indent text-only nodes
-        r += '>';
-        options.state = WriterState.InsideTag;
-        options.suppressPrettyCount++;
-        prettySuppressed = true;
-        r += this.writeChildNode(firstChildNode, options, level + 1);
-        options.suppressPrettyCount--;
-        prettySuppressed = false;
-        options.state = WriterState.CloseTag;
-        r += '</' + node.name + '>' + this.endline(node, options, level);
-      } else {
-        // if ANY are a text node, then suppress pretty now
-        if (options.dontPrettyTextNodes) {
-          ref2 = node.children;
-          for (i = 0, len1 = ref2.length; i < len1; i++) {
-            child = ref2[i];
-            if ((child.type === NodeType.Text || child.type === NodeType.Raw) && (child.value != null)) {
-              options.suppressPrettyCount++;
-              prettySuppressed = true;
-              break;
-            }
-          }
-        }
-        // close the opening tag, after dealing with newline
-        r += '>' + this.endline(node, options, level);
-        options.state = WriterState.InsideTag;
-        ref3 = node.children;
-        // inner tags
-        for (j = 0, len2 = ref3.length; j < len2; j++) {
-          child = ref3[j];
-          r += this.writeChildNode(child, options, level + 1);
-        }
-        // close tag
-        options.state = WriterState.CloseTag;
-        r += this.indent(node, options, level) + '</' + node.name + '>';
-        if (prettySuppressed) {
-          options.suppressPrettyCount--;
-        }
-        r += this.endline(node, options, level);
-        options.state = WriterState.None;
-      }
-      this.closeNode(node, options, level);
-      return r;
-    }
-
-    writeChildNode(node, options, level) {
-      switch (node.type) {
-        case NodeType.CData:
-          return this.cdata(node, options, level);
-        case NodeType.Comment:
-          return this.comment(node, options, level);
-        case NodeType.Element:
-          return this.element(node, options, level);
-        case NodeType.Raw:
-          return this.raw(node, options, level);
-        case NodeType.Text:
-          return this.text(node, options, level);
-        case NodeType.ProcessingInstruction:
-          return this.processingInstruction(node, options, level);
-        case NodeType.Dummy:
-          return '';
-        case NodeType.Declaration:
-          return this.declaration(node, options, level);
-        case NodeType.DocType:
-          return this.docType(node, options, level);
-        case NodeType.AttributeDeclaration:
-          return this.dtdAttList(node, options, level);
-        case NodeType.ElementDeclaration:
-          return this.dtdElement(node, options, level);
-        case NodeType.EntityDeclaration:
-          return this.dtdEntity(node, options, level);
-        case NodeType.NotationDeclaration:
-          return this.dtdNotation(node, options, level);
-        default:
-          throw new Error("Unknown XML node type: " + node.constructor.name);
-      }
-    }
-
-    processingInstruction(node, options, level) {
-      var r;
-      this.openNode(node, options, level);
-      options.state = WriterState.OpenTag;
-      r = this.indent(node, options, level) + '<?';
-      options.state = WriterState.InsideTag;
-      r += node.target;
-      if (node.value) {
-        r += ' ' + node.value;
-      }
-      options.state = WriterState.CloseTag;
-      r += options.spaceBeforeSlash + '?>';
-      r += this.endline(node, options, level);
-      options.state = WriterState.None;
-      this.closeNode(node, options, level);
-      return r;
-    }
-
-    raw(node, options, level) {
-      var r;
-      this.openNode(node, options, level);
-      options.state = WriterState.OpenTag;
-      r = this.indent(node, options, level);
-      options.state = WriterState.InsideTag;
-      r += node.value;
-      options.state = WriterState.CloseTag;
-      r += this.endline(node, options, level);
-      options.state = WriterState.None;
-      this.closeNode(node, options, level);
-      return r;
-    }
-
-    text(node, options, level) {
-      var r;
-      this.openNode(node, options, level);
-      options.state = WriterState.OpenTag;
-      r = this.indent(node, options, level);
-      options.state = WriterState.InsideTag;
-      r += node.value;
-      options.state = WriterState.CloseTag;
-      r += this.endline(node, options, level);
-      options.state = WriterState.None;
-      this.closeNode(node, options, level);
-      return r;
-    }
-
-    dtdAttList(node, options, level) {
-      var r;
-      this.openNode(node, options, level);
-      options.state = WriterState.OpenTag;
-      r = this.indent(node, options, level) + '<!ATTLIST';
-      options.state = WriterState.InsideTag;
-      r += ' ' + node.elementName + ' ' + node.attributeName + ' ' + node.attributeType;
-      if (node.defaultValueType !== '#DEFAULT') {
-        r += ' ' + node.defaultValueType;
-      }
-      if (node.defaultValue) {
-        r += ' "' + node.defaultValue + '"';
-      }
-      options.state = WriterState.CloseTag;
-      r += options.spaceBeforeSlash + '>' + this.endline(node, options, level);
-      options.state = WriterState.None;
-      this.closeNode(node, options, level);
-      return r;
-    }
-
-    dtdElement(node, options, level) {
-      var r;
-      this.openNode(node, options, level);
-      options.state = WriterState.OpenTag;
-      r = this.indent(node, options, level) + '<!ELEMENT';
-      options.state = WriterState.InsideTag;
-      r += ' ' + node.name + ' ' + node.value;
-      options.state = WriterState.CloseTag;
-      r += options.spaceBeforeSlash + '>' + this.endline(node, options, level);
-      options.state = WriterState.None;
-      this.closeNode(node, options, level);
-      return r;
-    }
-
-    dtdEntity(node, options, level) {
-      var r;
-      this.openNode(node, options, level);
-      options.state = WriterState.OpenTag;
-      r = this.indent(node, options, level) + '<!ENTITY';
-      options.state = WriterState.InsideTag;
-      if (node.pe) {
-        r += ' %';
-      }
-      r += ' ' + node.name;
-      if (node.value) {
-        r += ' "' + node.value + '"';
-      } else {
-        if (node.pubID && node.sysID) {
-          r += ' PUBLIC "' + node.pubID + '" "' + node.sysID + '"';
-        } else if (node.sysID) {
-          r += ' SYSTEM "' + node.sysID + '"';
-        }
-        if (node.nData) {
-          r += ' NDATA ' + node.nData;
-        }
-      }
-      options.state = WriterState.CloseTag;
-      r += options.spaceBeforeSlash + '>' + this.endline(node, options, level);
-      options.state = WriterState.None;
-      this.closeNode(node, options, level);
-      return r;
-    }
-
-    dtdNotation(node, options, level) {
-      var r;
-      this.openNode(node, options, level);
-      options.state = WriterState.OpenTag;
-      r = this.indent(node, options, level) + '<!NOTATION';
-      options.state = WriterState.InsideTag;
-      r += ' ' + node.name;
-      if (node.pubID && node.sysID) {
-        r += ' PUBLIC "' + node.pubID + '" "' + node.sysID + '"';
-      } else if (node.pubID) {
-        r += ' PUBLIC "' + node.pubID + '"';
-      } else if (node.sysID) {
-        r += ' SYSTEM "' + node.sysID + '"';
-      }
-      options.state = WriterState.CloseTag;
-      r += options.spaceBeforeSlash + '>' + this.endline(node, options, level);
-      options.state = WriterState.None;
-      this.closeNode(node, options, level);
-      return r;
-    }
-
-    openNode(node, options, level) {}
-
-    closeNode(node, options, level) {}
-
-    openAttribute(att, options, level) {}
-
-    closeAttribute(att, options, level) {}
-
-  };
-
-}).call(this);
-
-
-/***/ }),
-
-/***/ 2958:
-/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
-
-// Generated by CoffeeScript 2.4.1
-(function() {
-  var NodeType, WriterState, XMLDOMImplementation, XMLDocument, XMLDocumentCB, XMLStreamWriter, XMLStringWriter, assign, isFunction;
-
-  ({assign, isFunction} = __nccwpck_require__(8229));
-
-  XMLDOMImplementation = __nccwpck_require__(8310);
-
-  XMLDocument = __nccwpck_require__(3730);
-
-  XMLDocumentCB = __nccwpck_require__(7356);
-
-  XMLStringWriter = __nccwpck_require__(5913);
-
-  XMLStreamWriter = __nccwpck_require__(8601);
-
-  NodeType = __nccwpck_require__(9267);
-
-  WriterState = __nccwpck_require__(9766);
-
-  // Creates a new document and returns the root node for
-  // chain-building the document tree
-
-  // `name` name of the root element
-
-  // `xmldec.version` A version number string, e.g. 1.0
-  // `xmldec.encoding` Encoding declaration, e.g. UTF-8
-  // `xmldec.standalone` standalone document declaration: true or false
-
-  // `doctype.pubID` public identifier of the external subset
-  // `doctype.sysID` system identifier of the external subset
-
-  // `options.headless` whether XML declaration and doctype will be included:
-  //     true or false
-  // `options.keepNullNodes` whether nodes with null values will be kept
-  //     or ignored: true or false
-  // `options.keepNullAttributes` whether attributes with null values will be
-  //     kept or ignored: true or false
-  // `options.ignoreDecorators` whether decorator strings will be ignored when
-  //     converting JS objects: true or false
-  // `options.separateArrayItems` whether array items are created as separate
-  //     nodes when passed as an object value: true or false
-  // `options.noDoubleEncoding` whether existing html entities are encoded:
-  //     true or false
-  // `options.stringify` a set of functions to use for converting values to
-  //     strings
-  // `options.writer` the default XML writer to use for converting nodes to
-  //     string. If the default writer is not set, the built-in XMLStringWriter
-  //     will be used instead.
-  module.exports.create = function(name, xmldec, doctype, options) {
-    var doc, root;
-    if (name == null) {
-      throw new Error("Root element needs a name.");
-    }
-    options = assign({}, xmldec, doctype, options);
-    // create the document node
-    doc = new XMLDocument(options);
-    // add the root node
-    root = doc.element(name);
-    // prolog
-    if (!options.headless) {
-      doc.declaration(options);
-      if ((options.pubID != null) || (options.sysID != null)) {
-        doc.dtd(options);
-      }
-    }
-    return root;
-  };
-
-  // Creates a new document and returns the document node for
-  // chain-building the document tree
-
-  // `options.keepNullNodes` whether nodes with null values will be kept
-  //     or ignored: true or false
-  // `options.keepNullAttributes` whether attributes with null values will be
-  //     kept or ignored: true or false
-  // `options.ignoreDecorators` whether decorator strings will be ignored when
-  //     converting JS objects: true or false
-  // `options.separateArrayItems` whether array items are created as separate
-  //     nodes when passed as an object value: true or false
-  // `options.noDoubleEncoding` whether existing html entities are encoded:
-  //     true or false
-  // `options.stringify` a set of functions to use for converting values to
-  //     strings
-  // `options.writer` the default XML writer to use for converting nodes to
-  //     string. If the default writer is not set, the built-in XMLStringWriter
-  //     will be used instead.
-
-  // `onData` the function to be called when a new chunk of XML is output. The
-  //          string containing the XML chunk is passed to `onData` as its single
-  //          argument.
-  // `onEnd`  the function to be called when the XML document is completed with
-  //          `end`. `onEnd` does not receive any arguments.
-  module.exports.begin = function(options, onData, onEnd) {
-    if (isFunction(options)) {
-      [onData, onEnd] = [options, onData];
-      options = {};
-    }
-    if (onData) {
-      return new XMLDocumentCB(options, onData, onEnd);
-    } else {
-      return new XMLDocument(options);
-    }
-  };
-
-  module.exports.stringWriter = function(options) {
-    return new XMLStringWriter(options);
-  };
-
-  module.exports.streamWriter = function(stream, options) {
-    return new XMLStreamWriter(stream, options);
-  };
-
-  module.exports.implementation = new XMLDOMImplementation();
-
-  module.exports.nodeType = NodeType;
-
-  module.exports.writerState = WriterState;
-
-}).call(this);
 
 
 /***/ }),
