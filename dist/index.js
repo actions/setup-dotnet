@@ -526,6 +526,9 @@ function run() {
                 if (fs.existsSync(globalJsonPath)) {
                     versions.push(getVersionFromGlobalJson(globalJsonPath));
                 }
+                else {
+                    core.info(`global.json wasn't found in the root directory. No .NET version will be installed.`);
+                }
             }
             if (versions.length) {
                 const quality = core.getInput('dotnet-quality');
