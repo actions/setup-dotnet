@@ -46,6 +46,10 @@ export async function run() {
       const globalJsonPath = path.join(process.cwd(), 'global.json');
       if (fs.existsSync(globalJsonPath)) {
         versions.push(getVersionFromGlobalJson(globalJsonPath));
+      } else {
+        core.info(
+          `global.json wasn't found in the root directory. No .NET version will be installed.`
+        );
       }
     }
 
