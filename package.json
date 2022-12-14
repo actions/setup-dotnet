@@ -8,6 +8,7 @@
     "build": "tsc && ncc build",
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts",
+    "lint": "",
     "prepare": "husky install",
     "test": "jest --coverage --config ./jest.config.js",
     "update-installers": "nwget https://dot.net/v1/dotnet-install.ps1 -O externals/install-dotnet.ps1 && nwget https://dot.net/v1/dotnet-install.sh -O externals/install-dotnet.sh"

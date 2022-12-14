@@ -12,27 +12,9 @@ on:
       - '**.md'
 
 jobs:
-  build:
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      fail-fast: false
-      matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-    - name: Set Node.js 16
-      uses: actions/setup-node@v3
-      with:
-        node-version: 16.x
-        cache: npm
-    - run: npm ci --ignore-scripts
-    - run: npm run build
-    - run: npm run format-check
-    - run: npm test
-    - name: Verify no unstaged changes
-      if: runner.os != 'windows'
-      run: __tests__/verify-no-unstaged-changes.sh
+  call-basic-validation:
+    name: Basic validation
+    uses: actions/reusable-workflows/.github/workflows/basic-validation.yml@main
 
   test-setup-multiple-versions:
     runs-on: ${{ matrix.operating-system }}
