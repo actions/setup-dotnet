@@ -13,4 +13,5 @@ on:
 jobs:
   call-check-dist:
     name: Check dist/
-    uses: actions/reusable-workflows/.github/workflows/check-dist.yml@main
+    #uses: actions/reusable-workflows/.github/workflows/check-dist.yml@main
+    uses: IvanZosimov/reusable-workflows/.github/workflows/check-dist.yml@main
