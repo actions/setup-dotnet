@@ -5,8 +5,7 @@ on:
   pull_request:
     branches: [ main ]
   schedule:
-    - cron: '23 19 * * 0'
-  workflow_dispatch:
+    - cron: '0 3 * * 0'
 
 jobs:
   call-codeQL-analysis:

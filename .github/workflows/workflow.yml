@@ -10,7 +10,6 @@ on:
       - releases/*
     paths-ignore:
       - '**.md'
-  workflow_dispatch:
 
 jobs:
   call-basic-validation:
