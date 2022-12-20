@@ -8,7 +8,7 @@
     "build": "tsc && ncc build",
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts",
-    "lint": "",
+    "lint": "echo \"Fake command that does nothing. It is used in reusable workflows\"",
     "prepare": "husky install",
     "test": "jest --coverage --config ./jest.config.js",
     "update-installers": "nwget https://dot.net/v1/dotnet-install.ps1 -O externals/install-dotnet.ps1 && nwget https://dot.net/v1/dotnet-install.sh -O externals/install-dotnet.sh"
