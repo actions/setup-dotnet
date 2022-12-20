@@ -97,7 +97,31 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ matrix.dotnet }}
-      - run: dotnet build <my project>
+      - name: Execute dotnet
+        run: dotnet build <my project>
+```
+>**Note**: Unless a concrete version is specified in the [`global.json`](https://learn.microsoft.com/en-us/dotnet/core/tools/global-json) file, the latest .NET version installed on the runner (including preinstalled versions) will be used [by default](https://learn.microsoft.com/en-us/dotnet/core/versions/selection#the-sdk-uses-the-latest-installed-version). To control this behavior you may want to use temporary `global.json` files:
+
+**Matrix testing with temporary global.json creation**
+```yml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dotnet: [ '2.1.x', '3.1.x', '5.0.x' ]
+    name: Dotnet ${{ matrix.dotnet }} sample
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v3
+        id: cp310
+        with:
+          dotnet-version: ${{ matrix.dotnet }}
+      - name: Create temporary global.json
+        run: echo '{"sdk":{"version": "${{ steps.cp310.outputs.dotnet-version }}"}}' > ./global.json
+      - name: Execute dotnet
+        run: dotnet build <my project>
 ```
 ## Setting up authentication for nuget feeds
 
