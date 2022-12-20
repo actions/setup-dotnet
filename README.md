@@ -114,11 +114,11 @@ jobs:
       - uses: actions/checkout@v3
       - name: Setup dotnet
         uses: actions/setup-dotnet@v3
-        id: cp310
+        id: stepid
         with:
           dotnet-version: ${{ matrix.dotnet }}
       - name: Create temporary global.json
-        run: echo '{"sdk":{"version": "${{ steps.cp310.outputs.dotnet-version }}"}}' > ./global.json
+        run: echo '{"sdk":{"version": "${{ steps.stepid.outputs.dotnet-version }}"}}' > ./global.json
       - name: Execute dotnet
         run: dotnet build <my project>
 ```
@@ -178,10 +178,10 @@ In case of a single version installation, the `dotnet-version` output contains t
 
 ```yaml
     - uses: actions/setup-dotnet@v3
-      id: cp310
+      id: stepid
       with:
         dotnet-version: 3.1.422
-    - run: echo '${{ steps.cp310.outputs.dotnet-version }}' # outputs 3.1.422
+    - run: echo '${{ steps.stepid.outputs.dotnet-version }}' # outputs 3.1.422
 ```
 
 **Multiple version installation**
@@ -190,12 +190,12 @@ In case of a multiple version installation, the `dotnet-version` output contains
 
 ```yaml
     - uses: actions/setup-dotnet@v3
-      id: cp310
+      id: stepid
       with:
         dotnet-version: | 
           3.1.422
           5.0.408
-    - run: echo '${{ steps.cp310.outputs.dotnet-version }}' # outputs 5.0.408
+    - run: echo '${{ steps.stepid.outputs.dotnet-version }}' # outputs 5.0.408
 ```
 **Installation from global.json**
 
@@ -203,13 +203,13 @@ When the `dotnet-version` input is used along with the `global-json-file` input,
 
 ```yaml
     - uses: actions/setup-dotnet@v3
-      id: cp310
+      id: stepid
       with:
         dotnet-version: | 
           3.1.422
           5.0.408
         global-json-file: "./global.json" # contains version 2.2.207
-    - run: echo '${{ steps.cp310.outputs.dotnet-version }}' # outputs 2.2.207
+    - run: echo '${{ steps.stepid.outputs.dotnet-version }}' # outputs 2.2.207
 ```
 
 ## Environment variables
