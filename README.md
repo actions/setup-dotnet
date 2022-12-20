@@ -40,7 +40,7 @@ steps:
       5.0.x
 - run: dotnet build <my project>
 ```
-> **Note**: Unless a conrete version is specified in the [`global.json`](https://learn.microsoft.com/en-us/dotnet/core/tools/global-json) file, the latest .NET version installed on the runner (incliding preinstalled versions) will be used [by default](https://learn.microsoft.com/en-us/dotnet/core/versions/selection#the-sdk-uses-the-latest-installed-version). Check the list of preinstalled .NET versions on a particular OS [here](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-software).
+> **Note**: Unless a conrete version is specified in the [`global.json`](https://learn.microsoft.com/en-us/dotnet/core/tools/global-json) file, the latest .NET version installed on the runner (incliding preinstalled versions) will be used [by default](https://learn.microsoft.com/en-us/dotnet/core/versions/selection#the-sdk-uses-the-latest-installed-version).Please refer to the documentation: [Software installed on github hosted runners](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-software) for .NET SDK versions that are currently available.
 
 ## Supported version syntax
 
