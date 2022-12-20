@@ -10,8 +10,8 @@ This action sets up a [.NET CLI](https://github.com/dotnet/sdk) environment for 
 
 > **Note**: GitHub hosted runners have some versions of the .NET SDK
 preinstalled. Installed versions are subject to change. Please refer to the
-documentation
-[software installed on github hosted runners](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-software)
+documentation:
+[Software installed on github hosted runners](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-software)
 for .NET SDK versions that are currently available.
 
 ## Usage
@@ -40,7 +40,7 @@ steps:
       5.0.x
 - run: dotnet build <my project>
 ```
-> **Note**: Unless a conrete version is specified in the [`global.json`](https://learn.microsoft.com/en-us/dotnet/core/tools/global-json) file, the latest .NET version installed on the runner (incliding preinstalled versions) will be used [by default](https://learn.microsoft.com/en-us/dotnet/core/versions/selection#the-sdk-uses-the-latest-installed-version).Please refer to the documentation: [Software installed on github hosted runners](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-software) for .NET SDK versions that are currently available.
+> **Note**: Unless a concrete version is specified in the [`global.json`](https://learn.microsoft.com/en-us/dotnet/core/tools/global-json) file, the latest .NET version installed on the runner (including preinstalled versions) will be used [by default](https://learn.microsoft.com/en-us/dotnet/core/versions/selection#the-sdk-uses-the-latest-installed-version). Please refer to the [documentation](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-software) for the currently preinstalled .NET SDK versions.
 
 ## Supported version syntax
 
