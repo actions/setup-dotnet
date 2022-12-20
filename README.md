@@ -27,6 +27,7 @@ steps:
     dotnet-version: '3.1.x'
 - run: dotnet build <my project>
 ```
+> **Warning**: ***Unless a concrete version is specified in the [`global.json`](https://learn.microsoft.com/en-us/dotnet/core/tools/global-json) file, the latest .NET version installed on the runner (including preinstalled versions) will be used [by default](https://learn.microsoft.com/en-us/dotnet/core/versions/selection#the-sdk-uses-the-latest-installed-version). Please refer to the [documentation](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-software) for the currently preinstalled .NET SDK versions.***
 
 **Multiple version installation**:
 ```yml
@@ -40,8 +41,6 @@ steps:
       5.0.x
 - run: dotnet build <my project>
 ```
-> **Note**: Unless a concrete version is specified in the [`global.json`](https://learn.microsoft.com/en-us/dotnet/core/tools/global-json) file, the latest .NET version installed on the runner (including preinstalled versions) will be used [by default](https://learn.microsoft.com/en-us/dotnet/core/versions/selection#the-sdk-uses-the-latest-installed-version). Please refer to the [documentation](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-software) for the currently preinstalled .NET SDK versions.
-
 ## Supported version syntax
 
 The `dotnet-version` input supports following syntax:
