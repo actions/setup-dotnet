@@ -10,8 +10,8 @@ This action sets up a [.NET CLI](https://github.com/dotnet/sdk) environment for 
 
 > **Note**: GitHub hosted runners have some versions of the .NET SDK
 preinstalled. Installed versions are subject to change. Please refer to the
-documentation
-[software installed on github hosted runners](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-software)
+documentation:
+[Software installed on github hosted runners](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-software)
 for .NET SDK versions that are currently available.
 
 ## Usage
@@ -27,6 +27,7 @@ steps:
     dotnet-version: '3.1.x'
 - run: dotnet build <my project>
 ```
+> **Warning**: Unless a concrete version is specified in the [`global.json`](https://learn.microsoft.com/en-us/dotnet/core/tools/global-json) file, **_the latest .NET version installed on the runner (including preinstalled versions) will be used [by default](https://learn.microsoft.com/en-us/dotnet/core/versions/selection#the-sdk-uses-the-latest-installed-version)_**. Please refer to the [documentation](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-software) for the currently preinstalled .NET SDK versions.
 
 **Multiple version installation**:
 ```yml
@@ -40,8 +41,6 @@ steps:
       5.0.x
 - run: dotnet build <my project>
 ```
-> **Note**: In case multiple versions are installed, the latest .NET version will be used by default unless another version is specified in the `global.json` file.
-
 ## Supported version syntax
 
 The `dotnet-version` input supports following syntax:
@@ -97,7 +96,31 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ matrix.dotnet }}
-      - run: dotnet build <my project>
+      - name: Execute dotnet
+        run: dotnet build <my project>
+```
+>**Note**: Unless a concrete version is specified in the [`global.json`](https://learn.microsoft.com/en-us/dotnet/core/tools/global-json) file, the latest .NET version installed on the runner (including preinstalled versions) will be used [by default](https://learn.microsoft.com/en-us/dotnet/core/versions/selection#the-sdk-uses-the-latest-installed-version). To control this behavior you may want to use temporary `global.json` files:
+
+**Matrix testing with temporary global.json creation**
+```yml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dotnet: [ '2.1.x', '3.1.x', '5.0.x' ]
+    name: Dotnet ${{ matrix.dotnet }} sample
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v3
+        id: stepid
+        with:
+          dotnet-version: ${{ matrix.dotnet }}
+      - name: Create temporary global.json
+        run: echo '{"sdk":{"version": "${{ steps.stepid.outputs.dotnet-version }}"}}' > ./global.json
+      - name: Execute dotnet
+        run: dotnet build <my project>
 ```
 ## Setting up authentication for nuget feeds
 
@@ -155,10 +178,10 @@ In case of a single version installation, the `dotnet-version` output contains t
 
 ```yaml
     - uses: actions/setup-dotnet@v3
-      id: cp310
+      id: stepid
       with:
         dotnet-version: 3.1.422
-    - run: echo '${{ steps.cp310.outputs.dotnet-version }}' # outputs 3.1.422
+    - run: echo '${{ steps.stepid.outputs.dotnet-version }}' # outputs 3.1.422
 ```
 
 **Multiple version installation**
@@ -167,12 +190,12 @@ In case of a multiple version installation, the `dotnet-version` output contains
 
 ```yaml
     - uses: actions/setup-dotnet@v3
-      id: cp310
+      id: stepid
       with:
         dotnet-version: | 
           3.1.422
           5.0.408
-    - run: echo '${{ steps.cp310.outputs.dotnet-version }}' # outputs 5.0.408
+    - run: echo '${{ steps.stepid.outputs.dotnet-version }}' # outputs 5.0.408
 ```
 **Installation from global.json**
 
@@ -180,13 +203,13 @@ When the `dotnet-version` input is used along with the `global-json-file` input,
 
 ```yaml
     - uses: actions/setup-dotnet@v3
-      id: cp310
+      id: stepid
       with:
         dotnet-version: | 
           3.1.422
           5.0.408
         global-json-file: "./global.json" # contains version 2.2.207
-    - run: echo '${{ steps.cp310.outputs.dotnet-version }}' # outputs 2.2.207
+    - run: echo '${{ steps.stepid.outputs.dotnet-version }}' # outputs 2.2.207
 ```
 
 ## Environment variables
