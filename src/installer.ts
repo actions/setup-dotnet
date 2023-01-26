@@ -236,13 +236,15 @@ export class DotnetCoreInstaller {
       ignoreReturnCode: true,
       env: process.env as {string: string}
     };
-    const {exitCode, stdout} = await exec.getExecOutput(
+    const {exitCode, stderr} = await exec.getExecOutput(
       `"${scriptPath}"`,
       scriptArguments,
       getExecOutputOptions
     );
     if (exitCode) {
-      throw new Error(`Failed to install dotnet ${exitCode}. ${stdout}`);
+      throw new Error(
+        `Failed to install dotnet, exit code: ${exitCode}. ${stderr}`
+      );
     }
 
     return this.outputDotnetVersion(dotnetVersion.value);
