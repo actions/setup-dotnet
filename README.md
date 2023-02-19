@@ -1,7 +1,6 @@
 # setup-dotnet
 
-[![Basic validation](https://github.com/actions/setup-dotnet/actions/workflows/basic-validation.yml/badge.svg?branch=main)](https://github.com/actions/setup-dotnet/actions/workflows/basic-validation.yml)
-[![e2e tests](https://github.com/actions/setup-dotnet/actions/workflows/e2e-tests.yml/badge.svg?branch=main)](https://github.com/actions/setup-dotnet/actions/workflows/e2e-tests.yml)
+[![GitHub Actions Status](https://github.com/actions/setup-dotnet/workflows/Main%20workflow/badge.svg)](https://github.com/actions/setup-dotnet)
 
 This action sets up a [.NET CLI](https://github.com/dotnet/sdk) environment for use in actions by:
 
