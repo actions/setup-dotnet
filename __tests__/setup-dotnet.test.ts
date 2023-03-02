@@ -21,11 +21,11 @@ if (IS_WINDOWS) {
 const tempDir = path.join(__dirname, 'runner', 'temp2');
 
 describe('setup-dotnet tests', () => {
-  let getInputSpy = jest.spyOn(core, 'getInput');
-  let getMultilineInputSpy = jest.spyOn(core, 'getMultilineInput');
-  let setOutputSpy = jest.spyOn(core, 'setOutput');
+  const getInputSpy = jest.spyOn(core, 'getInput');
+  const getMultilineInputSpy = jest.spyOn(core, 'getMultilineInput');
+  const setOutputSpy = jest.spyOn(core, 'setOutput');
 
-  let inputs = {} as any;
+  const inputs = {} as any;
 
   beforeAll(async () => {
     process.env.RUNNER_TOOL_CACHE = toolDir;
@@ -74,7 +74,7 @@ describe('setup-dotnet tests', () => {
 
     await setup.run();
 
-    expect(setOutputSpy).toBeCalledWith('dotnet-version', '6.0.401');
+    expect(setOutputSpy).toHaveBeenCalledWith('dotnet-version', '6.0.401');
   }, 400000);
 
   it("Sets output with the version specified in global.json, if it's present", async () => {
@@ -93,6 +93,6 @@ describe('setup-dotnet tests', () => {
 
     await setup.run();
 
-    expect(setOutputSpy).toBeCalledWith('dotnet-version', '3.0.103');
+    expect(setOutputSpy).toHaveBeenCalledWith('dotnet-version', '3.0.103');
   }, 400000);
 });
