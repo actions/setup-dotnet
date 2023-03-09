@@ -45,7 +45,7 @@ function configAuthentication(feedUrl, existingFileLocation = '', processRoot = 
 }
 exports.configAuthentication = configAuthentication;
 function isValidKey(key) {
-    return /^[\w\-\.]+$/i.test(key);
+    return /^[\w\-.]+$/i.test(key);
 }
 function getExistingNugetConfig(processRoot) {
     const defaultConfigName = 'nuget.config';
@@ -60,9 +60,9 @@ function getExistingNugetConfig(processRoot) {
 function writeFeedToFile(feedUrl, existingFileLocation, tempFileLocation) {
     var _a, _b;
     core.info(`dotnet-auth: Finding any source references in ${existingFileLocation}, writing a new temporary configuration file with credentials to ${tempFileLocation}`);
-    let sourceKeys = [];
+    const sourceKeys = [];
     let owner = core.getInput('owner');
-    let sourceUrl = feedUrl;
+    const sourceUrl = feedUrl;
     if (!owner) {
         owner = github.context.repo.owner;
     }
@@ -132,7 +132,7 @@ function writeFeedToFile(feedUrl, existingFileLocation, tempFileLocation) {
         }
     ];
     if (!sourceKeys.length) {
-        let keystring = 'Source';
+        const keystring = 'Source';
         xmlSource[1].configuration.push({
             packageSources: [
                 {
@@ -300,9 +300,9 @@ class DotnetVersionResolver {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield httpClient.getJson(DotnetVersionResolver.DotNetCoreIndexUrl);
             const result = response.result || {};
-            let releasesInfo = result['releases-index'];
-            let releaseInfo = releasesInfo.find(info => {
-                let sdkParts = info['channel-version'].split('.');
+            const releasesInfo = result['releases-index'];
+            const releaseInfo = releasesInfo.find(info => {
+                const sdkParts = info['channel-version'].split('.');
                 return sdkParts[0] === versionParts[0];
             });
             if (!releaseInfo) {
@@ -408,8 +408,8 @@ class DotnetCoreInstaller {
     outputDotnetVersion(version) {
         return __awaiter(this, void 0, void 0, function* () {
             const installationPath = process.env['DOTNET_INSTALL_DIR'];
-            let versionsOnRunner = yield (0, promises_1.readdir)(path_1.default.join(installationPath.replace(/'/g, ''), 'sdk'));
-            let installedVersion = semver_1.default.maxSatisfying(versionsOnRunner, version, {
+            const versionsOnRunner = yield (0, promises_1.readdir)(path_1.default.join(installationPath.replace(/'/g, ''), 'sdk'));
+            const installedVersion = semver_1.default.maxSatisfying(versionsOnRunner, version, {
                 includePrerelease: true
             });
             return installedVersion;

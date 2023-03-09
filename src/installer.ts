@@ -88,10 +88,10 @@ export class DotnetVersionResolver {
       DotnetVersionResolver.DotNetCoreIndexUrl
     );
     const result = response.result || {};
-    let releasesInfo: any[] = result['releases-index'];
+    const releasesInfo: any[] = result['releases-index'];
 
-    let releaseInfo = releasesInfo.find(info => {
-      let sdkParts: string[] = info['channel-version'].split('.');
+    const releaseInfo = releasesInfo.find(info => {
+      const sdkParts: string[] = info['channel-version'].split('.');
       return sdkParts[0] === versionParts[0];
     });
 
@@ -106,7 +106,7 @@ export class DotnetVersionResolver {
     return releaseInfo['channel-version'];
   }
 
-  static DotNetCoreIndexUrl: string =
+  static DotNetCoreIndexUrl =
     'https://dotnetcli.azureedge.net/dotnet/release-metadata/releases-index.json';
 }
 
@@ -252,11 +252,11 @@ export class DotnetCoreInstaller {
 
   private async outputDotnetVersion(version): Promise<string> {
     const installationPath = process.env['DOTNET_INSTALL_DIR']!;
-    let versionsOnRunner: string[] = await readdir(
+    const versionsOnRunner: string[] = await readdir(
       path.join(installationPath.replace(/'/g, ''), 'sdk')
     );
 
-    let installedVersion = semver.maxSatisfying(versionsOnRunner, version, {
+    const installedVersion = semver.maxSatisfying(versionsOnRunner, version, {
       includePrerelease: true
     })!;
 

@@ -6,7 +6,7 @@ import {XMLParser, XMLBuilder} from 'fast-xml-parser';
 
 export function configAuthentication(
   feedUrl: string,
-  existingFileLocation: string = '',
+  existingFileLocation = '',
   processRoot: string = process.cwd()
 ) {
   const existingNuGetConfig: string = path.resolve(
@@ -26,7 +26,7 @@ export function configAuthentication(
 }
 
 function isValidKey(key: string): boolean {
-  return /^[\w\-\.]+$/i.test(key);
+  return /^[\w\-.]+$/i.test(key);
 }
 
 function getExistingNugetConfig(processRoot: string) {
@@ -48,9 +48,9 @@ function writeFeedToFile(
   core.info(
     `dotnet-auth: Finding any source references in ${existingFileLocation}, writing a new temporary configuration file with credentials to ${tempFileLocation}`
   );
-  let sourceKeys: string[] = [];
+  const sourceKeys: string[] = [];
   let owner: string = core.getInput('owner');
-  let sourceUrl: string = feedUrl;
+  const sourceUrl: string = feedUrl;
   if (!owner) {
     owner = github.context.repo.owner;
   }
@@ -130,7 +130,7 @@ function writeFeedToFile(
   ];
 
   if (!sourceKeys.length) {
-    let keystring = 'Source';
+    const keystring = 'Source';
 
     xmlSource[1].configuration.push({
       packageSources: [

@@ -9,20 +9,20 @@ const fakeSourcesDirForTesting = path.join(
   's'
 );
 
-const invalidNuGetConfig: string = `<?xml version="1.0" encoding="utf-8"?>`;
+const invalidNuGetConfig = `<?xml version="1.0" encoding="utf-8"?>`;
 
-const emptyNuGetConfig: string = `<?xml version="1.0" encoding="utf-8"?>
+const emptyNuGetConfig = `<?xml version="1.0" encoding="utf-8"?>
 <configuration>
 </configuration>`;
 
-const nugetorgNuGetConfig: string = `<?xml version="1.0" encoding="utf-8"?>
+const nugetorgNuGetConfig = `<?xml version="1.0" encoding="utf-8"?>
 <configuration>
   <packageSources>
     <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
   </packageSources>
 </configuration>`;
 
-const gprnugetorgNuGetConfig: string = `<?xml version="1.0" encoding="utf-8"?>
+const gprnugetorgNuGetConfig = `<?xml version="1.0" encoding="utf-8"?>
 <configuration>
   <packageSources>
     <add key="GPR" value="https://nuget.pkg.github.com/OwnerName/index.json" protocolVersion="3" />
@@ -30,14 +30,14 @@ const gprnugetorgNuGetConfig: string = `<?xml version="1.0" encoding="utf-8"?>
   </packageSources>
 </configuration>`;
 
-const gprNuGetConfig: string = `<?xml version="1.0" encoding="utf-8"?>
+const gprNuGetConfig = `<?xml version="1.0" encoding="utf-8"?>
 <configuration>
   <packageSources>
     <add key="GPR" value="https://nuget.pkg.github.com/OwnerName/index.json" protocolVersion="3" />
   </packageSources>
 </configuration>`;
 
-const twogprNuGetConfig: string = `<?xml version="1.0" encoding="utf-8"?>
+const twogprNuGetConfig = `<?xml version="1.0" encoding="utf-8"?>
 <configuration>
   <packageSources>
     <add key="GPR-GitHub" value="https://nuget.pkg.github.com/OwnerName/index.json" protocolVersion="3" />
@@ -45,21 +45,21 @@ const twogprNuGetConfig: string = `<?xml version="1.0" encoding="utf-8"?>
   </packageSources>
 </configuration>`;
 
-const spaceNuGetConfig: string = `<?xml version="1.0" encoding="utf-8"?>
+const spaceNuGetConfig = `<?xml version="1.0" encoding="utf-8"?>
 <configuration>
   <packageSources>
     <add key="GPR GitHub" value="https://nuget.pkg.github.com/OwnerName/index.json" protocolVersion="3" />
   </packageSources>
 </configuration>`;
 
-const azureartifactsNuGetConfig: string = `<?xml version="1.0" encoding="utf-8"?>
+const azureartifactsNuGetConfig = `<?xml version="1.0" encoding="utf-8"?>
 <configuration>
   <packageSources>
     <add key="AzureArtifacts" value="https://pkgs.dev.azure.com/amullans/_packaging/GitHubBuilds/nuget/v3/index.json" protocolVersion="3" />
   </packageSources>
 </configuration>`;
 
-const azureartifactsnugetorgNuGetConfig: string = `<?xml version="1.0" encoding="utf-8"?>
+const azureartifactsnugetorgNuGetConfig = `<?xml version="1.0" encoding="utf-8"?>
 <configuration>
   <packageSources>
     <add key="AzureArtifacts" value="https://pkgs.dev.azure.com/amullans/_packaging/GitHubBuilds/nuget/v3/index.json" protocolVersion="3" />
