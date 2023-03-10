@@ -513,7 +513,7 @@ function run() {
             const installedDotnetVersions = [];
             const globalJsonFileInput = core.getInput('global-json-file');
             if (globalJsonFileInput) {
-                const globalJsonPath = path_1.default.join(process.cwd(), globalJsonFileInput);
+                const globalJsonPath = path_1.default.resolve(process.cwd(), globalJsonFileInput);
                 if (!fs.existsSync(globalJsonPath)) {
                     throw new Error(`The specified global.json file '${globalJsonFileInput}' does not exist`);
                 }
