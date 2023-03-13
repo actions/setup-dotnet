@@ -18,6 +18,15 @@ if (IS_WINDOWS) {
   toolDir = path.join(process.env['HOME'] + '', '.dotnet');
 }
 
+function createGlobalJsonPath(dotnetVersion: string) {
+  const globalJsonPath = path.join(process.cwd(), 'global.json');
+  const jsonContents = `{${os.EOL}"sdk": {${os.EOL}"version": "${dotnetVersion}"${os.EOL}}${os.EOL}}`;
+  if (!fs.existsSync(globalJsonPath)) {
+    fs.writeFileSync(globalJsonPath, jsonContents);
+  }
+  return globalJsonPath;
+}
+
 const tempDir = path.join(__dirname, 'runner', 'temp2');
 
 describe('setup-dotnet tests', () => {
@@ -52,11 +61,7 @@ describe('setup-dotnet tests', () => {
   }, 30000);
 
   it('Acquires version of dotnet from global.json if no matching version is installed', async () => {
-    const globalJsonPath = path.join(process.cwd(), 'global.json');
-    const jsonContents = `{${os.EOL}"sdk": {${os.EOL}"version": "3.1.201"${os.EOL}}${os.EOL}}`;
-    if (!fs.existsSync(globalJsonPath)) {
-      fs.writeFileSync(globalJsonPath, jsonContents);
-    }
+    createGlobalJsonPath('3.1.201');
     await setup.run();
 
     expect(fs.existsSync(path.join(toolDir, 'sdk', '3.1.201'))).toBe(true);
@@ -78,14 +83,25 @@ describe('setup-dotnet tests', () => {
   }, 400000);
 
   it("Sets output with the version specified in global.json, if it's present", async () => {
-    const globalJsonPath = path.join(process.cwd(), 'global.json');
-    const jsonContents = `{${os.EOL}"sdk": {${os.EOL}"version": "3.0.103"${os.EOL}}${os.EOL}}`;
-    if (!fs.existsSync(globalJsonPath)) {
-      fs.writeFileSync(globalJsonPath, jsonContents);
-    }
+    createGlobalJsonPath('3.0.103');
 
     inputs['dotnet-version'] = ['3.1.201', '6.0.401'];
     inputs['global-json-file'] = './global.json';
+
+    getMultilineInputSpy.mockImplementation(input => inputs[input]);
+
+    getInputSpy.mockImplementation(input => inputs[input]);
+
+    await setup.run();
+
+    expect(setOutputSpy).toHaveBeenCalledWith('dotnet-version', '3.0.103');
+  }, 400000);
+
+  it('Sets output with the version specified in global.json with absolute path', async () => {
+    const globalJsonPath = createGlobalJsonPath('3.0.103');
+
+    inputs['dotnet-version'] = ['3.1.201', '6.0.401'];
+    inputs['global-json-file'] = globalJsonPath;
 
     getMultilineInputSpy.mockImplementation(input => inputs[input]);
 
