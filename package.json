@@ -6,10 +6,10 @@
   "main": "lib/setup-dotnet.js",
   "scripts": {
     "build": "tsc && ncc build",
-    "format": "prettier --no-error-on-unmatched-pattern --config ./.prettierrc.js --write **/*.{ts,yml,yaml}",
-    "format-check": "prettier --no-error-on-unmatched-pattern --config ./.prettierrc.js --check **/*.{ts,yml,yaml}",
-    "lint": "eslint --config ./.eslintrc.js **/*.ts",
-    "lint:fix": "eslint --config ./.eslintrc.js **/*.ts --fix",
+    "format": "prettier --no-error-on-unmatched-pattern --config ./.prettierrc.js --write \"**/*.{ts,yml,yaml}\"",
+    "format-check": "prettier --no-error-on-unmatched-pattern --config ./.prettierrc.js --check \"**/*.{ts,yml,yaml}\"",
+    "lint": "eslint --config ./.eslintrc.js \"**/*.ts\"",
+    "lint:fix": "eslint --config ./.eslintrc.js \"**/*.ts\" --fix",
     "prepare": "husky install",
     "test": "jest --coverage --config ./jest.config.js",
     "update-installers": "nwget https://dot.net/v1/dotnet-install.ps1 -O externals/install-dotnet.ps1 && nwget https://dot.net/v1/dotnet-install.sh -O externals/install-dotnet.sh"
