@@ -12,7 +12,7 @@ import {IS_LINUX, IS_WINDOWS} from './utils';
 import {QualityOptions} from './setup-dotnet';
 
 export interface DotnetVersion {
-  type: string | null;
+  type: string;
   value: string;
   qualityFlag: boolean;
 }
@@ -36,8 +36,6 @@ export class DotnetVersionResolver {
     if (semver.valid(this.inputVersion)) {
       this.resolvedArgument.type = 'version';
       this.resolvedArgument.value = this.inputVersion;
-    } else if (!this.inputVersion) {
-      this.resolvedArgument.type = null;
     } else {
       this.resolvedArgument.type = 'channel';
       const [major, minor] = this.inputVersion.split('.');

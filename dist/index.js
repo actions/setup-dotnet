@@ -258,9 +258,6 @@ class DotnetVersionResolver {
                 this.resolvedArgument.type = 'version';
                 this.resolvedArgument.value = this.inputVersion;
             }
-            else if (!this.inputVersion) {
-                this.resolvedArgument.type = null;
-            }
             else {
                 this.resolvedArgument.type = 'channel';
                 const [major, minor] = this.inputVersion.split('.');
