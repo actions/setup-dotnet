@@ -12,7 +12,7 @@ import {IS_LINUX, IS_WINDOWS} from './utils';
 import {QualityOptions} from './setup-dotnet';
 
 export interface DotnetVersion {
-  type: string;
+  type: string | null;
   value: string;
   qualityFlag: boolean;
 }
@@ -27,22 +27,25 @@ export class DotnetVersionResolver {
   }
 
   private async resolveVersionInput(): Promise<void> {
-    if (!semver.validRange(this.inputVersion)) {
+    const isLatestPatchSyntax = /^\d+\.\d+\.\d{1}x{2}$/.test(this.inputVersion);
+    if (!semver.validRange(this.inputVersion) && !isLatestPatchSyntax) {
       throw new Error(
-        `'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B, A.B.x, A, A.x`
+        `'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B, A.B.x, A, A.x, A.B.Cxx`
       );
     }
     if (semver.valid(this.inputVersion)) {
       this.resolvedArgument.type = 'version';
       this.resolvedArgument.value = this.inputVersion;
+    } else if (!this.inputVersion) {
+      this.resolvedArgument.type = null;
     } else {
+      this.resolvedArgument.type = 'channel';
       const [major, minor] = this.inputVersion.split('.');
-
-      if (this.isNumericTag(major)) {
-        this.resolvedArgument.type = 'channel';
-        if (this.isNumericTag(minor)) {
-          this.resolvedArgument.value = `${major}.${minor}`;
-        } else {
+      if (isLatestPatchSyntax) {
+        this.resolvedArgument.value = this.inputVersion;
+      } else if (this.isNumericTag(major) && this.isNumericTag(minor)) {
+        this.resolvedArgument.value = `${major}.${minor}`;
+      } else {
           const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
             allowRetries: true,
             maxRetries: 3
@@ -51,7 +54,6 @@ export class DotnetVersionResolver {
             httpClient,
             [major, minor]
           );
-        }
       }
       this.resolvedArgument.qualityFlag = +major >= 6 ? true : false;
     }
@@ -61,11 +63,7 @@ export class DotnetVersionResolver {
     return /^\d+$/.test(versionTag);
   }
 
-  public async createDotNetVersion(): Promise<{
-    type: string;
-    value: string;
-    qualityFlag: boolean;
-  }> {
+  public async createDotNetVersion(): Promise<DotnetVersion> {
     await this.resolveVersionInput();
     if (!this.resolvedArgument.type) {
       return this.resolvedArgument;
