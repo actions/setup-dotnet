@@ -46,14 +46,14 @@ export class DotnetVersionResolver {
       } else if (this.isNumericTag(major) && this.isNumericTag(minor)) {
         this.resolvedArgument.value = `${major}.${minor}`;
       } else {
-          const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
-            allowRetries: true,
-            maxRetries: 3
-          });
-          this.resolvedArgument.value = await this.getLatestVersion(
-            httpClient,
-            [major, minor]
-          );
+        const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
+          allowRetries: true,
+          maxRetries: 3
+        });
+        this.resolvedArgument.value = await this.getLatestVersion(httpClient, [
+          major,
+          minor
+        ]);
       }
       this.resolvedArgument.qualityFlag = +major >= 6 ? true : false;
     }

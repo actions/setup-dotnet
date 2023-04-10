@@ -250,27 +250,35 @@ class DotnetVersionResolver {
     }
     resolveVersionInput() {
         return __awaiter(this, void 0, void 0, function* () {
-            if (!semver_1.default.validRange(this.inputVersion)) {
-                throw new Error(`'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B, A.B.x, A, A.x`);
+            const isLatestPatchSyntax = /^\d+\.\d+\.\d{1}x{2}$/.test(this.inputVersion);
+            if (!semver_1.default.validRange(this.inputVersion) && !isLatestPatchSyntax) {
+                throw new Error(`'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B, A.B.x, A, A.x, A.B.Cxx`);
             }
             if (semver_1.default.valid(this.inputVersion)) {
                 this.resolvedArgument.type = 'version';
                 this.resolvedArgument.value = this.inputVersion;
             }
+            else if (!this.inputVersion) {
+                this.resolvedArgument.type = null;
+            }
             else {
+                this.resolvedArgument.type = 'channel';
                 const [major, minor] = this.inputVersion.split('.');
-                if (this.isNumericTag(major)) {
-                    this.resolvedArgument.type = 'channel';
-                    if (this.isNumericTag(minor)) {
-                        this.resolvedArgument.value = `${major}.${minor}`;
-                    }
-                    else {
-                        const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
-                            allowRetries: true,
-                            maxRetries: 3
-                        });
-                        this.resolvedArgument.value = yield this.getLatestVersion(httpClient, [major, minor]);
-                    }
+                if (isLatestPatchSyntax) {
+                    this.resolvedArgument.value = this.inputVersion;
+                }
+                else if (this.isNumericTag(major) && this.isNumericTag(minor)) {
+                    this.resolvedArgument.value = `${major}.${minor}`;
+                }
+                else {
+                    const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
+                        allowRetries: true,
+                        maxRetries: 3
+                    });
+                    this.resolvedArgument.value = yield this.getLatestVersion(httpClient, [
+                        major,
+                        minor
+                    ]);
                 }
                 this.resolvedArgument.qualityFlag = +major >= 6 ? true : false;
             }
