@@ -268,14 +268,7 @@ class DotnetVersionResolver {
                     this.resolvedArgument.value = `${major}.${minor}`;
                 }
                 else {
-                    const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
-                        allowRetries: true,
-                        maxRetries: 3
-                    });
-                    this.resolvedArgument.value = yield this.getLatestVersion(httpClient, [
-                        major,
-                        minor
-                    ]);
+                    this.resolvedArgument.value = yield this.getLatestByMajorTag(major);
                 }
                 this.resolvedArgument.qualityFlag = +major >= 6 ? true : false;
             }
@@ -301,17 +294,21 @@ class DotnetVersionResolver {
             return this.resolvedArgument;
         });
     }
-    getLatestVersion(httpClient, versionParts) {
+    getLatestByMajorTag(majorTag) {
         return __awaiter(this, void 0, void 0, function* () {
+            const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
+                allowRetries: true,
+                maxRetries: 3
+            });
             const response = yield httpClient.getJson(DotnetVersionResolver.DotNetCoreIndexUrl);
             const result = response.result || {};
             const releasesInfo = result['releases-index'];
             const releaseInfo = releasesInfo.find(info => {
                 const sdkParts = info['channel-version'].split('.');
-                return sdkParts[0] === versionParts[0];
+                return sdkParts[0] === majorTag;
             });
             if (!releaseInfo) {
-                throw new Error(`Could not find info for version ${versionParts.join('.')} at ${DotnetVersionResolver.DotNetCoreIndexUrl}`);
+                throw new Error(`Could not find info for version with major tag: v${majorTag} at ${DotnetVersionResolver.DotNetCoreIndexUrl}`);
             }
             return releaseInfo['channel-version'];
         });

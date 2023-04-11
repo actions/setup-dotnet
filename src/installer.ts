@@ -44,14 +44,7 @@ export class DotnetVersionResolver {
       } else if (this.isNumericTag(major) && this.isNumericTag(minor)) {
         this.resolvedArgument.value = `${major}.${minor}`;
       } else {
-        const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
-          allowRetries: true,
-          maxRetries: 3
-        });
-        this.resolvedArgument.value = await this.getLatestVersion(httpClient, [
-          major,
-          minor
-        ]);
+        this.resolvedArgument.value = await this.getLatestByMajorTag(major);
       }
       this.resolvedArgument.qualityFlag = +major >= 6 ? true : false;
     }
@@ -76,10 +69,11 @@ export class DotnetVersionResolver {
     return this.resolvedArgument;
   }
 
-  private async getLatestVersion(
-    httpClient: hc.HttpClient,
-    versionParts: string[]
-  ): Promise<string> {
+  private async getLatestByMajorTag(majorTag: string): Promise<string> {
+    const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
+      allowRetries: true,
+      maxRetries: 3
+    });
     const response = await httpClient.getJson<any>(
       DotnetVersionResolver.DotNetCoreIndexUrl
     );
@@ -88,14 +82,12 @@ export class DotnetVersionResolver {
 
     const releaseInfo = releasesInfo.find(info => {
       const sdkParts: string[] = info['channel-version'].split('.');
-      return sdkParts[0] === versionParts[0];
+      return sdkParts[0] === majorTag;
     });
 
     if (!releaseInfo) {
       throw new Error(
-        `Could not find info for version ${versionParts.join('.')} at ${
-          DotnetVersionResolver.DotNetCoreIndexUrl
-        }`
+        `Could not find info for version with major tag: v${majorTag} at ${DotnetVersionResolver.DotNetCoreIndexUrl}`
       );
     }
 
