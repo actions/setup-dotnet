@@ -87,7 +87,7 @@ export class DotnetVersionResolver {
 
     if (!releaseInfo) {
       throw new Error(
-        `Could not find info for version with major tag: v${majorTag} at ${DotnetVersionResolver.DotNetCoreIndexUrl}`
+        `Could not find info for version with major tag: ${majorTag} at ${DotnetVersionResolver.DotNetCoreIndexUrl}`
       );
     }
 
