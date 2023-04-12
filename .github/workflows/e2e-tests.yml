@@ -177,17 +177,17 @@ jobs:
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Setup dotnet '5.0.1xx'
+      - name: Setup dotnet '5.0.2xx'
         uses: ./
         with:
-          dotnet-version: '5.0.1xx'
+          dotnet-version: '5.0.2xx'
       - name: Setup dotnet '7.0.1xx'
         uses: ./
         with:
           dotnet-version: '7.0.1xx'
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 5.0.1 7.0.1
+        run: __tests__/verify-dotnet.ps1 5.0.2 7.0.1
 
   test-setup-global-json-specified-and-version:
     runs-on: ${{ matrix.operating-system }}

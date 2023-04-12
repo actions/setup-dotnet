@@ -290,9 +290,10 @@ class DotnetVersionResolver {
                 this.resolvedArgument.value = yield this.getLatestByMajorTag(major);
             }
             else {
+                // Resolve LTS version of .NET if "dotnet-version" is specified as *, x or X
                 this.resolvedArgument.value = 'LTS';
             }
-            this.resolvedArgument.qualityFlag = +major >= 6 ? true : false;
+            this.resolvedArgument.qualityFlag = parseInt(major) >= 6 ? true : false;
         });
     }
     createDotNetVersion() {
