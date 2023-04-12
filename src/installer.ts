@@ -27,31 +27,52 @@ export class DotnetVersionResolver {
   }
 
   private async resolveVersionInput(): Promise<void> {
-    const isLatestPatchSyntax = /^\d+\.\d+\.\d{1}x{2}$/.test(this.inputVersion);
-    if (!semver.validRange(this.inputVersion) && !isLatestPatchSyntax) {
+    if (!semver.validRange(this.inputVersion) && !this.isLatestPatchSyntax()) {
       throw new Error(
         `'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B, A.B.x, A, A.x, A.B.Cxx`
       );
     }
     if (semver.valid(this.inputVersion)) {
-      this.resolvedArgument.type = 'version';
-      this.resolvedArgument.value = this.inputVersion;
+      this.createVersionArgument();
     } else {
-      this.resolvedArgument.type = 'channel';
-      const [major, minor] = this.inputVersion.split('.');
-      if (isLatestPatchSyntax) {
-        this.resolvedArgument.value = this.inputVersion;
-      } else if (this.isNumericTag(major) && this.isNumericTag(minor)) {
-        this.resolvedArgument.value = `${major}.${minor}`;
-      } else {
-        this.resolvedArgument.value = await this.getLatestByMajorTag(major);
-      }
-      this.resolvedArgument.qualityFlag = +major >= 6 ? true : false;
+      await this.createChannelArgument();
     }
   }
 
   private isNumericTag(versionTag): boolean {
     return /^\d+$/.test(versionTag);
+  }
+
+  private isLatestPatchSyntax() {
+    const majorTag = this.inputVersion.match(
+      /^(?<majorTag>\d+)\.\d+\.\d{1}x{2}$/
+    )?.groups?.majorTag;
+    if (majorTag && parseInt(majorTag) < 5) {
+      throw new Error(
+        `'dotnet-version' was supplied in invalid format: ${this.inputVersion}! The A.B.Cxx syntax is available since the .NET 5.0 release.`
+      );
+    }
+    return majorTag ? true : false;
+  }
+
+  private createVersionArgument() {
+    this.resolvedArgument.type = 'version';
+    this.resolvedArgument.value = this.inputVersion;
+  }
+
+  private async createChannelArgument() {
+    this.resolvedArgument.type = 'channel';
+    const [major, minor] = this.inputVersion.split('.');
+    if (this.isLatestPatchSyntax()) {
+      this.resolvedArgument.value = this.inputVersion;
+    } else if (this.isNumericTag(major) && this.isNumericTag(minor)) {
+      this.resolvedArgument.value = `${major}.${minor}`;
+    } else if (this.isNumericTag(major)) {
+      this.resolvedArgument.value = await this.getLatestByMajorTag(major);
+    } else {
+      this.resolvedArgument.value = 'LTS';
+    }
+    this.resolvedArgument.qualityFlag = +major >= 6 ? true : false;
   }
 
   public async createDotNetVersion(): Promise<DotnetVersion> {

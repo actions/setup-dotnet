@@ -250,32 +250,50 @@ class DotnetVersionResolver {
     }
     resolveVersionInput() {
         return __awaiter(this, void 0, void 0, function* () {
-            const isLatestPatchSyntax = /^\d+\.\d+\.\d{1}x{2}$/.test(this.inputVersion);
-            if (!semver_1.default.validRange(this.inputVersion) && !isLatestPatchSyntax) {
+            if (!semver_1.default.validRange(this.inputVersion) && !this.isLatestPatchSyntax()) {
                 throw new Error(`'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B, A.B.x, A, A.x, A.B.Cxx`);
             }
             if (semver_1.default.valid(this.inputVersion)) {
-                this.resolvedArgument.type = 'version';
-                this.resolvedArgument.value = this.inputVersion;
+                this.createVersionArgument();
             }
             else {
-                this.resolvedArgument.type = 'channel';
-                const [major, minor] = this.inputVersion.split('.');
-                if (isLatestPatchSyntax) {
-                    this.resolvedArgument.value = this.inputVersion;
-                }
-                else if (this.isNumericTag(major) && this.isNumericTag(minor)) {
-                    this.resolvedArgument.value = `${major}.${minor}`;
-                }
-                else {
-                    this.resolvedArgument.value = yield this.getLatestByMajorTag(major);
-                }
-                this.resolvedArgument.qualityFlag = +major >= 6 ? true : false;
+                yield this.createChannelArgument();
             }
         });
     }
     isNumericTag(versionTag) {
         return /^\d+$/.test(versionTag);
+    }
+    isLatestPatchSyntax() {
+        var _b, _c;
+        const majorTag = (_c = (_b = this.inputVersion.match(/^(?<majorTag>\d+)\.\d+\.\d{1}x{2}$/)) === null || _b === void 0 ? void 0 : _b.groups) === null || _c === void 0 ? void 0 : _c.majorTag;
+        if (majorTag && parseInt(majorTag) < 5) {
+            throw new Error(`'dotnet-version' was supplied in invalid format: ${this.inputVersion}! The A.B.Cxx syntax is available since the .NET 5.0 release.`);
+        }
+        return majorTag ? true : false;
+    }
+    createVersionArgument() {
+        this.resolvedArgument.type = 'version';
+        this.resolvedArgument.value = this.inputVersion;
+    }
+    createChannelArgument() {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.resolvedArgument.type = 'channel';
+            const [major, minor] = this.inputVersion.split('.');
+            if (this.isLatestPatchSyntax()) {
+                this.resolvedArgument.value = this.inputVersion;
+            }
+            else if (this.isNumericTag(major) && this.isNumericTag(minor)) {
+                this.resolvedArgument.value = `${major}.${minor}`;
+            }
+            else if (this.isNumericTag(major)) {
+                this.resolvedArgument.value = yield this.getLatestByMajorTag(major);
+            }
+            else {
+                this.resolvedArgument.value = 'LTS';
+            }
+            this.resolvedArgument.qualityFlag = +major >= 6 ? true : false;
+        });
     }
     createDotNetVersion() {
         return __awaiter(this, void 0, void 0, function* () {

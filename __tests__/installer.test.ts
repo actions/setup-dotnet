@@ -201,7 +201,6 @@ describe('DotnetVersionResolver tests', () => {
     '.2.3',
     '.2.x',
     '*.',
-    '*',
     '1.2.',
     '1.2.-abc',
     'a.b',
@@ -222,7 +221,7 @@ describe('DotnetVersionResolver tests', () => {
     }
   );
 
-  each(['3.1', '3.1.x', '3.1.*', '3.1.X', '3.1.1xx']).test(
+  each(['3.1', '3.1.x', '3.1.*', '3.1.X', '5.0.1xx']).test(
     "if version: '%s' that can be resolved to 'channel' option is supplied, it should set type to 'channel' in version object",
     async version => {
       const dotnetVersionResolver = new installer.DotnetVersionResolver(
