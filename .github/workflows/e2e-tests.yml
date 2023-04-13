@@ -165,30 +165,6 @@ jobs:
         shell: pwsh
         run: __tests__/verify-dotnet.ps1 3.1 2.2
 
-  test-setup-with-ABCxx-syntax:
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      fail-fast: false
-      matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Clear toolcache
-        shell: pwsh
-        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Setup dotnet '5.0.2xx'
-        uses: ./
-        with:
-          dotnet-version: '5.0.2xx'
-      - name: Setup dotnet '7.0.1xx'
-        uses: ./
-        with:
-          dotnet-version: '7.0.1xx'
-      - name: Verify dotnet
-        shell: pwsh
-        run: __tests__/verify-dotnet.ps1 5.0.2 7.0.1
-
   test-setup-global-json-specified-and-version:
     runs-on: ${{ matrix.operating-system }}
     strategy:

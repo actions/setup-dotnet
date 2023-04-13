@@ -17,6 +17,11 @@ export interface DotnetVersion {
   qualityFlag: boolean;
 }
 
+enum DotnetInstallerLimits {
+  QualityInputMinimalMajorTag = 6,
+  LatestPatchSyntaxMinimalMajorTag = 5
+}
+
 export class DotnetVersionResolver {
   private inputVersion: string;
   private resolvedArgument: DotnetVersion;
@@ -47,7 +52,11 @@ export class DotnetVersionResolver {
     const majorTag = this.inputVersion.match(
       /^(?<majorTag>\d+)\.\d+\.\d{1}x{2}$/
     )?.groups?.majorTag;
-    if (majorTag && parseInt(majorTag) < 5) {
+    if (
+      majorTag &&
+      parseInt(majorTag) <
+        DotnetInstallerLimits.LatestPatchSyntaxMinimalMajorTag
+    ) {
       throw new Error(
         `'dotnet-version' was supplied in invalid format: ${this.inputVersion}! The A.B.Cxx syntax is available since the .NET 5.0 release.`
       );
@@ -70,10 +79,13 @@ export class DotnetVersionResolver {
     } else if (this.isNumericTag(major)) {
       this.resolvedArgument.value = await this.getLatestByMajorTag(major);
     } else {
-      // Resolve LTS version of .NET if "dotnet-version" is specified as *, x or X
+      // If "dotnet-version" is specified as *, x or X resolve latest version of .NET explicitly from LTS channel. The version argument will be set to "latest" by default.
       this.resolvedArgument.value = 'LTS';
     }
-    this.resolvedArgument.qualityFlag = parseInt(major) >= 6 ? true : false;
+    this.resolvedArgument.qualityFlag =
+      parseInt(major) >= DotnetInstallerLimits.QualityInputMinimalMajorTag
+        ? true
+        : false;
   }
 
   public async createDotNetVersion(): Promise<DotnetVersion> {

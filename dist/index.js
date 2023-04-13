@@ -243,6 +243,11 @@ const path_1 = __importDefault(__nccwpck_require__(1017));
 const os_1 = __importDefault(__nccwpck_require__(2037));
 const semver_1 = __importDefault(__nccwpck_require__(5911));
 const utils_1 = __nccwpck_require__(918);
+var DotnetInstallerLimits;
+(function (DotnetInstallerLimits) {
+    DotnetInstallerLimits[DotnetInstallerLimits["QualityInputMinimalMajorTag"] = 6] = "QualityInputMinimalMajorTag";
+    DotnetInstallerLimits[DotnetInstallerLimits["LatestPatchSyntaxMinimalMajorTag"] = 5] = "LatestPatchSyntaxMinimalMajorTag";
+})(DotnetInstallerLimits || (DotnetInstallerLimits = {}));
 class DotnetVersionResolver {
     constructor(version) {
         this.inputVersion = version.trim();
@@ -267,7 +272,9 @@ class DotnetVersionResolver {
     isLatestPatchSyntax() {
         var _b, _c;
         const majorTag = (_c = (_b = this.inputVersion.match(/^(?<majorTag>\d+)\.\d+\.\d{1}x{2}$/)) === null || _b === void 0 ? void 0 : _b.groups) === null || _c === void 0 ? void 0 : _c.majorTag;
-        if (majorTag && parseInt(majorTag) < 5) {
+        if (majorTag &&
+            parseInt(majorTag) <
+                DotnetInstallerLimits.LatestPatchSyntaxMinimalMajorTag) {
             throw new Error(`'dotnet-version' was supplied in invalid format: ${this.inputVersion}! The A.B.Cxx syntax is available since the .NET 5.0 release.`);
         }
         return majorTag ? true : false;
@@ -290,10 +297,13 @@ class DotnetVersionResolver {
                 this.resolvedArgument.value = yield this.getLatestByMajorTag(major);
             }
             else {
-                // Resolve LTS version of .NET if "dotnet-version" is specified as *, x or X
+                // If "dotnet-version" is specified as *, x or X resolve latest version of .NET explicitly from LTS channel. The version argument will be set to "latest" by default.
                 this.resolvedArgument.value = 'LTS';
             }
-            this.resolvedArgument.qualityFlag = parseInt(major) >= 6 ? true : false;
+            this.resolvedArgument.qualityFlag =
+                parseInt(major) >= DotnetInstallerLimits.QualityInputMinimalMajorTag
+                    ? true
+                    : false;
         });
     }
     createDotNetVersion() {
