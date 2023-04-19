@@ -71,6 +71,7 @@ $targetFrameworkVersionMap = @{
   "5.0" = "net5.0";
   "6.0" = "net6.0";
   "7.0" = "net7.0";
+  "8.0" = "net8.0";
  }
 
 foreach ($version in $Versions)
@@ -78,10 +79,18 @@ foreach ($version in $Versions)
   # Creating temporary global.json file inside e2e-test-csproj dir and setting exact version of .NET inside allows to override default behavior of .NET and run build and tests on that exact version. 
   Write-Host "Creating temporary global.json file for $version .NET version."
   & $dotnet new globaljson --sdk-version $version --force
+  if (!(Test-Path "./global.json"))
+  {
+    throw "An error occured while creating the global.json file. Exit code: $LASTEXITCODE"
+  }
   Write-Host "The global.json file for the version $version is created. Currently used .NET version is: $(& $dotnet --version)."
 
   # Environment variable TEST_TARGET_FRAMEWORK is used inside the test.csproj file to target required framework version
-  $version -match "^(?<key>\d+\.\d+)"
+  $version -match "^(?<key>\d+\.\d+)" | Out-Null
+  if (!($targetFrameworkVersionMap.ContainsKey($Matches.key)))
+  {
+    throw "The map with the framework targets doesn't contain a target name for the version $version."
+  }
   Write-Host "Setting the TEST_TARGET_FRAMEWORK environment variable to $($targetFrameworkVersionMap[$Matches.key])"
   [Environment]::SetEnvironmentVariable('TEST_TARGET_FRAMEWORK', $($targetFrameworkVersionMap[$Matches.key]))
 
