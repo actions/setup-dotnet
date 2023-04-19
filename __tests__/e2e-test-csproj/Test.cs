@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 
 namespace test_csproj
 {
@@ -7,8 +8,11 @@ namespace test_csproj
     {
         [TestMethod]
         public void TestMethod()
-        {
-            Assert.AreEqual((1 + 1), 2);
+        {   
+            Console.WriteLine("TestMethod");
+            int calculatedResult = 1000 / 25;
+            int expectedResult = 40;
+            Assert.AreEqual(calculatedResult, expectedResult);
         }
     }
 }

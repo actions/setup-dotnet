@@ -33,7 +33,7 @@ jobs:
             3.0.x
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns 2.2.402, 3.1.404, 3.0
+        run: __tests__/verify-dotnet.ps1 -Patterns "^2.2.402$", "^3.1.404$", "^3.0"
 
   test-setup-full-version:
     runs-on: ${{ matrix.operating-system }}
@@ -62,7 +62,7 @@ jobs:
           NUGET_AUTH_TOKEN: NOTATOKEN
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns 3.1.201, 2.2.402 -CheckNugetConfig
+        run: __tests__/verify-dotnet.ps1 -Patterns "^3.1.201$", "^2.2.402$" -CheckNugetConfig
 
   test-setup-without-patch-version:
     runs-on: ${{ matrix.operating-system }}
@@ -87,7 +87,7 @@ jobs:
           dotnet-version: '2.2'
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns 3.1, 2.2
+        run: __tests__/verify-dotnet.ps1 -Patterns "^3.1", "^2.2"
 
   test-setup-prerelease-version:
     runs-on: ${{ matrix.operating-system }}
@@ -107,7 +107,7 @@ jobs:
           dotnet-version: '3.1.100-preview1-014459'
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns 3.1.100-preview1-014459
+        run: __tests__/verify-dotnet.ps1 -Patterns "3.1.100-preview1-014459"
 
   test-setup-latest-patch-version:
     runs-on: ${{ matrix.operating-system }}
@@ -131,7 +131,7 @@ jobs:
           dotnet-version: 2.2.X
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns 2.2, 3.1
+        run: __tests__/verify-dotnet.ps1 -Patterns "^2.2", "^3.1"
 
   test-setup-with-wildcard:
     runs-on: ${{ matrix.operating-system }}
@@ -155,7 +155,7 @@ jobs:
           dotnet-version: 2.2.*
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns 3.1, 2.2
+        run: __tests__/verify-dotnet.ps1 -Patterns "^3.1", "^2.2"
 
   test-setup-global-json-specified-and-version:
     runs-on: ${{ matrix.operating-system }}
@@ -181,7 +181,7 @@ jobs:
           global-json-file: ./subdirectory/global.json
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns 2.2.207, 3.1
+        run: __tests__/verify-dotnet.ps1 -Patterns "^2.2", "^3.1"
 
   test-setup-with-dotnet-quality:
     runs-on: ${{ matrix.operating-system }}
@@ -203,7 +203,7 @@ jobs:
           dotnet-quality: 'preview'
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns 7.0 -ContainedPattern "preview"
+        run: __tests__/verify-dotnet.ps1 -Patterns "^7\.0\.\d+-"
 
   test-dotnet-version-output-during-single-version-installation:
     runs-on: ${{ matrix.operating-system }}
@@ -262,7 +262,7 @@ jobs:
   test-proxy:
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/dotnet/core/runtime-deps:3.0-bionic
+      image: ubuntu:latest
       options: --dns 127.0.0.1
     services:
       squid-proxy:
@@ -275,22 +275,29 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Clear tool cache
-        run: rm -rf "/usr/share/dotnet"
-      - name: Install curl
+      - name: Install Powershell
         run: |
-          apt update
-          apt -y install curl
-      - name: Setup dotnet 3.1.201
+          apt-get update
+          apt-get install -y wget apt-transport-https software-properties-common
+          wget -q "https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb"
+          dpkg -i packages-microsoft-prod.deb
+          rm packages-microsoft-prod.deb
+          apt-get update
+          apt-get install -y powershell
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+      - name: Setup dotnet 6.0
         uses: ./
         with:
-          dotnet-version: 3.1.201
+          dotnet-version: 6.0
           source-url: https://api.nuget.org/v3/index.json
         env:
           NUGET_AUTH_TOKEN: NOTATOKEN
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns 3.1.201 -CheckNugetConfig
+        run: |
+          __tests__/verify-dotnet.ps1 -Patterns "^6.0" -CheckNugetConfig
 
   test-bypass-proxy:
     runs-on: ubuntu-latest
@@ -300,8 +307,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Clear tool cache
-        run: rm -rf "/usr/share/dotnet"
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
       - name: Setup dotnet 3.1.201
         uses: ./
         with:
@@ -311,4 +319,4 @@ jobs:
           NUGET_AUTH_TOKEN: NOTATOKEN
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns 3.1.201 -CheckNugetConfig
+        run: __tests__/verify-dotnet.ps1 -Patterns "^3.1.201$" -CheckNugetConfig
