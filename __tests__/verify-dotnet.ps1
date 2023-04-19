@@ -28,9 +28,7 @@ if ($CheckNugetConfig.IsPresent -and !(Test-Path "../nuget.config")) {
   throw "The nuget.config file is not generated correctly."
 }
 
-$PatternsCount = $PatternsList.Count
-
-Write-Host "Those patterns were supplied to the script: $($PatternsList -join ', ')."
+Write-Host "These patterns were supplied to the script: $($PatternsList -join ', ')."
 $dotnet = Get-Command dotnet | Select-Object -First 1 | ForEach-Object { $_.Path }
 Write-Host "Found: '$dotnet'"
 
@@ -57,9 +55,9 @@ if ( $InstalledVersionCount -ne 0)
   throw "An unexpected version of Dotnet is found on the machine, please check the correctness of the -Patterns input."
 }
 
-Write-Host "Changing directory to the ./__tests__/e2e-test-csproj"
 $workingDir = Get-Location
 $testProjectDir = "./__tests__/e2e-test-csproj"
+Write-Host "Changing directory to the $testProjectDir"
 Set-Location $testProjectDir
 
 $targetFrameworkVersionMap = @{
