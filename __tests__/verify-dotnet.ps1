@@ -78,7 +78,7 @@ foreach ($version in $Versions)
 {
   # Creating temporary global.json file inside e2e-test-csproj dir and setting exact version of .NET inside allows to override default behavior of .NET and run build and tests on that exact version. 
   Write-Host "Creating temporary global.json file for $version .NET version."
-  & $dotnet new globaljson --sdk-version $version --force
+  & $dotnet new globaljson --sdk-version $version --force | Out-Null
   if (!(Test-Path "./global.json"))
   {
     throw "An error occured while creating the global.json file. Exit code: $LASTEXITCODE"
