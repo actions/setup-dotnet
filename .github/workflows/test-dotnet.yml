@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest, windows-latest, macOS-latest]
-        dotnet-version: ['2.1', '2.2', '3.0', '3.1', '5.0']
+        dotnet-version: ['2.1', '2.2', '3.0', '3.1', '5.0', '6.0', '7.0', '8.0']
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -29,9 +29,7 @@ jobs:
         uses: ./
         with:
           dotnet-version: ${{ matrix.dotnet-version }}
-      - name: Check installed version
+      - name: Verify installed version
         shell: pwsh
         run: |
-          $version = & dotnet --version
-          Write-Host "Installed version: $version"
-          if (-not $version.StartsWith("${{ matrix.dotnet-version }}")) { throw "Unexpected version" }
+          __tests__/verify-dotnet.ps1 -Patterns "^${{ matrix.dotnet-version }}"

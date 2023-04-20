@@ -3,8 +3,8 @@ global.json
 lib/
 node_modules/
 __tests__/runner/*
-__tests__/sample-csproj/bin/
-__tests__/sample-csproj/obj/
+__tests__/e2e-test-csproj/bin/
+__tests__/e2e-test-csproj/obj/
 
 # Rest of the file pulled from https://github.com/github/gitignore/blob/master/Node.gitignore
 # Logs
