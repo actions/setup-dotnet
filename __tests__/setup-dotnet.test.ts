@@ -31,6 +31,7 @@ const tempDir = path.join(__dirname, 'runner', 'temp2');
 
 describe('setup-dotnet tests', () => {
   const getInputSpy = jest.spyOn(core, 'getInput');
+  const getBooleanInputSpy = jest.spyOn(core, 'getBooleanInput');
   const getMultilineInputSpy = jest.spyOn(core, 'getMultilineInput');
   const setOutputSpy = jest.spyOn(core, 'setOutput');
 
@@ -73,28 +74,33 @@ describe('setup-dotnet tests', () => {
   }, 400000);
 
   it("Sets output with the latest installed by action version if global.json file isn't specified", async () => {
+    inputs['cache'] = false;
     inputs['dotnet-version'] = ['3.1.201', '6.0.401'];
 
+    getBooleanInputSpy.mockImplementation(input => inputs[input]);
     getMultilineInputSpy.mockImplementation(input => inputs[input]);
 
     await setup.run();
 
     expect(setOutputSpy).toHaveBeenCalledWith('dotnet-version', '6.0.401');
+    expect(setOutputSpy).toHaveBeenCalledWith('cache-hit', false);
   }, 400000);
 
   it("Sets output with the version specified in global.json, if it's present", async () => {
     createGlobalJsonPath('3.0.103');
 
+    inputs['cache'] = false;
     inputs['dotnet-version'] = ['3.1.201', '6.0.401'];
     inputs['global-json-file'] = './global.json';
 
+    getBooleanInputSpy.mockImplementation(input => inputs[input]);
     getMultilineInputSpy.mockImplementation(input => inputs[input]);
-
     getInputSpy.mockImplementation(input => inputs[input]);
 
     await setup.run();
 
     expect(setOutputSpy).toHaveBeenCalledWith('dotnet-version', '3.0.103');
+    expect(setOutputSpy).toHaveBeenCalledWith('cache-hit', false);
   }, 400000);
 
   it('Sets output with the version specified in global.json with absolute path', async () => {
@@ -110,5 +116,6 @@ describe('setup-dotnet tests', () => {
     await setup.run();
 
     expect(setOutputSpy).toHaveBeenCalledWith('dotnet-version', '3.0.103');
+    expect(setOutputSpy).toHaveBeenCalledWith('cache-hit', false);
   }, 400000);
 });

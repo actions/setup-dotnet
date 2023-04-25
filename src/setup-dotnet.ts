@@ -4,6 +4,9 @@ import * as fs from 'fs';
 import path from 'path';
 import semver from 'semver';
 import * as auth from './authutil';
+import {isCacheFeatureAvailable} from './cache-utils';
+import {restoreCache} from './cache-restore';
+import {Outputs} from './constants';
 
 const qualityOptions = [
   'daily',
@@ -90,7 +93,13 @@ export async function run() {
       }
     );
 
-    core.setOutput('dotnet-version', versionToOutput);
+    core.setOutput(Outputs.DotnetVersion, versionToOutput);
+
+    if (core.getBooleanInput('cache') && isCacheFeatureAvailable()) {
+      await restoreCache();
+    } else {
+      core.setOutput(Outputs.CacheHit, false);
+    }
 
     const matchersPath = path.join(__dirname, '..', '.github');
     core.info(`##[add-matcher]${path.join(matchersPath, 'csc.json')}`);
