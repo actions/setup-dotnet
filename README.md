@@ -95,7 +95,7 @@ env:
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
 steps:
 - uses: actions/checkout@v3
-- uses: actions/setup-node@v3
+- uses: actions/setup-dotnet@v3
   with:
     dotnet-version: 6.x
     cache: true
