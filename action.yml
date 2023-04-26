@@ -18,9 +18,9 @@ inputs:
   config-file:
     description: 'Optional NuGet.config location, if your NuGet.config isn''t located in the root of the repo.'
   cache:
-    description: 'Cache NuGet global packages folder or not.'
+    description: 'Optional input to enable caching of the NuGet global-packages folder'
     required: false
-    default: 'false'
+    default: false
 outputs:
   cache-hit: 
     description: 'A boolean value to indicate if a cache was hit.'
@@ -28,6 +28,6 @@ outputs:
     description: 'Contains the installed by action .NET SDK version for reuse.'
 runs:
   using: 'node16'
-  main: 'dist/index.js'
+  main: 'dist/setup/index.js'
   post: 'dist/cache-save/index.js'
   post-if: success()
