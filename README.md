@@ -88,6 +88,16 @@ The action searches for [NuGet Lock files](https://learn.microsoft.com/nuget/con
 
 > **Warning:** Caching NuGet packages is available since .NET SDK 2.1.500 and 2.2.100 as the NuGet lock file [is available](https://learn.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies) only for NuGet 4.9 and above.
 
+```yaml
+steps:
+- uses: actions/checkout@v3
+- uses: actions/setup-dotnet@v3
+  with:
+    dotnet-version: 6.x
+    cache: true
+- run: dotnet restore --locked-mode
+```
+
 **Note:** Use [`NUGET_PACKAGES`](https://learn.microsoft.com/nuget/reference/cli-reference/cli-ref-environment-variables) environment variable if available. Some action runners already has huge libraries. (ex. Xamarin)
 
 ```yaml
