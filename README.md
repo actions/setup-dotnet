@@ -82,13 +82,13 @@ steps:
 ```
 
 ## Caching NuGet Packages
-The action has a built-in functionality for caching and restoring dependencies. It uses [actions/cache](https://github.com/actions/cache) under the hood for caching global packages data but requires less configuration settings. The `cache` input is optional, and caching is turned off by default.
+The action has a built-in functionality for caching and restoring dependencies. It uses [toolkit/cache](https://github.com/actions/toolkit/tree/main/packages/cache) under the hood for caching global packages data but requires less configuration settings. The `cache` input is optional, and caching is turned off by default.
 
-The action searches for [NuGet Lock files](https://learn.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies) (`**/packages.lock.json`) in the repository, and uses its hash as a part of the cache key. If lock file does not exist, caching will not be enabled.
+The action searches for [NuGet Lock files](https://learn.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies) (`**/packages.lock.json`) in the repository, calculates their hash and uses it as a part of the cache key. If lock file does not exist, caching will not be enabled.
 
-**Note 1:** NuGet Lock file needs .NET (Core) SDK 2.1.500 and above.
+> **Warning:** Caching NuGet packages is available since .NET SDK 2.1.500 and 2.2.100 as the NuGet lock file [is available](https://learn.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies) only for NuGet 4.9 and above.
 
-**Note 2:** Use [`NUGET_PACKAGES`](https://learn.microsoft.com/nuget/reference/cli-reference/cli-ref-environment-variables) environment variable if available. Some action runners already has huge libraries. (ex. Xamarin)
+**Note:** Use [`NUGET_PACKAGES`](https://learn.microsoft.com/nuget/reference/cli-reference/cli-ref-environment-variables) environment variable if available. Some action runners already has huge libraries. (ex. Xamarin)
 
 ```yaml
 env:
@@ -235,7 +235,7 @@ When the `dotnet-version` input is used along with the `global-json-file` input,
 ```
 
 ### `cache-hit`
-A boolean value to indicate an exact match was found for the cache key (follows `actions/cache`)
+A boolean value to indicate an exact match was found for the cache key (follows [actions/cache](https://github.com/actions/cache#outputs))
 
 ## Environment variables
 
@@ -247,26 +247,28 @@ Some environment variables may be necessary for your particular case or to impro
 | DOTNET_NOLOGO      |Removes logo and telemetry message from first run of dotnet cli|*false*|
 | DOTNET_CLI_TELEMETRY_OPTOUT   |Opt-out of telemetry being sent to Microsoft|*false*|
 | DOTNET_MULTILEVEL_LOOKUP   |Configures whether the global install location is used as a fall-back|*true*|
-| NUGET_PACKAGES |Path to use for the [NuGet `global-packages` folder](https://learn.microsoft.com/nuget/consume-packages/managing-the-global-packages-and-cache-folders)|*default value for each OS* |
+| NUGET_PACKAGES |Configures a path to the [NuGet `global-packages` folder](https://learn.microsoft.com/nuget/consume-packages/managing-the-global-packages-and-cache-folders)|*default value for each OS* |
 
-The default value of the `DOTNET_INSTALL_DIR` and `NUGET_PACKAGES` environment variable depends on the operation system which is used on a runner:
+The default values of the `DOTNET_INSTALL_DIR` and `NUGET_PACKAGES` environment variables depend on the operation system which is used on a runner:
 | **Operation system** | `DOTNET_INSTALL_DIR` | `NUGET_PACKAGES` |
 | ----------- | ----------- | ----------- |
 | **Windows** | `C:\Program Files\dotnet` | `%userprofile%\.nuget\packages` |
 | **Ubuntu** | `/usr/share/dotnet` | `~/.nuget/packages` |
 | **macOS** | `/Users/runner/.dotnet` | `~/.nuget/packages` |
 
-**Example usage of DOTNET_INSTALL_DIR**:
+**Example usage of environment variable**:
 ```yml
 build:
   runs-on: ubuntu-latest
   env:
     DOTNET_INSTALL_DIR: "path/to/directory"
+    NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
   steps:
     - uses: actions/checkout@main
     - uses: actions/setup-dotnet@v3
       with:
         dotnet-version: '3.1.x'
+        cache: true
 ```
 
 ## License
