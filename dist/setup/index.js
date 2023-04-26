@@ -71498,7 +71498,7 @@ function run() {
             else {
                 core.setOutput(constants_1.Outputs.CacheHit, false);
             }
-            const matchersPath = path_1.default.join(__dirname, '..', '.github');
+            const matchersPath = path_1.default.join(__dirname, '..', '..', '.github');
             core.info(`##[add-matcher]${path_1.default.join(matchersPath, 'csc.json')}`);
         }
         catch (error) {
