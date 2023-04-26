@@ -71290,7 +71290,7 @@ class DotnetCoreInstaller {
             ];
             const scriptName = utils_1.IS_WINDOWS ? 'install-dotnet.ps1' : 'install-dotnet.sh';
             const escapedScript = path_1.default
-                .join(__dirname, '..', 'externals', scriptName)
+                .join(__dirname, '..', '..', 'externals', scriptName)
                 .replace(/'/g, "''");
             let scriptArguments;
             let scriptPath = '';
