@@ -205,6 +205,34 @@ jobs:
         shell: pwsh
         run: __tests__/verify-dotnet.ps1 -Patterns "^7\.0\.\d+-"
 
+  test-setup-with-cache:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+    env:
+      NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+      - name: Setup .NET Core 3.1
+        id: setup-dotnet
+        uses: ./
+        with:
+          dotnet-version: 3.1
+          cache: true
+      - name: Verify Cache
+        if: steps.setup-dotnet.outputs.cache-hit == 'true'
+        shell: bash
+        run: if [[ -e ${NUGET_PACKAGES} ]]; then exit 0; else exit 1; fi
+      - name: Verify dotnet
+        shell: pwsh
+        run: __tests__/verify-dotnet.ps1 -Patterns "^3.1"
+
   test-dotnet-version-output-during-single-version-installation:
     runs-on: ${{ matrix.operating-system }}
     strategy:
