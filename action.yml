@@ -22,12 +22,12 @@ inputs:
     required: false
     default: false
 outputs:
-  cache-hit: 
+  cache-hit:
     description: 'A boolean value to indicate if a cache was hit.'
   dotnet-version:
     description: 'Contains the installed by action .NET SDK version for reuse.'
 runs:
   using: 'node16'
-  main: 'dist/setup/index.js'
+  main: 'dist/index.js'
   post: 'dist/cache-save/index.js'
   post-if: success()

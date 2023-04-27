@@ -188,7 +188,7 @@ export class DotnetCoreInstaller {
     ];
     const scriptName = IS_WINDOWS ? 'install-dotnet.ps1' : 'install-dotnet.sh';
     const escapedScript = path
-      .join(__dirname, '..', '..', 'externals', scriptName)
+      .join(__dirname, '..', 'externals', scriptName)
       .replace(/'/g, "''");
     let scriptArguments: string[];
     let scriptPath = '';

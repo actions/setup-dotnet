@@ -71288,7 +71288,7 @@ class DotnetCoreInstaller {
             ];
             const scriptName = utils_1.IS_WINDOWS ? 'install-dotnet.ps1' : 'install-dotnet.sh';
             const escapedScript = path_1.default
-                .join(__dirname, '..', '..', 'externals', scriptName)
+                .join(__dirname, '..', 'externals', scriptName)
                 .replace(/'/g, "''");
             let scriptArguments;
             let scriptPath = '';
@@ -71496,7 +71496,7 @@ function run() {
             else {
                 core.setOutput(constants_1.Outputs.CacheHit, false);
             }
-            const matchersPath = path_1.default.join(__dirname, '..', '..', '.github');
+            const matchersPath = path_1.default.join(__dirname, '..', '.github');
             core.info(`##[add-matcher]${path_1.default.join(matchersPath, 'csc.json')}`);
         }
         catch (error) {
