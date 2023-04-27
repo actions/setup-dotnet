@@ -99,34 +99,24 @@ Options:
     });
   });
 
-  describe('isCacheFeatureAvailable()', () => {
-    // Save & Restore env
-    let serverUrlEnv: string | undefined;
-    beforeAll(() => (serverUrlEnv = process.env['GITHUB_SERVER_URL']));
-    afterEach(() => (process.env['GITHUB_SERVER_URL'] = serverUrlEnv));
+  describe.each(['', 'https://github.com/', 'https://example.com/'])(
+    'isCacheFeatureAvailable()',
+    url => {
+      // Save & Restore env
+      let serverUrlEnv: string | undefined;
+      beforeAll(() => (serverUrlEnv = process.env['GITHUB_SERVER_URL']));
+      beforeEach(() => process.env['GITHUB_SERVER_URL'] = url)
+      afterEach(() => (process.env['GITHUB_SERVER_URL'] = serverUrlEnv));
 
-    it.each(['', 'https://github.com/', 'https://example.com/'])(
-      'returns true when cache.isFeatureAvailable() === true',
-      url => {
-        process.env['GITHUB_SERVER_URL'] = url;
+      it('returns true when cache.isFeatureAvailable() === true', () => {
         jest.mocked(cache.isFeatureAvailable).mockReturnValue(true);
         expect(isCacheFeatureAvailable()).toBe(true);
-      }
-    );
+      });
 
-    it.each(['', 'https://github.com/'])(
-      'returns false when cache.isFeatureAvailable() === false',
-      url => {
-        process.env['GITHUB_SERVER_URL'] = url;
+      it('returns false when cache.isFeatureAvailable() === false', () => {
         jest.mocked(cache.isFeatureAvailable).mockReturnValue(false);
         expect(isCacheFeatureAvailable()).toBe(false);
-      }
-    );
-
-    it('throws Error when GHES version < 3.5.', () => {
-      process.env['GITHUB_SERVER_URL'] = 'https://example.com/';
-      jest.mocked(cache.isFeatureAvailable).mockReturnValue(false);
-      expect(() => isCacheFeatureAvailable()).toThrow();
-    });
-  });
+      });
+    }
+  );
 });
