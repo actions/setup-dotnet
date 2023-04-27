@@ -105,7 +105,7 @@ Options:
       // Save & Restore env
       let serverUrlEnv: string | undefined;
       beforeAll(() => (serverUrlEnv = process.env['GITHUB_SERVER_URL']));
-      beforeEach(() => process.env['GITHUB_SERVER_URL'] = url)
+      beforeEach(() => (process.env['GITHUB_SERVER_URL'] = url));
       afterEach(() => (process.env['GITHUB_SERVER_URL'] = serverUrlEnv));
 
       it('returns true when cache.isFeatureAvailable() === true', () => {
