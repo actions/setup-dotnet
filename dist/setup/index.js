@@ -71019,16 +71019,9 @@ const cache = __importStar(__nccwpck_require__(7799));
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const constants_1 = __nccwpck_require__(9042);
-const folders = new Set([
-    'http-cache',
-    'global-packages',
-    'temp',
-    'plugins-cache'
-]);
 /**
  * Get NuGet global packages, cache, and temp folders from .NET CLI.
  * @returns (Folder Name)-(Path) mappings
- * @summary This function only works in .NET Core SDK 3.1 and above.
  * @see https://docs.microsoft.com/nuget/consume-packages/managing-the-global-packages-and-cache-folders
  * @example
  * Windows
@@ -71064,12 +71057,12 @@ const getNuGetFolderPath = () => __awaiter(void 0, void 0, void 0, function* () 
         temp: '',
         'plugins-cache': ''
     };
-    const regex = /^([a-z-]+): (.+[/\\].+)$/gm;
-    let m;
-    while ((m = regex.exec(stdout)) !== null) {
-        const [, key, path] = m;
-        if (folders.has(key)) {
-            result[key] = path;
+    const regex = /(?:^|\s)(?<key>[a-z-]+): (?<path>.+[/\\].+)$/gm;
+    let match;
+    while ((match = regex.exec(stdout)) !== null) {
+        const key = match.groups.key;
+        if (key in result) {
+            result[key] = match.groups.path;
         }
     }
     return result;
@@ -71080,16 +71073,21 @@ function isCacheFeatureAvailable() {
         return true;
     }
     if (isGhes()) {
-        throw new Error('Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.');
+        core.warning('Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.');
+        return false;
     }
     core.warning('The runner was not able to contact the cache service. Caching will be skipped');
     return false;
-    function isGhes() {
-        const url = process.env['GITHUB_SERVER_URL'] || 'https://github.com';
-        return new URL(url).hostname.toUpperCase() !== 'GITHUB.COM';
-    }
 }
 exports.isCacheFeatureAvailable = isCacheFeatureAvailable;
+/**
+ * Returns this action runs on GitHub Enterprise Server or not.
+ * (port from https://github.com/actions/toolkit/blob/457303960f03375db6f033e214b9f90d79c3fe5c/packages/cache/src/internal/cacheUtils.ts#L134)
+ */
+function isGhes() {
+    const url = process.env['GITHUB_SERVER_URL'] || 'https://github.com';
+    return new URL(url).hostname.toUpperCase() !== 'GITHUB.COM';
+}
 
 
 /***/ }),

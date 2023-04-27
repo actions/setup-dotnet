@@ -26,10 +26,39 @@ plugins-cache: /home/codespace/.local/share/NuGet/plugins-cache
       ],
       [
         `
+  http-cache: /home/codespace/.local/share/NuGet/v3-cache
+  global-packages: /var/nuget
+  temp: /tmp/NuGetScratch
+  plugins-cache: /home/codespace/.local/share/NuGet/plugins-cache
+`,
+        {
+          'http-cache': '/home/codespace/.local/share/NuGet/v3-cache',
+          'global-packages': '/var/nuget',
+          temp: '/tmp/NuGetScratch',
+          'plugins-cache': '/home/codespace/.local/share/NuGet/plugins-cache'
+        }
+      ],
+      [
+        `
 http-cache: C:\\Users\\user\\AppData\\Local\\NuGet\\v3-cache
 global-packages: C:\\Users\\user\\.nuget\\packages\\
 temp: C:\\Users\\user\\AppData\\Local\\Temp\\NuGetScratch
 plugins-cache: C:\\Users\\user\\AppData\\Local\\NuGet\\plugins-cache
+        `,
+        {
+          'http-cache': 'C:\\Users\\user\\AppData\\Local\\NuGet\\v3-cache',
+          'global-packages': 'C:\\Users\\user\\.nuget\\packages\\',
+          temp: 'C:\\Users\\user\\AppData\\Local\\Temp\\NuGetScratch',
+          'plugins-cache':
+            'C:\\Users\\user\\AppData\\Local\\NuGet\\plugins-cache'
+        }
+      ],
+      [
+        `
+  http-cache: C:\\Users\\user\\AppData\\Local\\NuGet\\v3-cache
+  global-packages: C:\\Users\\user\\.nuget\\packages\\
+  temp: C:\\Users\\user\\AppData\\Local\\Temp\\NuGetScratch
+  plugins-cache: C:\\Users\\user\\AppData\\Local\\NuGet\\plugins-cache
         `,
         {
           'http-cache': 'C:\\Users\\user\\AppData\\Local\\NuGet\\v3-cache',
