@@ -96,7 +96,8 @@ export async function run() {
     core.setOutput(Outputs.DotnetVersion, versionToOutput);
 
     if (core.getBooleanInput('cache') && isCacheFeatureAvailable()) {
-      await restoreCache();
+      const cacheDependencyPath = core.getInput('cache-dependency-path');
+      await restoreCache(cacheDependencyPath);
     } else {
       core.setOutput(Outputs.CacheHit, false);
     }

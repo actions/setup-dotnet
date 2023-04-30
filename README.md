@@ -98,6 +98,8 @@ steps:
 - run: dotnet restore --locked-mode
 ```
 
+### Reduce caching size
+
 **Note:** Use [`NUGET_PACKAGES`](https://learn.microsoft.com/nuget/reference/cli-reference/cli-ref-environment-variables) environment variable if available. Some action runners already has huge libraries. (ex. Xamarin)
 
 ```yaml
@@ -109,6 +111,21 @@ steps:
   with:
     dotnet-version: 6.x
     cache: true
+- run: dotnet restore --locked-mode
+```
+
+### Caching NuGet packages in monorepos
+
+```yaml
+env:
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+steps:
+- uses: actions/checkout@v3
+- uses: actions/setup-dotnet@v3
+  with:
+    dotnet-version: 6.x
+    cache: true
+    cache-dependency-path: subdir/packages.lock.json
 - run: dotnet restore --locked-mode
 ```
 

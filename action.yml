@@ -21,6 +21,9 @@ inputs:
     description: 'Optional input to enable caching of the NuGet global-packages folder'
     required: false
     default: false
+  cache-dependency-path:
+    description: 'Used to specify the path to a dependency file: packages.lock.json. Supports wildcards or a list of file names for caching multiple dependencies.'
+    required: false
 outputs:
   cache-hit:
     description: 'A boolean value to indicate if a cache was hit.'

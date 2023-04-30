@@ -3,6 +3,7 @@ import * as core from '@actions/core';
 import * as glob from '@actions/glob';
 import {restoreCache} from '../src/cache-restore';
 import {getNuGetFolderPath} from '../src/cache-utils';
+import {lockFilePattern} from '../src/constants';
 
 jest.mock('@actions/cache');
 jest.mock('@actions/core');
@@ -20,15 +21,16 @@ describe('cache-restore tests', () => {
       });
     });
     beforeEach(() => {
+      jest.mocked(glob.hashFiles).mockClear();
       jest.mocked(core.saveState).mockClear();
       jest.mocked(core.setOutput).mockClear();
       jest.mocked(cache.restoreCache).mockClear();
     });
 
-    it('does not call cache.restoreCache() when lock file is not found', async () => {
+    it('throws error when lock file is not found', async () => {
       jest.mocked(glob.hashFiles).mockResolvedValue('');
 
-      await restoreCache();
+      await expect(restoreCache(lockFilePattern)).rejects.toThrow();
 
       expect(jest.mocked(core.saveState)).not.toHaveBeenCalled();
       expect(jest.mocked(core.setOutput)).not.toHaveBeenCalled();
@@ -39,7 +41,7 @@ describe('cache-restore tests', () => {
       jest.mocked(glob.hashFiles).mockResolvedValue('hash');
       jest.mocked(cache.restoreCache).mockResolvedValue(undefined);
 
-      await restoreCache();
+      await restoreCache(lockFilePattern);
 
       const expectedKey = `dotnet-cache-${process.env.RUNNER_OS}-hash`;
       expect(jest.mocked(core.saveState)).toHaveBeenCalledWith(
@@ -61,7 +63,7 @@ describe('cache-restore tests', () => {
       jest.mocked(glob.hashFiles).mockResolvedValue('hash');
       jest.mocked(cache.restoreCache).mockResolvedValue(expectedKey);
 
-      await restoreCache();
+      await restoreCache(lockFilePattern);
 
       expect(jest.mocked(core.saveState)).toHaveBeenCalledWith(
         'CACHE_KEY',
@@ -75,6 +77,17 @@ describe('cache-restore tests', () => {
         'cache-hit',
         true
       );
+    });
+
+    it('calls glob.hashFiles("**/packages.lock.json") if cacheDependencyPath is falsy', async () => {
+      const expectedKey = `dotnet-cache-${process.env.RUNNER_OS}-hash`;
+      jest.mocked(glob.hashFiles).mockResolvedValue('hash');
+      jest.mocked(cache.restoreCache).mockResolvedValue(expectedKey);
+
+      await restoreCache('');
+
+      expect(jest.mocked(glob.hashFiles)).not.toHaveBeenCalledWith('');
+      expect(jest.mocked(glob.hashFiles)).toHaveBeenCalledWith(lockFilePattern);
     });
   });
 });

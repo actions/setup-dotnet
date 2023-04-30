@@ -5,11 +5,12 @@ import * as glob from '@actions/glob';
 import {getNuGetFolderPath} from './cache-utils';
 import {lockFilePattern, State, Outputs} from './constants';
 
-export const restoreCache = async () => {
-  const fileHash = await glob.hashFiles(lockFilePattern);
+export const restoreCache = async (cacheDependencyPath?: string) => {
+  const fileHash = await glob.hashFiles(cacheDependencyPath || lockFilePattern);
   if (!fileHash) {
-    core.warning(`No matches found for glob: ${lockFilePattern}`);
-    return;
+    throw new Error(
+      'Some specified paths were not resolved, unable to cache dependencies.'
+    );
   }
 
   const platform = process.env.RUNNER_OS;
