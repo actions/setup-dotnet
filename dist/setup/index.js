@@ -70951,11 +70951,10 @@ const core = __importStar(__nccwpck_require__(2186));
 const glob = __importStar(__nccwpck_require__(8090));
 const cache_utils_1 = __nccwpck_require__(1678);
 const constants_1 = __nccwpck_require__(9042);
-const restoreCache = () => __awaiter(void 0, void 0, void 0, function* () {
-    const fileHash = yield glob.hashFiles(constants_1.lockFilePattern);
+const restoreCache = (cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
+    const fileHash = yield glob.hashFiles(cacheDependencyPath || constants_1.lockFilePattern);
     if (!fileHash) {
-        core.warning(`No matches found for glob: ${constants_1.lockFilePattern}`);
-        return;
+        throw new Error('Some specified paths were not resolved, unable to cache dependencies.');
     }
     const platform = process.env.RUNNER_OS;
     const primaryKey = `dotnet-cache-${platform}-${fileHash}`;
@@ -71288,7 +71287,7 @@ class DotnetCoreInstaller {
             ];
             const scriptName = utils_1.IS_WINDOWS ? 'install-dotnet.ps1' : 'install-dotnet.sh';
             const escapedScript = path_1.default
-                .join(__dirname, '..', 'externals', scriptName)
+                .join(__dirname, '../..', 'externals', scriptName)
                 .replace(/'/g, "''");
             let scriptArguments;
             let scriptPath = '';
@@ -71491,12 +71490,13 @@ function run() {
             });
             core.setOutput(constants_1.Outputs.DotnetVersion, versionToOutput);
             if (core.getBooleanInput('cache') && (0, cache_utils_1.isCacheFeatureAvailable)()) {
-                yield (0, cache_restore_1.restoreCache)();
+                const cacheDependencyPath = core.getInput('cache-dependency-path');
+                yield (0, cache_restore_1.restoreCache)(cacheDependencyPath);
             }
             else {
                 core.setOutput(constants_1.Outputs.CacheHit, false);
             }
-            const matchersPath = path_1.default.join(__dirname, '..', '.github');
+            const matchersPath = path_1.default.join(__dirname, '../..', '.github');
             core.info(`##[add-matcher]${path_1.default.join(matchersPath, 'csc.json')}`);
         }
         catch (error) {

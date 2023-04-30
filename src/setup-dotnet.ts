@@ -102,7 +102,7 @@ export async function run() {
       core.setOutput(Outputs.CacheHit, false);
     }
 
-    const matchersPath = path.join(__dirname, '..', '.github');
+    const matchersPath = path.join(__dirname, '../..', '.github');
     core.info(`##[add-matcher]${path.join(matchersPath, 'csc.json')}`);
   } catch (error) {
     core.setFailed(error.message);
