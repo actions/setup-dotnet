@@ -274,15 +274,20 @@ export class DotnetCoreInstaller {
 
   private async getListOfInstalledVersions(): Promise<string[]> {
     const installationPath = process.env['DOTNET_INSTALL_DIR']!;
-    const versionsOnRunner: string[] = (await readdir(
-      path.join(installationPath.replace(/'/g, ''), 'sdk')
-    )).filter((el) => semver.valid(el));
+    const versionsOnRunner: string[] = (
+      await readdir(path.join(installationPath.replace(/'/g, ''), 'sdk'))
+    ).filter(el => semver.valid(el));
     return versionsOnRunner;
   }
 
-  private async outputDotnetVersion(listOfInstalledVersions: string[]): Promise<string> {
-    const updatedListOfInstalledVersions = await this.getListOfInstalledVersions();
-    const installedVersion = updatedListOfInstalledVersions.filter((el) => !listOfInstalledVersions.includes(el))
+  private async outputDotnetVersion(
+    listOfInstalledVersions: string[]
+  ): Promise<string> {
+    const updatedListOfInstalledVersions =
+      await this.getListOfInstalledVersions();
+    const installedVersion = updatedListOfInstalledVersions.filter(
+      el => !listOfInstalledVersions.includes(el)
+    );
     return installedVersion[0];
   }
 }
