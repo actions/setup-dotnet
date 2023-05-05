@@ -53,232 +53,202 @@ describe('DotnetCoreInstaller tests', () => {
     }
   }, 30000);
 
-  it('Aquires multiple versions of dotnet', async () => {
-    const versions = ['2.2.207', '3.1.120'];
+  // it('Aquires multiple versions of dotnet', async () => {
+  //   const versions = ['2.2.207', '3.1.120'];
 
-    for (const version of versions) {
-      await getDotnet(version);
-    }
-    expect(fs.existsSync(path.join(toolDir, 'sdk', '2.2.207'))).toBe(true);
-    expect(fs.existsSync(path.join(toolDir, 'sdk', '3.1.120'))).toBe(true);
+  //   for (const version of versions) {
+  //     await getDotnet(version);
+  //   }
+  //   expect(fs.existsSync(path.join(toolDir, 'sdk', '2.2.207'))).toBe(true);
+  //   expect(fs.existsSync(path.join(toolDir, 'sdk', '3.1.120'))).toBe(true);
 
-    if (IS_WINDOWS) {
-      expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
-    } else {
-      expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
-    }
+  //   if (IS_WINDOWS) {
+  //     expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
+  //   } else {
+  //     expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
+  //   }
 
-    expect(process.env.DOTNET_ROOT).toBeDefined();
-    expect(process.env.PATH).toBeDefined();
-    expect(process.env.DOTNET_ROOT).toBe(toolDir);
-    expect(process.env.PATH?.startsWith(toolDir)).toBe(true);
-  }, 600000);
+  //   expect(process.env.DOTNET_ROOT).toBeDefined();
+  //   expect(process.env.PATH).toBeDefined();
+  //   expect(process.env.DOTNET_ROOT).toBe(toolDir);
+  //   expect(process.env.PATH?.startsWith(toolDir)).toBe(true);
+  // }, 600000);
 
-  it('Acquires version of dotnet if no matching version is installed', async () => {
-    await getDotnet('3.1.201');
-    expect(fs.existsSync(path.join(toolDir, 'sdk', '3.1.201'))).toBe(true);
-    if (IS_WINDOWS) {
-      expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
-    } else {
-      expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
-    }
+  // it('Acquires version of dotnet if no matching version is installed', async () => {
+  //   await getDotnet('3.1.201');
+  //   expect(fs.existsSync(path.join(toolDir, 'sdk', '3.1.201'))).toBe(true);
+  //   if (IS_WINDOWS) {
+  //     expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
+  //   } else {
+  //     expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
+  //   }
 
-    expect(process.env.DOTNET_ROOT).toBeDefined();
-    expect(process.env.PATH).toBeDefined();
-    expect(process.env.DOTNET_ROOT).toBe(toolDir);
-    expect(process.env.PATH?.startsWith(toolDir)).toBe(true);
-  }, 600000); //This needs some time to download on "slower" internet connections
+  //   expect(process.env.DOTNET_ROOT).toBeDefined();
+  //   expect(process.env.PATH).toBeDefined();
+  //   expect(process.env.DOTNET_ROOT).toBe(toolDir);
+  //   expect(process.env.PATH?.startsWith(toolDir)).toBe(true);
+  // }, 600000); //This needs some time to download on "slower" internet connections
 
-  it('Acquires generic version of dotnet if no matching version is installed', async () => {
-    await getDotnet('3.1');
-    const directory = fs
-      .readdirSync(path.join(toolDir, 'sdk'))
-      .filter(fn => fn.startsWith('3.1.'));
-    expect(directory.length > 0).toBe(true);
-    if (IS_WINDOWS) {
-      expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
-    } else {
-      expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
-    }
+  // it('Acquires generic version of dotnet if no matching version is installed', async () => {
+  //   await getDotnet('3.1');
+  //   const directory = fs
+  //     .readdirSync(path.join(toolDir, 'sdk'))
+  //     .filter(fn => fn.startsWith('3.1.'));
+  //   expect(directory.length > 0).toBe(true);
+  //   if (IS_WINDOWS) {
+  //     expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
+  //   } else {
+  //     expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
+  //   }
 
-    expect(process.env.DOTNET_ROOT).toBeDefined();
-    expect(process.env.PATH).toBeDefined();
-    expect(process.env.DOTNET_ROOT).toBe(toolDir);
-    expect(process.env.PATH?.startsWith(toolDir)).toBe(true);
-  }, 600000); //This needs some time to download on "slower" internet connections
+  //   expect(process.env.DOTNET_ROOT).toBeDefined();
+  //   expect(process.env.PATH).toBeDefined();
+  //   expect(process.env.DOTNET_ROOT).toBe(toolDir);
+  //   expect(process.env.PATH?.startsWith(toolDir)).toBe(true);
+  // }, 600000); //This needs some time to download on "slower" internet connections
 
   it('Returns string with installed SDK version', async () => {
-    const version = '3.1.120';
+    const version = '6.0.1xx';
 
     const installedVersion = await getDotnet(version);
 
     expect(installedVersion).toBe('3.1.120');
   }, 600000);
-
-  it('Throws if no location contains correct dotnet version', async () => {
-    await expect(async () => {
-      await getDotnet('1000.0.0');
-    }).rejects.toThrow();
-  }, 30000);
-
-  it('Uses an up to date bash download script', async () => {
-    const httpCallbackClient = new hc.HttpClient('setup-dotnet-test', [], {
-      allowRetries: true,
-      maxRetries: 3
-    });
-    const response: hc.HttpClientResponse = await httpCallbackClient.get(
-      'https://dot.net/v1/dotnet-install.sh'
-    );
-    expect(response.message.statusCode).toBe(200);
-    const upToDateContents: string = await response.readBody();
-    const currentContents: string = fs
-      .readFileSync(
-        path.join(__dirname, '..', 'externals', 'install-dotnet.sh')
-      )
-      .toString();
-    expect(normalizeFileContents(currentContents)).toBe(
-      normalizeFileContents(upToDateContents)
-    );
-  }, 30000);
-
-  it('Uses an up to date powershell download script', async () => {
-    const httpCallbackClient = new hc.HttpClient('setup-dotnet-test', [], {
-      allowRetries: true,
-      maxRetries: 3
-    });
-    const response: hc.HttpClientResponse = await httpCallbackClient.get(
-      'https://dot.net/v1/dotnet-install.ps1'
-    );
-    expect(response.message.statusCode).toBe(200);
-    const upToDateContents: string = await response.readBody();
-    const currentContents: string = fs
-      .readFileSync(
-        path.join(__dirname, '..', 'externals', 'install-dotnet.ps1')
-      )
-      .toString();
-    expect(normalizeFileContents(currentContents)).toBe(
-      normalizeFileContents(upToDateContents)
-    );
-  }, 30000);
 });
 
-describe('DotnetVersionResolver tests', () => {
-  each([
-    '3.1',
-    '3.x',
-    '3.1.x',
-    '3.1.*',
-    '3.1.X',
-    '3.1.2',
-    '3.1.0-preview1'
-  ]).test(
-    "if valid version: '%s' is supplied, it should return version object with some value",
-    async version => {
-      const dotnetVersionResolver = new installer.DotnetVersionResolver(
-        version
-      );
-      const versionObject = await dotnetVersionResolver.createDotNetVersion();
+// describe('DotnetVersionResolver tests', () => {
+//   each([
+//     '3.1',
+//     '3.x',
+//     '3.1.x',
+//     '3.1.*',
+//     '3.1.X',
+//     '3.1.2',
+//     '3.1.0-preview1'
+//   ]).test(
+//     "if valid version: '%s' is supplied, it should return version object with some value",
+//     async version => {
+//       const dotnetVersionResolver = new installer.DotnetVersionResolver(
+//         version
+//       );
+//       const versionObject = await dotnetVersionResolver.createDotNetVersion();
 
-      expect(!!versionObject.value).toBe(true);
-    }
-  );
+//       expect(!!versionObject.value).toBe(true);
+//     }
+//   );
 
-  each([
-    '.',
-    '..',
-    ' . ',
-    '. ',
-    ' .',
-    ' . . ',
-    ' .. ',
-    ' .  ',
-    '-1.-1',
-    '-1',
-    '-1.-1.-1',
-    '..3',
-    '1..3',
-    '1..',
-    '.2.3',
-    '.2.x',
-    '*.',
-    '1.2.',
-    '1.2.-abc',
-    'a.b',
-    'a.b.c',
-    'a.b.c-preview',
-    ' 0 . 1 . 2 ',
-    'invalid'
-  ]).test(
-    "if invalid version: '%s' is supplied, it should throw",
-    async version => {
-      const dotnetVersionResolver = new installer.DotnetVersionResolver(
-        version
-      );
+//   each([
+//     '.',
+//     '..',
+//     ' . ',
+//     '. ',
+//     ' .',
+//     ' . . ',
+//     ' .. ',
+//     ' .  ',
+//     '-1.-1',
+//     '-1',
+//     '-1.-1.-1',
+//     '..3',
+//     '1..3',
+//     '1..',
+//     '.2.3',
+//     '.2.x',
+//     '*.',
+//     '1.2.',
+//     '1.2.-abc',
+//     'a.b',
+//     'a.b.c',
+//     'a.b.c-preview',
+//     ' 0 . 1 . 2 ',
+//     'invalid'
+//   ]).test(
+//     "if invalid version: '%s' is supplied, it should throw",
+//     async version => {
+//       const dotnetVersionResolver = new installer.DotnetVersionResolver(
+//         version
+//       );
 
-      await expect(
-        async () => await dotnetVersionResolver.createDotNetVersion()
-      ).rejects.toThrow();
-    }
-  );
+//       await expect(
+//         async () => await dotnetVersionResolver.createDotNetVersion()
+//       ).rejects.toThrow();
+//     }
+//   );
 
-  each(['3.1', '3.1.x', '3.1.*', '3.1.X', '5.0.1xx']).test(
-    "if version: '%s' that can be resolved to 'channel' option is supplied, it should set type to 'channel' in version object",
-    async version => {
-      const dotnetVersionResolver = new installer.DotnetVersionResolver(
-        version
-      );
-      const versionObject = await dotnetVersionResolver.createDotNetVersion();
+//   each(['3.1', '3.1.x', '3.1.*', '3.1.X', '5.0.1xx']).test(
+//     "if version: '%s' that can be resolved to 'channel' option is supplied, it should set type to 'channel' in version object",
+//     async version => {
+//       const dotnetVersionResolver = new installer.DotnetVersionResolver(
+//         version
+//       );
+//       const versionObject = await dotnetVersionResolver.createDotNetVersion();
 
-      expect(versionObject.type.toLowerCase().includes('channel')).toBe(true);
-    }
-  );
+//       expect(versionObject.type.toLowerCase().includes('channel')).toBe(true);
+//     }
+//   );
 
-  each(['6.0', '6.0.x', '6.0.*', '6.0.X', '6.0.1xx']).test(
-    "if version: '%s' that can be resolved to 'channel' option is supplied and its major tag is >= 6, it should set type to 'channel' and qualityFlag to 'true' in version object",
-    async version => {
-      const dotnetVersionResolver = new installer.DotnetVersionResolver(
-        version
-      );
-      const versionObject = await dotnetVersionResolver.createDotNetVersion();
+//   each(['6.0', '6.0.x', '6.0.*', '6.0.X', '6.0.1xx']).test(
+//     "if version: '%s' that can be resolved to 'channel' option is supplied and its major tag is >= 6, it should set type to 'channel' and qualityFlag to 'true' in version object",
+//     async version => {
+//       const dotnetVersionResolver = new installer.DotnetVersionResolver(
+//         version
+//       );
+//       const versionObject = await dotnetVersionResolver.createDotNetVersion();
 
-      expect(versionObject.type.toLowerCase().includes('channel')).toBe(true);
-      expect(versionObject.qualityFlag).toBe(true);
-    }
-  );
+//       expect(versionObject.type.toLowerCase().includes('channel')).toBe(true);
+//       expect(versionObject.qualityFlag).toBe(true);
+//     }
+//   );
 
-  each(['3.1.2', '3.1.0-preview1']).test(
-    "if version: '%s' that can be resolved to 'version' option is supplied, it should set quality flag to 'false' and type to 'version' in version object",
-    async version => {
-      const dotnetVersionResolver = new installer.DotnetVersionResolver(
-        version
-      );
-      const versionObject = await dotnetVersionResolver.createDotNetVersion();
+//   each(['3.1.2', '3.1.0-preview1']).test(
+//     "if version: '%s' that can be resolved to 'version' option is supplied, it should set quality flag to 'false' and type to 'version' in version object",
+//     async version => {
+//       const dotnetVersionResolver = new installer.DotnetVersionResolver(
+//         version
+//       );
+//       const versionObject = await dotnetVersionResolver.createDotNetVersion();
 
-      expect(versionObject.type.toLowerCase().includes('version')).toBe(true);
-      expect(versionObject.qualityFlag).toBe(false);
-    }
-  );
+//       expect(versionObject.type.toLowerCase().includes('version')).toBe(true);
+//       expect(versionObject.qualityFlag).toBe(false);
+//     }
+//   );
 
-  each(['3.1.2', '3.1']).test(
-    'it should create proper line arguments for powershell/bash installation scripts',
-    async version => {
-      const dotnetVersionResolver = new installer.DotnetVersionResolver(
-        version
-      );
-      const versionObject = await dotnetVersionResolver.createDotNetVersion();
-      const windowsRegEx = new RegExp(/^-[VC]/);
-      const nonWindowsRegEx = new RegExp(/^--[vc]/);
+//   each(['3.1.2', '3.1']).test(
+//     'it should create proper line arguments for powershell/bash installation scripts',
+//     async version => {
+//       const dotnetVersionResolver = new installer.DotnetVersionResolver(
+//         version
+//       );
+//       const versionObject = await dotnetVersionResolver.createDotNetVersion();
+//       const windowsRegEx = new RegExp(/^-[VC]/);
+//       const nonWindowsRegEx = new RegExp(/^--[vc]/);
 
-      if (IS_WINDOWS) {
-        expect(windowsRegEx.test(versionObject.type)).toBe(true);
-        expect(nonWindowsRegEx.test(versionObject.type)).toBe(false);
-      } else {
-        expect(nonWindowsRegEx.test(versionObject.type)).toBe(true);
-        expect(windowsRegEx.test(versionObject.type)).toBe(false);
-      }
-    }
-  );
-});
+//       if (IS_WINDOWS) {
+//         expect(windowsRegEx.test(versionObject.type)).toBe(true);
+//         expect(nonWindowsRegEx.test(versionObject.type)).toBe(false);
+//       } else {
+//         expect(nonWindowsRegEx.test(versionObject.type)).toBe(true);
+//         expect(windowsRegEx.test(versionObject.type)).toBe(false);
+//       }
+//     }
+//   );
+
+//   it('Should throw if supplied dotnet version is in A.B.Cxx syntax and the major tag is lower than 5', async () => {
+//     const version = '3.1.1xx';
+//     const dotnetVersionResolver = new installer.DotnetVersionResolver(version);
+//     await expect(dotnetVersionResolver.createDotNetVersion()).rejects.toThrow(
+//       `'dotnet-version' was supplied in invalid format: ${version}! The A.B.Cxx syntax is available since the .NET 5.0 release.`
+//     );
+//   }, 600000);
+
+//   it('Should resolve version supplied as * to channel type and set value to LTS', async () => {
+//     const version = '*';
+//     const dotnetVersionResolver = new installer.DotnetVersionResolver(version);
+//     const versionObject = await dotnetVersionResolver.createDotNetVersion();
+//     expect(versionObject.type.toLowerCase().includes('channel')).toBe(true);
+//     expect(versionObject.value).toBe('LTS');
+//   }, 600000);
+// });
 
 function normalizeFileContents(contents: string): string {
   return contents

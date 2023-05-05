@@ -297,7 +297,7 @@ class DotnetVersionResolver {
                 this.resolvedArgument.value = yield this.getLatestByMajorTag(major);
             }
             else {
-                // If "dotnet-version" is specified as *, x or X resolve latest version of .NET explicitly from LTS channel. The version argument will be set to "latest" by default.
+                // If "dotnet-version" is specified as *, x or X resolve latest version of .NET explicitly from LTS channel. The version argument will default to "latest" by install-dotnet script.
                 this.resolvedArgument.value = 'LTS';
             }
             this.resolvedArgument.qualityFlag =
@@ -377,6 +377,7 @@ class DotnetCoreInstaller {
     }
     installDotnet() {
         return __awaiter(this, void 0, void 0, function* () {
+            const listOfInstalledVersions = yield this.getListOfInstalledVersions();
             const windowsDefaultOptions = [
                 '-NoLogo',
                 '-Sta',
@@ -433,17 +434,21 @@ class DotnetCoreInstaller {
             if (exitCode) {
                 throw new Error(`Failed to install dotnet, exit code: ${exitCode}. ${stderr}`);
             }
-            return this.outputDotnetVersion(dotnetVersion.value);
+            return this.outputDotnetVersion(listOfInstalledVersions);
         });
     }
-    outputDotnetVersion(version) {
+    getListOfInstalledVersions() {
         return __awaiter(this, void 0, void 0, function* () {
             const installationPath = process.env['DOTNET_INSTALL_DIR'];
-            const versionsOnRunner = yield (0, promises_1.readdir)(path_1.default.join(installationPath.replace(/'/g, ''), 'sdk'));
-            const installedVersion = semver_1.default.maxSatisfying(versionsOnRunner, version, {
-                includePrerelease: true
-            });
-            return installedVersion;
+            const versionsOnRunner = (yield (0, promises_1.readdir)(path_1.default.join(installationPath.replace(/'/g, ''), 'sdk'))).filter((el) => semver_1.default.valid(el));
+            return versionsOnRunner;
+        });
+    }
+    outputDotnetVersion(listOfInstalledVersions) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const updatedListOfInstalledVersions = yield this.getListOfInstalledVersions();
+            const installedVersion = updatedListOfInstalledVersions.filter((el) => !listOfInstalledVersions.includes(el));
+            return installedVersion[0];
         });
     }
 }

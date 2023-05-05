@@ -6,7 +6,7 @@ branding:
   color: green
 inputs:
   dotnet-version:
-    description: 'Optional SDK version(s) to use. If not provided, will install global.json version when available. Examples: 2.2.104, 3.1, 3.1.x, 3.x'
+    description: 'Optional SDK version(s) to use. If not provided, will install global.json version when available. Examples: 2.2.104, 3.1, 3.1.x, 3.x, 3.1.4xx'
   dotnet-quality:
     description: 'Optional quality of the build. The possible values are: daily, signed, validated, preview, ga.'
   global-json-file:

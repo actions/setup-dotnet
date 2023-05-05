@@ -79,7 +79,7 @@ export class DotnetVersionResolver {
     } else if (this.isNumericTag(major)) {
       this.resolvedArgument.value = await this.getLatestByMajorTag(major);
     } else {
-      // If "dotnet-version" is specified as *, x or X resolve latest version of .NET explicitly from LTS channel. The version argument will be set to "latest" by default.
+      // If "dotnet-version" is specified as *, x or X resolve latest version of .NET explicitly from LTS channel. The version argument will default to "latest" by install-dotnet script.
       this.resolvedArgument.value = 'LTS';
     }
     this.resolvedArgument.qualityFlag =
@@ -199,6 +199,7 @@ export class DotnetCoreInstaller {
   }
 
   public async installDotnet(): Promise<string> {
+    const listOfInstalledVersions = await this.getListOfInstalledVersions();
     const windowsDefaultOptions = [
       '-NoLogo',
       '-Sta',
@@ -268,20 +269,20 @@ export class DotnetCoreInstaller {
         `Failed to install dotnet, exit code: ${exitCode}. ${stderr}`
       );
     }
-
-    return this.outputDotnetVersion(dotnetVersion.value);
+    return await this.outputDotnetVersion(listOfInstalledVersions);
   }
 
-  private async outputDotnetVersion(version): Promise<string> {
+  private async getListOfInstalledVersions(): Promise<string[]> {
     const installationPath = process.env['DOTNET_INSTALL_DIR']!;
-    const versionsOnRunner: string[] = await readdir(
+    const versionsOnRunner: string[] = (await readdir(
       path.join(installationPath.replace(/'/g, ''), 'sdk')
-    );
+    )).filter((el) => semver.valid(el));
+    return versionsOnRunner;
+  }
 
-    const installedVersion = semver.maxSatisfying(versionsOnRunner, version, {
-      includePrerelease: true
-    })!;
-
-    return installedVersion;
+  private async outputDotnetVersion(listOfInstalledVersions: string[]): Promise<string> {
+    const updatedListOfInstalledVersions = await this.getListOfInstalledVersions();
+    const installedVersion = updatedListOfInstalledVersions.filter((el) => !listOfInstalledVersions.includes(el))
+    return installedVersion[0];
   }
 }
