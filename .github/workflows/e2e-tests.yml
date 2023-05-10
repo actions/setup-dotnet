@@ -219,6 +219,9 @@ jobs:
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+      - name: Copy NuGet lock file to root
+        shell: bash
+        run: cp ./__tests__/e2e-test-csproj/packages.lock.json ./packages.lock.json
       - name: Setup .NET Core 3.1
         id: setup-dotnet
         uses: ./
