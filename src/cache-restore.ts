@@ -1,12 +1,15 @@
+import {readdir} from 'node:fs/promises';
+import {join} from 'node:path';
 import * as cache from '@actions/cache';
 import * as core from '@actions/core';
 import * as glob from '@actions/glob';
 
 import {getNuGetFolderPath} from './cache-utils';
-import {lockFilePattern, State, Outputs} from './constants';
+import {lockFilePatterns, State, Outputs} from './constants';
 
 export const restoreCache = async (cacheDependencyPath?: string) => {
-  const fileHash = await glob.hashFiles(cacheDependencyPath || lockFilePattern);
+  const lockFilePath = cacheDependencyPath || (await findLockFile());
+  const fileHash = await glob.hashFiles(lockFilePath);
   if (!fileHash) {
     throw new Error(
       'Some specified paths were not resolved, unable to cache dependencies.'
@@ -30,4 +33,18 @@ export const restoreCache = async (cacheDependencyPath?: string) => {
 
   core.saveState(State.CacheMatchedKey, cacheKey);
   core.info(`Cache restored from key: ${cacheKey}`);
+};
+
+const findLockFile = async () => {
+  const workspace = process.env.GITHUB_WORKSPACE!;
+  const rootContent = await readdir(workspace);
+
+  const lockFile = lockFilePatterns.find(item => rootContent.includes(item));
+  if (!lockFile) {
+    throw new Error(
+      `Dependencies lock file is not found in ${workspace}. Supported file patterns: ${lockFilePatterns.toString()}`
+    );
+  }
+
+  return join(workspace, lockFile);
 };

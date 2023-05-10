@@ -1,5 +1,5 @@
-/** NuGet lock file glob pattern */
-export const lockFilePattern = '**/packages.lock.json';
+/** NuGet lock file patterns */
+export const lockFilePatterns = ['packages.lock.json'];
 
 /**
  * .NET CLI command to list local NuGet resources.

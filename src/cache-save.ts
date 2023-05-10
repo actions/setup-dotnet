@@ -26,8 +26,8 @@ const cachePackages = async () => {
   const state = core.getState(State.CacheMatchedKey);
   const primaryKey = core.getState(State.CachePrimaryKey);
 
-  if (primaryKey === '') {
-    core.info('Missing lock files, not saving cache.');
+  if (!primaryKey) {
+    core.info('Primary key was not generated, not saving cache.');
     return;
   }
 

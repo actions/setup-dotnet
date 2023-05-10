@@ -58542,8 +58542,8 @@ exports.run = run;
 const cachePackages = () => __awaiter(void 0, void 0, void 0, function* () {
     const state = core.getState(constants_1.State.CacheMatchedKey);
     const primaryKey = core.getState(constants_1.State.CachePrimaryKey);
-    if (primaryKey === '') {
-        core.info('Missing lock files, not saving cache.');
+    if (!primaryKey) {
+        core.info('Primary key was not generated, not saving cache.');
         return;
     }
     const { 'global-packages': cachePath } = yield (0, cache_utils_1.getNuGetFolderPath)();
@@ -58687,9 +58687,9 @@ function isGhes() {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Outputs = exports.State = exports.cliCommand = exports.lockFilePattern = void 0;
-/** NuGet lock file glob pattern */
-exports.lockFilePattern = '**/packages.lock.json';
+exports.Outputs = exports.State = exports.cliCommand = exports.lockFilePatterns = void 0;
+/** NuGet lock file patterns */
+exports.lockFilePatterns = ['packages.lock.json'];
 /**
  * .NET CLI command to list local NuGet resources.
  * @see https://docs.microsoft.com/dotnet/core/tools/dotnet-nuget-locals

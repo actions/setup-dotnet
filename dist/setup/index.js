@@ -70946,13 +70946,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.restoreCache = void 0;
+const promises_1 = __nccwpck_require__(3977);
+const node_path_1 = __nccwpck_require__(9411);
 const cache = __importStar(__nccwpck_require__(7799));
 const core = __importStar(__nccwpck_require__(2186));
 const glob = __importStar(__nccwpck_require__(8090));
 const cache_utils_1 = __nccwpck_require__(1678);
 const constants_1 = __nccwpck_require__(9042);
 const restoreCache = (cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
-    const fileHash = yield glob.hashFiles(cacheDependencyPath || constants_1.lockFilePattern);
+    const lockFilePath = cacheDependencyPath || (yield findLockFile());
+    const fileHash = yield glob.hashFiles(lockFilePath);
     if (!fileHash) {
         throw new Error('Some specified paths were not resolved, unable to cache dependencies.');
     }
@@ -70971,6 +70974,15 @@ const restoreCache = (cacheDependencyPath) => __awaiter(void 0, void 0, void 0, 
     core.info(`Cache restored from key: ${cacheKey}`);
 });
 exports.restoreCache = restoreCache;
+const findLockFile = () => __awaiter(void 0, void 0, void 0, function* () {
+    const workspace = process.env.GITHUB_WORKSPACE;
+    const rootContent = yield (0, promises_1.readdir)(workspace);
+    const lockFile = constants_1.lockFilePatterns.find(item => rootContent.includes(item));
+    if (!lockFile) {
+        throw new Error(`Dependencies lock file is not found in ${workspace}. Supported file patterns: ${constants_1.lockFilePatterns.toString()}`);
+    }
+    return (0, node_path_1.join)(workspace, lockFile);
+});
 
 
 /***/ }),
@@ -71097,9 +71109,9 @@ function isGhes() {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Outputs = exports.State = exports.cliCommand = exports.lockFilePattern = void 0;
-/** NuGet lock file glob pattern */
-exports.lockFilePattern = '**/packages.lock.json';
+exports.Outputs = exports.State = exports.cliCommand = exports.lockFilePatterns = void 0;
+/** NuGet lock file patterns */
+exports.lockFilePatterns = ['packages.lock.json'];
 /**
  * .NET CLI command to list local NuGet resources.
  * @see https://docs.microsoft.com/dotnet/core/tools/dotnet-nuget-locals
@@ -71493,9 +71505,6 @@ function run() {
                 const cacheDependencyPath = core.getInput('cache-dependency-path');
                 yield (0, cache_restore_1.restoreCache)(cacheDependencyPath);
             }
-            else {
-                core.setOutput(constants_1.Outputs.CacheHit, false);
-            }
             const matchersPath = path_1.default.join(__dirname, '../..', '.github');
             core.info(`##[add-matcher]${path_1.default.join(matchersPath, 'csc.json')}`);
         }
@@ -71623,6 +71632,22 @@ module.exports = require("https");
 
 "use strict";
 module.exports = require("net");
+
+/***/ }),
+
+/***/ 3977:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("node:fs/promises");
+
+/***/ }),
+
+/***/ 9411:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("node:path");
 
 /***/ }),
 

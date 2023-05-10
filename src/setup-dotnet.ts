@@ -98,8 +98,6 @@ export async function run() {
     if (core.getBooleanInput('cache') && isCacheFeatureAvailable()) {
       const cacheDependencyPath = core.getInput('cache-dependency-path');
       await restoreCache(cacheDependencyPath);
-    } else {
-      core.setOutput(Outputs.CacheHit, false);
     }
 
     const matchersPath = path.join(__dirname, '../..', '.github');
