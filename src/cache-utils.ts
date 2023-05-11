@@ -39,7 +39,9 @@ export const getNuGetFolderPath = async () => {
   const {stdout, stderr, exitCode} = await exec.getExecOutput(
     cliCommand,
     undefined,
-    {ignoreReturnCode: true}
+    { ignoreReturnCode: true,
+      silent: true
+    }
   );
 
   if (exitCode) {

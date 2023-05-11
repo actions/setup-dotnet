@@ -84,7 +84,7 @@ steps:
 ## Caching NuGet Packages
 The action has a built-in functionality for caching and restoring dependencies. It uses [toolkit/cache](https://github.com/actions/toolkit/tree/main/packages/cache) under the hood for caching global packages data but requires less configuration settings. The `cache` input is optional, and caching is turned off by default.
 
-The action searches for [NuGet Lock files](https://learn.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies) (`packages.lock.json`) in the repository root, calculates their hash and uses it as a part of the cache key. If lock file does not exist, this action throws error.
+The action searches for [NuGet Lock files](https://learn.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies) (`packages.lock.json`) in the repository root, calculates their hash and uses it as a part of the cache key. If lock file does not exist, this action throws error. Use `cache-dependency-path` for cases when multiple dependency files are used, or they are located in different subdirectories.
 
 > **Warning:** Caching NuGet packages is available since .NET SDK 2.1.500 and 2.2.100 as the NuGet lock file [is available](https://learn.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies) only for NuGet 4.9 and above.
 
