@@ -32,12 +32,13 @@ describe('csc tests', () => {
       }
     ];
 
-    stringsToMatch.forEach((string, index) => {
-      const matchedResult = string.match(regex);
-      for (const name in expectedResults[index]) {
-        expect(matchedResult![regexResultsMap[name]]).toEqual(
-          expectedResults[index][name]
-        );
+    stringsToMatch.map((string, index) => {
+      const matchedResultsArray = string.match(regex);
+      for (const propName in expectedResults[index]) {
+        const propertyIndex = regexResultsMap[propName];
+        const expectedPropValue = expectedResults[index][propName];
+        const matchedPropValue = matchedResultsArray![propertyIndex];
+        expect(matchedPropValue).toEqual(expectedPropValue);
       }
     });
   }, 10000);

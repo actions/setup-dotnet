@@ -93,7 +93,7 @@ describe('authutil tests', () => {
 
   it('No existing config, sets up a full NuGet.config with URL and user/PAT for GPR', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
-    await auth.configAuthentication(
+    auth.configAuthentication(
       'https://nuget.pkg.github.com/OwnerName/index.json',
       '',
       fakeSourcesDirForTesting
@@ -107,7 +107,7 @@ describe('authutil tests', () => {
   it('No existing config, auth token environment variable not provided, throws', async () => {
     let thrown = false;
     try {
-      await auth.configAuthentication(
+      auth.configAuthentication(
         'https://nuget.pkg.github.com/OwnerName/index.json',
         '',
         fakeSourcesDirForTesting
@@ -121,7 +121,7 @@ describe('authutil tests', () => {
   it('No existing config, sets up a full NuGet.config with URL and other owner/PAT for GPR', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
     process.env['INPUT_OWNER'] = 'otherorg';
-    await auth.configAuthentication(
+    auth.configAuthentication(
       'https://nuget.pkg.github.com/otherorg/index.json',
       '',
       fakeSourcesDirForTesting
@@ -141,7 +141,7 @@ describe('authutil tests', () => {
     fs.writeFileSync(inputNuGetConfigPath, invalidNuGetConfig);
     let thrown = false;
     try {
-      await auth.configAuthentication(
+      auth.configAuthentication(
         'https://nuget.pkg.github.com/OwnerName/index.json',
         '',
         fakeSourcesDirForTesting
@@ -159,7 +159,7 @@ describe('authutil tests', () => {
       'nuget.config'
     );
     fs.writeFileSync(inputNuGetConfigPath, emptyNuGetConfig);
-    await auth.configAuthentication(
+    auth.configAuthentication(
       'https://nuget.pkg.github.com/OwnerName/index.json',
       '',
       fakeSourcesDirForTesting
@@ -177,7 +177,7 @@ describe('authutil tests', () => {
       'nuget.config'
     );
     fs.writeFileSync(inputNuGetConfigPath, nugetorgNuGetConfig);
-    await auth.configAuthentication(
+    auth.configAuthentication(
       'https://nuget.pkg.github.com/OwnerName/index.json',
       '',
       fakeSourcesDirForTesting
@@ -195,7 +195,7 @@ describe('authutil tests', () => {
       'nuget.config'
     );
     fs.writeFileSync(inputNuGetConfigPath, gprNuGetConfig);
-    await auth.configAuthentication(
+    auth.configAuthentication(
       'https://nuget.pkg.github.com/OwnerName/index.json',
       '',
       fakeSourcesDirForTesting
@@ -213,7 +213,7 @@ describe('authutil tests', () => {
       'nuget.config'
     );
     fs.writeFileSync(inputNuGetConfigPath, gprnugetorgNuGetConfig);
-    await auth.configAuthentication(
+    auth.configAuthentication(
       'https://nuget.pkg.github.com/OwnerName/index.json',
       '',
       fakeSourcesDirForTesting
@@ -231,7 +231,7 @@ describe('authutil tests', () => {
       'nuget.config'
     );
     fs.writeFileSync(inputNuGetConfigPath, twogprNuGetConfig);
-    await auth.configAuthentication(
+    auth.configAuthentication(
       'https://nuget.pkg.github.com',
       '',
       fakeSourcesDirForTesting
@@ -251,7 +251,7 @@ describe('authutil tests', () => {
     fs.writeFileSync(inputNuGetConfigPath, spaceNuGetConfig);
     let thrown = false;
     try {
-      await auth.configAuthentication(
+      auth.configAuthentication(
         'https://nuget.pkg.github.com/OwnerName/index.json',
         '',
         fakeSourcesDirForTesting
@@ -274,7 +274,7 @@ describe('authutil tests', () => {
     );
     fs.mkdirSync(inputNuGetConfigDirectory, {recursive: true});
     fs.writeFileSync(inputNuGetConfigPath, gprNuGetConfig);
-    await auth.configAuthentication(
+    auth.configAuthentication(
       'https://nuget.pkg.github.com/OwnerName/index.json',
       'subfolder/nuget.config',
       fakeSourcesDirForTesting
@@ -292,7 +292,7 @@ describe('authutil tests', () => {
       'nuget.config'
     );
     fs.writeFileSync(inputNuGetConfigPath, azureartifactsNuGetConfig);
-    await auth.configAuthentication(
+    auth.configAuthentication(
       'https://pkgs.dev.azure.com/amullans/_packaging/GitHubBuilds/nuget/v3/index.json',
       '',
       fakeSourcesDirForTesting
@@ -310,7 +310,7 @@ describe('authutil tests', () => {
       'nuget.config'
     );
     fs.writeFileSync(inputNuGetConfigPath, azureartifactsnugetorgNuGetConfig);
-    await auth.configAuthentication(
+    auth.configAuthentication(
       'https://pkgs.dev.azure.com/amullans/_packaging/GitHubBuilds/nuget/v3/index.json',
       '',
       fakeSourcesDirForTesting
@@ -323,7 +323,7 @@ describe('authutil tests', () => {
 
   it('No existing config, sets up a full NuGet.config with URL and token for other source', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
-    await auth.configAuthentication(
+    auth.configAuthentication(
       'https://pkgs.dev.azure.com/amullans/_packaging/GitHubBuilds/nuget/v3/index.json',
       '',
       fakeSourcesDirForTesting
