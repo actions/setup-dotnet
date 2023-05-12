@@ -40,7 +40,7 @@ describe('setup-dotnet tests', () => {
     });
 
     it('should fail the action if global-json-file input is present, but the file does not exist in the file system', async () => {
-      inputs['global-json-file'] = 'fictious.json';
+      inputs['global-json-file'] = 'fictitious.json';
       inputs['dotnet-version'] = [];
 
       const expectedErrorMessage = `The specified global.json file '${inputs['global-json-file']}' does not exist`;
@@ -49,7 +49,7 @@ describe('setup-dotnet tests', () => {
       expect(setFailedSpy).toHaveBeenCalledWith(expectedErrorMessage);
     });
 
-    it('should log message into debug output, try to find global.json in the repo root, fail and log message into info output if the dotnet-version and global-json-file inputs are not present', async () => {
+    test(`if 'dotnet-version' and 'global-json-file' inputs aren't present, should log into debug output, try to find global.json in the repo root, fail and log message into info output`, async () => {
       inputs['global-json-file'] = '';
       inputs['dotnet-version'] = [];
 
@@ -70,7 +70,7 @@ describe('setup-dotnet tests', () => {
     it('should fail the action if quality is supplied but its value is not supported', async () => {
       inputs['global-json-file'] = '';
       inputs['dotnet-version'] = ['6.0'];
-      inputs['dotnet-quality'] = 'fictiousQuality';
+      inputs['dotnet-quality'] = 'fictitiousQuality';
 
       const expectedErrorMessage = `${inputs['dotnet-quality']} is not a supported value for 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`;
 
@@ -105,7 +105,7 @@ describe('setup-dotnet tests', () => {
       inputs['global-json-file'] = '';
       inputs['dotnet-version'] = [];
       inputs['dotnet-quality'] = '';
-      inputs['source-url'] = 'fictious.source.url';
+      inputs['source-url'] = 'fictitious.source.url';
 
       configAuthenticationSpy.mockImplementation(() => {});
 
@@ -120,8 +120,8 @@ describe('setup-dotnet tests', () => {
       inputs['global-json-file'] = '';
       inputs['dotnet-version'] = [];
       inputs['dotnet-quality'] = '';
-      inputs['source-url'] = 'fictious.source.url';
-      inputs['config-file'] = 'fictious.path';
+      inputs['source-url'] = 'fictitious.source.url';
+      inputs['config-file'] = 'fictitious.path';
 
       configAuthenticationSpy.mockImplementation(() => {});
       setOutputSpy.mockImplementation(() => {});

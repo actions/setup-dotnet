@@ -91,7 +91,7 @@ describe('authutil tests', () => {
     process.env['NUGET_AUTH_TOKEN'] = '';
   });
 
-  it('No existing config, sets up a full NuGet.config with URL and user/PAT for GPR', async () => {
+  it('no existing config, sets up a full NuGet.config with URL and user/PAT for GPR', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
     auth.configAuthentication(
       'https://nuget.pkg.github.com/OwnerName/index.json',
@@ -104,7 +104,7 @@ describe('authutil tests', () => {
     ).toMatchSnapshot();
   });
 
-  it('No existing config, auth token environment variable not provided, throws', async () => {
+  it('no existing config, auth token environment variable not provided, throws', async () => {
     let thrown = false;
     try {
       auth.configAuthentication(
@@ -118,7 +118,7 @@ describe('authutil tests', () => {
     expect(thrown).toBe(true);
   });
 
-  it('No existing config, sets up a full NuGet.config with URL and other owner/PAT for GPR', async () => {
+  it('no existing config, sets up a full NuGet.config with URL and other owner/PAT for GPR', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
     process.env['INPUT_OWNER'] = 'otherorg';
     auth.configAuthentication(
@@ -132,7 +132,7 @@ describe('authutil tests', () => {
     ).toMatchSnapshot();
   });
 
-  it('Existing config (invalid), tries to parse an invalid NuGet.config and throws', async () => {
+  it('existing config (invalid), tries to parse an invalid NuGet.config and throws', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
     const inputNuGetConfigPath: string = path.join(
       fakeSourcesDirForTesting,
@@ -152,7 +152,7 @@ describe('authutil tests', () => {
     expect(thrown).toBe(true);
   });
 
-  it('Existing config w/ no sources, sets up a full NuGet.config with URL and user/PAT for GPR', async () => {
+  it('existing config w/ no sources, sets up a full NuGet.config with URL and user/PAT for GPR', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
     const inputNuGetConfigPath: string = path.join(
       fakeSourcesDirForTesting,
@@ -170,7 +170,7 @@ describe('authutil tests', () => {
     ).toMatchSnapshot();
   });
 
-  it('Existing config w/ no GPR sources, sets up a full NuGet.config with URL and user/PAT for GPR', async () => {
+  it('existing config w/ no GPR sources, sets up a full NuGet.config with URL and user/PAT for GPR', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
     const inputNuGetConfigPath: string = path.join(
       fakeSourcesDirForTesting,
@@ -188,7 +188,7 @@ describe('authutil tests', () => {
     ).toMatchSnapshot();
   });
 
-  it('Existing config w/ only GPR source, sets up a partial NuGet.config user/PAT for GPR', async () => {
+  it('existing config w/ only GPR source, sets up a partial NuGet.config user/PAT for GPR', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
     const inputNuGetConfigPath: string = path.join(
       fakeSourcesDirForTesting,
@@ -206,7 +206,7 @@ describe('authutil tests', () => {
     ).toMatchSnapshot();
   });
 
-  it('Existing config w/ GPR source and NuGet.org, sets up a partial NuGet.config user/PAT for GPR', async () => {
+  it('existing config w/ GPR source and NuGet.org, sets up a partial NuGet.config user/PAT for GPR', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
     const inputNuGetConfigPath: string = path.join(
       fakeSourcesDirForTesting,
@@ -224,7 +224,7 @@ describe('authutil tests', () => {
     ).toMatchSnapshot();
   });
 
-  it('Existing config w/ two GPR sources, sets up a partial NuGet.config user/PAT for GPR', async () => {
+  it('existing config w/ two GPR sources, sets up a partial NuGet.config user/PAT for GPR', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
     const inputNuGetConfigPath: string = path.join(
       fakeSourcesDirForTesting,
@@ -242,7 +242,7 @@ describe('authutil tests', () => {
     ).toMatchSnapshot();
   });
 
-  it('Existing config w/ spaces in key, throws for now', async () => {
+  it('existing config w/ spaces in key, throws for now', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
     const inputNuGetConfigPath: string = path.join(
       fakeSourcesDirForTesting,
@@ -262,7 +262,7 @@ describe('authutil tests', () => {
     expect(thrown).toBe(true);
   });
 
-  it('Existing config not in repo root, sets up a partial NuGet.config user/PAT for GPR', async () => {
+  it('existing config not in repo root, sets up a partial NuGet.config user/PAT for GPR', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
     const inputNuGetConfigDirectory: string = path.join(
       fakeSourcesDirForTesting,
@@ -285,7 +285,7 @@ describe('authutil tests', () => {
     ).toMatchSnapshot();
   });
 
-  it('Existing config w/ only Azure Artifacts source, sets up a partial NuGet.config user/PAT for GPR', async () => {
+  it('existing config w/ only Azure Artifacts source, sets up a partial NuGet.config user/PAT for GPR', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
     const inputNuGetConfigPath: string = path.join(
       fakeSourcesDirForTesting,
@@ -303,7 +303,7 @@ describe('authutil tests', () => {
     ).toMatchSnapshot();
   });
 
-  it('Existing config w/ Azure Artifacts source and NuGet.org, sets up a partial NuGet.config user/PAT for GPR', async () => {
+  it('existing config w/ Azure Artifacts source and NuGet.org, sets up a partial NuGet.config user/PAT for GPR', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
     const inputNuGetConfigPath: string = path.join(
       fakeSourcesDirForTesting,
@@ -321,7 +321,7 @@ describe('authutil tests', () => {
     ).toMatchSnapshot();
   });
 
-  it('No existing config, sets up a full NuGet.config with URL and token for other source', async () => {
+  it('no existing config, sets up a full NuGet.config with URL and token for other source', async () => {
     process.env['NUGET_AUTH_TOKEN'] = 'TEST_FAKE_AUTH_TOKEN';
     auth.configAuthentication(
       'https://pkgs.dev.azure.com/amullans/_packaging/GitHubBuilds/nuget/v3/index.json',

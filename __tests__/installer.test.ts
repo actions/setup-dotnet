@@ -16,10 +16,6 @@ describe('installer tests', () => {
     process.env = {...env};
   });
 
-  afterEach(() => {
-    process.env = env;
-  });
-
   describe('DotnetCoreInstaller tests', () => {
     const getExecOutputSpy = jest.spyOn(exec, 'getExecOutput');
     const warningSpy = jest.spyOn(core, 'warning');
@@ -32,7 +28,7 @@ describe('installer tests', () => {
       it('should throw the error in case of non-zero exit code of the installation script. The error message should contain logs.', async () => {
         const inputVersion = '3.1.100';
         const inputQuality = '' as QualityOptions;
-        const errorMessage = 'Fictious error message!';
+        const errorMessage = 'fictitious error message!';
         getExecOutputSpy.mockImplementation(() => {
           return Promise.resolve({
             exitCode: 1,
@@ -252,16 +248,17 @@ describe('installer tests', () => {
         });
       }
     });
+
     describe('addToPath() tests', () => {
       it(`should export DOTNET_ROOT env.var with value from DOTNET_INSTALL_DIR env.var`, async () => {
-        process.env['DOTNET_INSTALL_DIR'] = 'fictious/dotnet/install/dir';
+        process.env['DOTNET_INSTALL_DIR'] = 'fictitious/dotnet/install/dir';
         installer.DotnetCoreInstaller.addToPath();
         const dotnet_root = process.env['DOTNET_ROOT'];
         expect(dotnet_root).toBe(process.env['DOTNET_INSTALL_DIR']);
       });
 
-      it(`should export value from the DOTNET_INSTALL_DIR env.var to the PATH`, async () => {
-        process.env['DOTNET_INSTALL_DIR'] = 'fictious/dotnet/install/dir';
+      it(`should export value from DOTNET_INSTALL_DIR env.var to the PATH`, async () => {
+        process.env['DOTNET_INSTALL_DIR'] = 'fictitious/dotnet/install/dir';
         installer.DotnetCoreInstaller.addToPath();
         const path = process.env['PATH'];
         expect(path).toContain(process.env['DOTNET_INSTALL_DIR']);

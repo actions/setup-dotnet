@@ -1,6 +1,6 @@
 import cscFile from '../.github/csc.json';
 describe('csc tests', () => {
-  it('Valid regular expression', async () => {
+  test('regular expression in csc.json is valid', async () => {
     const regexPattern = cscFile['problemMatcher'][0]['pattern'][0]['regexp'];
     const regexResultsMap = cscFile['problemMatcher'][0]['pattern'][0];
 
