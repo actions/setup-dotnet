@@ -419,24 +419,15 @@ class DotnetCoreInstaller {
 exports.DotnetCoreInstaller = DotnetCoreInstaller;
 _a = DotnetCoreInstaller;
 (() => {
-    const installationDirectoryWindows = path_1.default.join(process.env['PROGRAMFILES'] + '', 'dotnet');
-    const installationDirectoryLinux = '/usr/share/dotnet';
-    const installationDirectoryMac = path_1.default.join(process.env['HOME'] + '', '.dotnet');
-    const dotnetInstallDir = process.env['DOTNET_INSTALL_DIR'];
-    if (dotnetInstallDir) {
-        process.env['DOTNET_INSTALL_DIR'] =
-            _a.convertInstallPathToAbsolute(dotnetInstallDir);
-    }
-    else {
-        if (utils_1.IS_WINDOWS) {
-            process.env['DOTNET_INSTALL_DIR'] = installationDirectoryWindows;
-        }
-        else {
-            process.env['DOTNET_INSTALL_DIR'] = utils_1.IS_LINUX
-                ? installationDirectoryLinux
-                : installationDirectoryMac;
-        }
-    }
+    const dotnetInstallDirDefault = {
+        linux: '/usr/share/dotnet',
+        mac: path_1.default.join(process.env['HOME'] + '', '.dotnet'),
+        windows: path_1.default.join(process.env['PROGRAMFILES'] + '', 'dotnet')
+    }[(0, utils_1.getPlatform)()];
+    const dotnetInstallDir = process.env['DOTNET_INSTALL_DIR']
+        ? _a.convertInstallPathToAbsolute(process.env['DOTNET_INSTALL_DIR'])
+        : dotnetInstallDirDefault;
+    process.env['DOTNET_INSTALL_DIR'] = dotnetInstallDir;
 })();
 
 
@@ -591,9 +582,17 @@ run();
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.IS_LINUX = exports.IS_WINDOWS = void 0;
+exports.getPlatform = exports.IS_LINUX = exports.IS_WINDOWS = void 0;
 exports.IS_WINDOWS = process.platform === 'win32';
 exports.IS_LINUX = process.platform === 'linux';
+const getPlatform = () => {
+    if (exports.IS_WINDOWS)
+        return 'windows';
+    if (exports.IS_LINUX)
+        return 'linux';
+    return 'mac';
+};
+exports.getPlatform = getPlatform;
 
 
 /***/ }),

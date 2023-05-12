@@ -8,7 +8,7 @@ import {readdir} from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import semver from 'semver';
-import {IS_LINUX, IS_WINDOWS} from './utils';
+import {IS_WINDOWS, getPlatform} from './utils';
 import {QualityOptions} from './setup-dotnet';
 
 export interface DotnetVersion {
@@ -115,29 +115,17 @@ export class DotnetCoreInstaller {
   private quality: QualityOptions;
 
   static {
-    const installationDirectoryWindows = path.join(
-      process.env['PROGRAMFILES'] + '',
-      'dotnet'
-    );
-    const installationDirectoryLinux = '/usr/share/dotnet';
-    const installationDirectoryMac = path.join(
-      process.env['HOME'] + '',
-      '.dotnet'
-    );
-    const dotnetInstallDir: string | undefined =
-      process.env['DOTNET_INSTALL_DIR'];
-    if (dotnetInstallDir) {
-      process.env['DOTNET_INSTALL_DIR'] =
-        this.convertInstallPathToAbsolute(dotnetInstallDir);
-    } else {
-      if (IS_WINDOWS) {
-        process.env['DOTNET_INSTALL_DIR'] = installationDirectoryWindows;
-      } else {
-        process.env['DOTNET_INSTALL_DIR'] = IS_LINUX
-          ? installationDirectoryLinux
-          : installationDirectoryMac;
-      }
-    }
+    const dotnetInstallDirDefault = {
+      linux: '/usr/share/dotnet',
+      mac: path.join(process.env['HOME'] + '', '.dotnet'),
+      windows: path.join(process.env['PROGRAMFILES'] + '', 'dotnet')
+    }[getPlatform()];
+
+    const dotnetInstallDir = process.env['DOTNET_INSTALL_DIR']
+      ? this.convertInstallPathToAbsolute(process.env['DOTNET_INSTALL_DIR'])
+      : dotnetInstallDirDefault;
+
+    process.env['DOTNET_INSTALL_DIR'] = dotnetInstallDir;
   }
 
   constructor(version: string, quality: QualityOptions) {
