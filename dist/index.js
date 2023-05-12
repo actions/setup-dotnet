@@ -447,7 +447,7 @@ class DotnetCoreInstaller {
 exports.DotnetCoreInstaller = DotnetCoreInstaller;
 DotnetCoreInstaller.addToPath = DotnetInstallDir.addToPath;
 (() => {
-    DotnetInstallDir.initialize;
+    DotnetInstallDir.initialize();
 })();
 
 
