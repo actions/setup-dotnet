@@ -455,4 +455,4 @@ jobs:
           dotnet-version: ${{ matrix.higher-version }}
       - name: Verify dotnet (higher version)
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^${{ matrix.higher-version }}$"
+        run: __tests__/verify-dotnet.ps1 -Patterns "^${{ matrix.lower-version }}$", "^${{ matrix.higher-version }}$"
