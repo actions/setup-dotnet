@@ -58634,7 +58634,7 @@ const constants_1 = __nccwpck_require__(9042);
  * ```
  */
 const getNuGetFolderPath = () => __awaiter(void 0, void 0, void 0, function* () {
-    const { stdout, stderr, exitCode } = yield exec.getExecOutput(constants_1.cliCommand, undefined, { ignoreReturnCode: true });
+    const { stdout, stderr, exitCode } = yield exec.getExecOutput(constants_1.cliCommand, undefined, { ignoreReturnCode: true, silent: true });
     if (exitCode) {
         throw new Error(!stderr.trim()
             ? `The '${constants_1.cliCommand}' command failed with exit code: ${exitCode}`
