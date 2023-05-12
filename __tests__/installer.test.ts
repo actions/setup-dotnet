@@ -117,7 +117,7 @@ describe('DotnetCoreInstaller tests', () => {
 
   it('Throws if no location contains correct dotnet version', async () => {
     await expect(async () => {
-      await getDotnet('1000.0.0');
+      await getDotnet('1000.0.0')
     }).rejects.toThrow();
   }, 30000);
 
@@ -177,7 +177,7 @@ describe('DotnetVersionResolver tests', () => {
       const dotnetVersionResolver = new installer.DotnetVersionResolver(
         version
       );
-      const versionObject = await dotnetVersionResolver.createDotNetVersion();
+      const versionObject = await dotnetVersionResolver.createDotnetVersion();
 
       expect(!!versionObject.value).toBe(true);
     }
@@ -216,7 +216,7 @@ describe('DotnetVersionResolver tests', () => {
       );
 
       await expect(
-        async () => await dotnetVersionResolver.createDotNetVersion()
+        async () => await dotnetVersionResolver.createDotnetVersion()
       ).rejects.toThrow();
     }
   );
@@ -227,7 +227,7 @@ describe('DotnetVersionResolver tests', () => {
       const dotnetVersionResolver = new installer.DotnetVersionResolver(
         version
       );
-      const versionObject = await dotnetVersionResolver.createDotNetVersion();
+      const versionObject = await dotnetVersionResolver.createDotnetVersion();
 
       expect(versionObject.type.toLowerCase().includes('channel')).toBe(true);
     }
@@ -239,7 +239,7 @@ describe('DotnetVersionResolver tests', () => {
       const dotnetVersionResolver = new installer.DotnetVersionResolver(
         version
       );
-      const versionObject = await dotnetVersionResolver.createDotNetVersion();
+      const versionObject = await dotnetVersionResolver.createDotnetVersion();
 
       expect(versionObject.type.toLowerCase().includes('channel')).toBe(true);
       expect(versionObject.qualityFlag).toBe(true);
@@ -252,7 +252,7 @@ describe('DotnetVersionResolver tests', () => {
       const dotnetVersionResolver = new installer.DotnetVersionResolver(
         version
       );
-      const versionObject = await dotnetVersionResolver.createDotNetVersion();
+      const versionObject = await dotnetVersionResolver.createDotnetVersion();
 
       expect(versionObject.type.toLowerCase().includes('version')).toBe(true);
       expect(versionObject.qualityFlag).toBe(false);
@@ -265,7 +265,7 @@ describe('DotnetVersionResolver tests', () => {
       const dotnetVersionResolver = new installer.DotnetVersionResolver(
         version
       );
-      const versionObject = await dotnetVersionResolver.createDotNetVersion();
+      const versionObject = await dotnetVersionResolver.createDotnetVersion();
       const windowsRegEx = new RegExp(/^-[VC]/);
       const nonWindowsRegEx = new RegExp(/^--[vc]/);
 
