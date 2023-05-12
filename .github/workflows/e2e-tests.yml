@@ -433,6 +433,8 @@ jobs:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        lower-version: ['2.2.402', '3.0.103', '3.1.426', '6.0.408', '7.0.100']
+        higher-version: ['6.0.408', '7.0.203']
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -440,17 +442,17 @@ jobs:
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
       # Install one version, use it for something, then switch to next version
-      - name: Setup dotnet 2.2.402
+      - name: Setup dotnet (lower version)
         uses: ./
         with:
-          dotnet-version: 2.2.402
-      - name: Verify dotnet 2.2.402
+          dotnet-version: ${{ matrix.lower-version }}
+      - name: Verify dotnet (lower version)
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^2.2.402$"
-      - name: Setup dotnet 7.0.203
+        run: __tests__/verify-dotnet.ps1 -Patterns "^${{ matrix.lower-version }}$"
+      - name: Setup dotnet (higher version)
         uses: ./
         with:
-          dotnet-version: 7.0.203
-      - name: Verify dotnet 7.0.203
+          dotnet-version: ${{ matrix.higher-version }}
+      - name: Verify dotnet (higher version)
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^7.0.203$"
+        run: __tests__/verify-dotnet.ps1 -Patterns "^${{ matrix.higher-version }}$"
