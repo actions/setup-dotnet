@@ -154,9 +154,6 @@ export class DotnetInstallScript {
 
   private async setupScriptBash() {
     chmodSync(this.escapedScript, '777');
-
-    this.scriptArguments = [];
-
     this.scriptPath = await io.which(this.escapedScript, true);
   }
 
@@ -214,14 +211,12 @@ export abstract class DotnetInstallDir {
     : DotnetInstallDir.default[getPlatform()];
 
   private static convertInstallPathToAbsolute(installDir: string): string {
-    let transformedPath;
-    if (path.isAbsolute(installDir)) {
-      transformedPath = installDir;
-    } else {
-      transformedPath = installDir.startsWith('~')
-        ? path.join(os.homedir(), installDir.slice(1))
-        : (transformedPath = path.join(process.cwd(), installDir));
-    }
+    if (path.isAbsolute(installDir)) return path.normalize(installDir);
+
+    const transformedPath = installDir.startsWith('~')
+      ? path.join(os.homedir(), installDir.slice(1))
+      : path.join(process.cwd(), installDir);
+
     return path.normalize(transformedPath);
   }
 

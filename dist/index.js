@@ -350,7 +350,6 @@ class DotnetInstallScript {
     setupScriptBash() {
         return __awaiter(this, void 0, void 0, function* () {
             (0, fs_1.chmodSync)(this.escapedScript, '777');
-            this.scriptArguments = [];
             this.scriptPath = yield io.which(this.escapedScript, true);
         });
     }
@@ -385,15 +384,11 @@ class DotnetInstallScript {
 exports.DotnetInstallScript = DotnetInstallScript;
 class DotnetInstallDir {
     static convertInstallPathToAbsolute(installDir) {
-        let transformedPath;
-        if (path_1.default.isAbsolute(installDir)) {
-            transformedPath = installDir;
-        }
-        else {
-            transformedPath = installDir.startsWith('~')
-                ? path_1.default.join(os_1.default.homedir(), installDir.slice(1))
-                : (transformedPath = path_1.default.join(process.cwd(), installDir));
-        }
+        if (path_1.default.isAbsolute(installDir))
+            return path_1.default.normalize(installDir);
+        const transformedPath = installDir.startsWith('~')
+            ? path_1.default.join(os_1.default.homedir(), installDir.slice(1))
+            : path_1.default.join(process.cwd(), installDir);
         return path_1.default.normalize(transformedPath);
     }
     static addToPath() {
