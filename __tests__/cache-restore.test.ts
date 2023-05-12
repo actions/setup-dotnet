@@ -1,18 +1,23 @@
+import {readdir} from 'node:fs/promises';
 import * as cache from '@actions/cache';
 import * as core from '@actions/core';
 import * as glob from '@actions/glob';
 import {restoreCache} from '../src/cache-restore';
 import {getNuGetFolderPath} from '../src/cache-utils';
-import {lockFilePattern} from '../src/constants';
+import {lockFilePatterns} from '../src/constants';
 
+jest.mock('node:fs/promises');
 jest.mock('@actions/cache');
 jest.mock('@actions/core');
 jest.mock('@actions/glob');
 jest.mock('../src/cache-utils');
 
 describe('cache-restore tests', () => {
-  describe('restoreCache()', () => {
+  describe.each(lockFilePatterns)('restoreCache("%s")', lockFilePattern => {
+    /** Store original process.env.GITHUB_WORKSPACE */
+    let githubWorkspace: string | undefined;
     beforeAll(() => {
+      githubWorkspace = process.env.GITHUB_WORKSPACE;
       jest.mocked(getNuGetFolderPath).mockResolvedValue({
         'global-packages': 'global-packages',
         'http-cache': 'http-cache',
@@ -21,11 +26,13 @@ describe('cache-restore tests', () => {
       });
     });
     beforeEach(() => {
+      process.env.GITHUB_WORKSPACE = './';
       jest.mocked(glob.hashFiles).mockClear();
       jest.mocked(core.saveState).mockClear();
       jest.mocked(core.setOutput).mockClear();
       jest.mocked(cache.restoreCache).mockClear();
     });
+    afterEach(() => (process.env.GITHUB_WORKSPACE = githubWorkspace));
 
     it('throws error when lock file is not found', async () => {
       jest.mocked(glob.hashFiles).mockResolvedValue('');
@@ -79,10 +86,11 @@ describe('cache-restore tests', () => {
       );
     });
 
-    it('calls glob.hashFiles("**/packages.lock.json") if cacheDependencyPath is falsy', async () => {
+    it('calls glob.hashFiles("/packages.lock.json") if cacheDependencyPath is falsy', async () => {
       const expectedKey = `dotnet-cache-${process.env.RUNNER_OS}-hash`;
       jest.mocked(glob.hashFiles).mockResolvedValue('hash');
       jest.mocked(cache.restoreCache).mockResolvedValue(expectedKey);
+      jest.mocked(readdir).mockResolvedValue([lockFilePattern] as any);
 
       await restoreCache('');
 
