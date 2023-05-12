@@ -239,7 +239,7 @@ export class DotnetCoreInstaller {
   static addToPath = DotnetInstallDir.addToPath;
 
   static {
-    DotnetInstallDir.initialize;
+    DotnetInstallDir.initialize();
   }
 
   constructor(private version: string, private quality: QualityOptions) {}
