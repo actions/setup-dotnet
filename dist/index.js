@@ -238,7 +238,6 @@ const exec = __importStar(__nccwpck_require__(1514));
 const io = __importStar(__nccwpck_require__(7436));
 const hc = __importStar(__nccwpck_require__(6255));
 const fs_1 = __nccwpck_require__(7147);
-const promises_1 = __nccwpck_require__(3292);
 const path_1 = __importDefault(__nccwpck_require__(1017));
 const os_1 = __importDefault(__nccwpck_require__(2037));
 const semver_1 = __importDefault(__nccwpck_require__(5911));
@@ -377,7 +376,6 @@ class DotnetCoreInstaller {
     }
     installDotnet() {
         return __awaiter(this, void 0, void 0, function* () {
-            const listOfInstalledVersions = yield this.getListOfInstalledVersions();
             const windowsDefaultOptions = [
                 '-NoLogo',
                 '-Sta',
@@ -430,26 +428,20 @@ class DotnetCoreInstaller {
                 ignoreReturnCode: true,
                 env: process.env
             };
-            const { exitCode, stderr } = yield exec.getExecOutput(`"${scriptPath}"`, scriptArguments, getExecOutputOptions);
+            const { exitCode, stdout, stderr } = yield exec.getExecOutput(`"${scriptPath}"`, scriptArguments, getExecOutputOptions);
             if (exitCode) {
                 throw new Error(`Failed to install dotnet, exit code: ${exitCode}. ${stderr}`);
             }
-            return this.outputDotnetVersion(listOfInstalledVersions);
+            return this.parseInstalledVersion(stdout);
         });
     }
-    getListOfInstalledVersions() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const installationPath = process.env['DOTNET_INSTALL_DIR'];
-            const versionsOnRunner = (yield (0, promises_1.readdir)(path_1.default.join(installationPath.replace(/'/g, ''), 'sdk'))).filter((el) => semver_1.default.valid(el));
-            return versionsOnRunner;
-        });
-    }
-    outputDotnetVersion(listOfInstalledVersions) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const updatedListOfInstalledVersions = yield this.getListOfInstalledVersions();
-            const installedVersion = updatedListOfInstalledVersions.filter((el) => !listOfInstalledVersions.includes(el));
-            return installedVersion[0];
-        });
+    parseInstalledVersion(stdout) {
+        const regex = /(?<version>\d+\.\d+\.\d+[a-z0-9._-]*)/gm;
+        const matchedResult = regex.exec(stdout);
+        if (!matchedResult) {
+            throw new Error(`Failed to parse installed by the script version of .NET`);
+        }
+        return matchedResult.groups.version;
     }
 }
 exports.DotnetCoreInstaller = DotnetCoreInstaller;
@@ -21117,14 +21109,6 @@ module.exports = require("events");
 
 "use strict";
 module.exports = require("fs");
-
-/***/ }),
-
-/***/ 3292:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("fs/promises");
 
 /***/ }),
 
