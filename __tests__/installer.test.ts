@@ -48,8 +48,13 @@ describe('installer tests', () => {
       it('should return version of .NET SDK after installation complete', async () => {
         const inputVersion = '3.1.100';
         const inputQuality = '' as QualityOptions;
+        const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
         getExecOutputSpy.mockImplementation(() => {
-          return Promise.resolve({exitCode: 0, stdout: '', stderr: ''});
+          return Promise.resolve({
+            exitCode: 0,
+            stdout: `${stdout}`,
+            stderr: ''
+          });
         });
         maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
@@ -65,9 +70,14 @@ describe('installer tests', () => {
       it(`should supply 'version' argument to the installation script if supplied version is in A.B.C syntax`, async () => {
         const inputVersion = '6.0.300';
         const inputQuality = '' as QualityOptions;
+        const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
 
         getExecOutputSpy.mockImplementation(() => {
-          return Promise.resolve({exitCode: 0, stdout: '', stderr: ''});
+          return Promise.resolve({
+            exitCode: 0,
+            stdout: `${stdout}`,
+            stderr: ''
+          });
         });
         maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
@@ -91,9 +101,13 @@ describe('installer tests', () => {
       it(`should warn if the 'quality' input is set and the supplied version is in A.B.C syntax`, async () => {
         const inputVersion = '6.0.300';
         const inputQuality = 'ga' as QualityOptions;
-
+        const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
         getExecOutputSpy.mockImplementation(() => {
-          return Promise.resolve({exitCode: 0, stdout: '', stderr: ''});
+          return Promise.resolve({
+            exitCode: 0,
+            stdout: `${stdout}`,
+            stderr: ''
+          });
         });
         maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
@@ -112,9 +126,14 @@ describe('installer tests', () => {
       it(`should warn if the 'quality' input is set and version isn't in A.B.C syntax but major tag is lower then 6`, async () => {
         const inputVersion = '3.1';
         const inputQuality = 'ga' as QualityOptions;
+        const stdout = `Fictitious dotnet version 3.1.100 is installed`;
 
         getExecOutputSpy.mockImplementation(() => {
-          return Promise.resolve({exitCode: 0, stdout: '', stderr: ''});
+          return Promise.resolve({
+            exitCode: 0,
+            stdout: `${stdout}`,
+            stderr: ''
+          });
         });
         maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
@@ -135,10 +154,11 @@ describe('installer tests', () => {
         async inputVersion => {
           const inputQuality = 'ga' as QualityOptions;
           const exitCode = 0;
+          const stdout = `Fictitious dotnet version 6.0.0 is installed`;
           getExecOutputSpy.mockImplementation(() => {
             return Promise.resolve({
               exitCode: exitCode,
-              stdout: '',
+              stdout: `${stdout}`,
               stderr: ''
             });
           });
@@ -167,10 +187,11 @@ describe('installer tests', () => {
         async inputVersion => {
           const inputQuality = '' as QualityOptions;
           const exitCode = 0;
+          const stdout = `Fictitious dotnet version 6.0.0 is installed`;
           getExecOutputSpy.mockImplementation(() => {
             return Promise.resolve({
               exitCode: exitCode,
-              stdout: '',
+              stdout: `${stdout}`,
               stderr: ''
             });
           });
@@ -199,9 +220,14 @@ describe('installer tests', () => {
           process.env['https_proxy'] = 'https://proxy.com';
           const inputVersion = '6.0.100';
           const inputQuality = '' as QualityOptions;
+          const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
 
           getExecOutputSpy.mockImplementation(() => {
-            return Promise.resolve({exitCode: 0, stdout: '', stderr: ''});
+            return Promise.resolve({
+              exitCode: 0,
+              stdout: `${stdout}`,
+              stderr: ''
+            });
           });
           maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
@@ -225,9 +251,14 @@ describe('installer tests', () => {
           process.env['no_proxy'] = 'first.url,second.url';
           const inputVersion = '6.0.100';
           const inputQuality = '' as QualityOptions;
+          const stdout = `Fictitious dotnet version 6.0.0 is installed`;
 
           getExecOutputSpy.mockImplementation(() => {
-            return Promise.resolve({exitCode: 0, stdout: '', stderr: ''});
+            return Promise.resolve({
+              exitCode: 0,
+              stdout: `${stdout}`,
+              stderr: ''
+            });
           });
           maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
