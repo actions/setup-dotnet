@@ -4,7 +4,6 @@ import * as exec from '@actions/exec';
 import * as io from '@actions/io';
 import * as hc from '@actions/http-client';
 import {chmodSync} from 'fs';
-import {readdir} from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import semver from 'semver';
@@ -199,7 +198,6 @@ export class DotnetCoreInstaller {
   }
 
   public async installDotnet(): Promise<string> {
-    const listOfInstalledVersions = await this.getListOfInstalledVersions();
     const windowsDefaultOptions = [
       '-NoLogo',
       '-Sta',
@@ -259,7 +257,7 @@ export class DotnetCoreInstaller {
       ignoreReturnCode: true,
       env: process.env as {string: string}
     };
-    const {exitCode, stderr} = await exec.getExecOutput(
+    const {exitCode, stdout, stderr} = await exec.getExecOutput(
       `"${scriptPath}"`,
       scriptArguments,
       getExecOutputOptions
@@ -269,25 +267,19 @@ export class DotnetCoreInstaller {
         `Failed to install dotnet, exit code: ${exitCode}. ${stderr}`
       );
     }
-    return await this.outputDotnetVersion(listOfInstalledVersions);
+
+    return this.parseInstalledVersion(stdout);
   }
 
-  private async getListOfInstalledVersions(): Promise<string[]> {
-    const installationPath = process.env['DOTNET_INSTALL_DIR']!;
-    const versionsOnRunner: string[] = (
-      await readdir(path.join(installationPath.replace(/'/g, ''), 'sdk'))
-    ).filter(el => semver.valid(el));
-    return versionsOnRunner;
-  }
+  private parseInstalledVersion(stdout: string): string {
+    const regex = /(?<version>\d+\.\d+\.\d+[a-z0-9._-]*)/gm;
+    const matchedResult = regex.exec(stdout);
 
-  private async outputDotnetVersion(
-    listOfInstalledVersions: string[]
-  ): Promise<string> {
-    const updatedListOfInstalledVersions =
-      await this.getListOfInstalledVersions();
-    const installedVersion = updatedListOfInstalledVersions.filter(
-      el => !listOfInstalledVersions.includes(el)
-    );
-    return installedVersion[0];
+    if (!matchedResult) {
+      throw new Error(
+        `Failed to parse installed by the script version of .NET`
+      );
+    }
+    return matchedResult.groups!.version;
   }
 }
