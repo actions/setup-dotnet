@@ -1,114 +1,146 @@
-import * as io from '@actions/io';
 import * as core from '@actions/core';
 import fs from 'fs';
-import os from 'os';
-import path from 'path';
+import semver from 'semver';
+import * as auth from '../src/authutil';
 
 import * as setup from '../src/setup-dotnet';
-import {IS_WINDOWS} from '../src/utils';
-import {IS_LINUX} from '../src/utils';
-
-let toolDir: string;
-
-if (IS_WINDOWS) {
-  toolDir = path.join(process.env['PROGRAMFILES'] + '', 'dotnet');
-} else if (IS_LINUX) {
-  toolDir = '/usr/share/dotnet';
-} else {
-  toolDir = path.join(process.env['HOME'] + '', '.dotnet');
-}
-
-function createGlobalJsonPath(dotnetVersion: string) {
-  const globalJsonPath = path.join(process.cwd(), 'global.json');
-  const jsonContents = `{${os.EOL}"sdk": {${os.EOL}"version": "${dotnetVersion}"${os.EOL}}${os.EOL}}`;
-  if (!fs.existsSync(globalJsonPath)) {
-    fs.writeFileSync(globalJsonPath, jsonContents);
-  }
-  return globalJsonPath;
-}
-
-const tempDir = path.join(__dirname, 'runner', 'temp2');
+import {DotnetCoreInstaller} from '../src/installer';
 
 describe('setup-dotnet tests', () => {
-  const getInputSpy = jest.spyOn(core, 'getInput');
-  const getMultilineInputSpy = jest.spyOn(core, 'getMultilineInput');
-  const setOutputSpy = jest.spyOn(core, 'setOutput');
-
   const inputs = {} as any;
 
-  beforeAll(async () => {
-    process.env.RUNNER_TOOL_CACHE = toolDir;
-    process.env.DOTNET_INSTALL_DIR = toolDir;
-    process.env.RUNNER_TEMP = tempDir;
-    try {
-      await io.rmRF(`${toolDir}/*`);
-      await io.rmRF(`${tempDir}/*`);
-    } catch (err) {
-      console.log(err.message);
-      console.log('Failed to remove test directories');
-    }
-  }, 30000);
+  const getInputSpy = jest.spyOn(core, 'getInput');
+  const getMultilineInputSpy = jest.spyOn(core, 'getMultilineInput');
+  const setFailedSpy = jest.spyOn(core, 'setFailed');
+  const debugSpy = jest.spyOn(core, 'debug');
+  const infoSpy = jest.spyOn(core, 'info');
+  const setOutputSpy = jest.spyOn(core, 'setOutput');
 
-  afterEach(async () => {
-    try {
-      await io.rmRF(path.join(process.cwd(), 'global.json'));
-      await io.rmRF(`${toolDir}/*`);
-      await io.rmRF(`${tempDir}/*`);
-    } catch (err) {
-      console.log(err.message);
-      console.log('Failed to remove test directories');
-    }
-  }, 30000);
+  const existsSyncSpy = jest.spyOn(fs, 'existsSync');
 
-  it('Acquires version of dotnet from global.json if no matching version is installed', async () => {
-    createGlobalJsonPath('3.1.201');
-    await setup.run();
+  const maxSatisfyingSpy = jest.spyOn(semver, 'maxSatisfying');
 
-    expect(fs.existsSync(path.join(toolDir, 'sdk', '3.1.201'))).toBe(true);
-    if (IS_WINDOWS) {
-      expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
-    } else {
-      expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
-    }
-  }, 400000);
+  const installDotnetSpy = jest.spyOn(
+    DotnetCoreInstaller.prototype,
+    'installDotnet'
+  );
+  const addToPathSpy = jest.spyOn(DotnetCoreInstaller, 'addToPath');
 
-  it("Sets output with the latest installed by action version if global.json file isn't specified", async () => {
-    inputs['dotnet-version'] = ['3.1.201', '6.0.401'];
+  const configAuthenticationSpy = jest.spyOn(auth, 'configAuthentication');
 
-    getMultilineInputSpy.mockImplementation(input => inputs[input]);
+  describe('run() tests', () => {
+    beforeEach(() => {
+      getMultilineInputSpy.mockImplementation(input => inputs[input as string]);
+      getInputSpy.mockImplementation(input => inputs[input as string]);
+    });
 
-    await setup.run();
+    afterEach(() => {
+      jest.clearAllMocks();
+      jest.resetAllMocks();
+    });
 
-    expect(setOutputSpy).toHaveBeenCalledWith('dotnet-version', '6.0.401');
-  }, 400000);
+    it('should fail the action if global-json-file input is present, but the file does not exist in the file system', async () => {
+      inputs['global-json-file'] = 'fictitious.json';
+      inputs['dotnet-version'] = [];
 
-  it("Sets output with the version specified in global.json, if it's present", async () => {
-    createGlobalJsonPath('3.0.103');
+      const expectedErrorMessage = `The specified global.json file '${inputs['global-json-file']}' does not exist`;
 
-    inputs['dotnet-version'] = ['3.1.201', '6.0.401'];
-    inputs['global-json-file'] = './global.json';
+      await setup.run();
+      expect(setFailedSpy).toHaveBeenCalledWith(expectedErrorMessage);
+    });
 
-    getMultilineInputSpy.mockImplementation(input => inputs[input]);
+    test(`if 'dotnet-version' and 'global-json-file' inputs aren't present, should log into debug output, try to find global.json in the repo root, fail and log message into info output`, async () => {
+      inputs['global-json-file'] = '';
+      inputs['dotnet-version'] = [];
 
-    getInputSpy.mockImplementation(input => inputs[input]);
+      maxSatisfyingSpy.mockImplementation(() => null);
+      setOutputSpy.mockImplementation(() => {});
 
-    await setup.run();
+      const expectedDebugMessage =
+        'No version found, trying to find version from global.json';
+      const expectedInfoMessage = `global.json wasn't found in the root directory. No .NET version will be installed.`;
 
-    expect(setOutputSpy).toHaveBeenCalledWith('dotnet-version', '3.0.103');
-  }, 400000);
+      await setup.run();
 
-  it('Sets output with the version specified in global.json with absolute path', async () => {
-    const globalJsonPath = createGlobalJsonPath('3.0.103');
+      expect(debugSpy).toHaveBeenCalledWith(expectedDebugMessage);
+      expect(existsSyncSpy).toHaveBeenCalled();
+      expect(infoSpy).toHaveBeenCalledWith(expectedInfoMessage);
+    });
 
-    inputs['dotnet-version'] = ['3.1.201', '6.0.401'];
-    inputs['global-json-file'] = globalJsonPath;
+    it('should fail the action if quality is supplied but its value is not supported', async () => {
+      inputs['global-json-file'] = '';
+      inputs['dotnet-version'] = ['6.0'];
+      inputs['dotnet-quality'] = 'fictitiousQuality';
 
-    getMultilineInputSpy.mockImplementation(input => inputs[input]);
+      const expectedErrorMessage = `${inputs['dotnet-quality']} is not a supported value for 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`;
 
-    getInputSpy.mockImplementation(input => inputs[input]);
+      await setup.run();
+      expect(setFailedSpy).toHaveBeenCalledWith(expectedErrorMessage);
+    });
 
-    await setup.run();
+    it('should call installDotnet() multiple times if dotnet-version multiline input is provided', async () => {
+      inputs['global-json-file'] = '';
+      inputs['dotnet-version'] = ['6.0', '7.0'];
+      inputs['dotnet-quality'] = '';
 
-    expect(setOutputSpy).toHaveBeenCalledWith('dotnet-version', '3.0.103');
-  }, 400000);
+      installDotnetSpy.mockImplementation(() => Promise.resolve(''));
+
+      await setup.run();
+      expect(installDotnetSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('should call addToPath() after installation complete', async () => {
+      inputs['global-json-file'] = '';
+      inputs['dotnet-version'] = ['6.0', '7.0'];
+      inputs['dotnet-quality'] = '';
+
+      installDotnetSpy.mockImplementation(() => Promise.resolve(''));
+      addToPathSpy.mockImplementation(() => {});
+
+      await setup.run();
+      expect(addToPathSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should call auth.configAuthentication() if source-url input is provided', async () => {
+      inputs['global-json-file'] = '';
+      inputs['dotnet-version'] = [];
+      inputs['dotnet-quality'] = '';
+      inputs['source-url'] = 'fictitious.source.url';
+
+      configAuthenticationSpy.mockImplementation(() => {});
+
+      await setup.run();
+      expect(configAuthenticationSpy).toHaveBeenCalledWith(
+        inputs['source-url'],
+        undefined
+      );
+    });
+
+    it('should call auth.configAuthentication() with proper parameters if source-url and config-file inputs are provided', async () => {
+      inputs['global-json-file'] = '';
+      inputs['dotnet-version'] = [];
+      inputs['dotnet-quality'] = '';
+      inputs['source-url'] = 'fictitious.source.url';
+      inputs['config-file'] = 'fictitious.path';
+
+      configAuthenticationSpy.mockImplementation(() => {});
+      setOutputSpy.mockImplementation(() => {});
+
+      await setup.run();
+      expect(configAuthenticationSpy).toHaveBeenCalledWith(
+        inputs['source-url'],
+        inputs['config-file']
+      );
+    });
+
+    it('should call setOutput() after installation complete', async () => {
+      inputs['dotnet-version'] = ['6.0.300'];
+
+      installDotnetSpy.mockImplementation(() => Promise.resolve(''));
+      addToPathSpy.mockImplementation(() => {});
+
+      await setup.run();
+      expect(setOutputSpy).toHaveBeenCalledTimes(1);
+    });
+  });
 });

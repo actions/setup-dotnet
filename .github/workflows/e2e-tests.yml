@@ -24,7 +24,7 @@ jobs:
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Setup dotnet 2.2.402 and 3.1.404
+      - name: Setup dotnet 2.2.402, 3.1.404 and 3.0.x
         uses: ./
         with:
           dotnet-version: |
