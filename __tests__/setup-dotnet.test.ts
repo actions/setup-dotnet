@@ -5,12 +5,15 @@ import * as auth from '../src/authutil';
 
 import * as setup from '../src/setup-dotnet';
 import {DotnetCoreInstaller} from '../src/installer';
+import * as cacheUtils from '../src/cache-utils';
+import * as cacheRestore from '../src/cache-restore';
 
 describe('setup-dotnet tests', () => {
   const inputs = {} as any;
 
   const getInputSpy = jest.spyOn(core, 'getInput');
   const getMultilineInputSpy = jest.spyOn(core, 'getMultilineInput');
+  const getBooleanInputSpy = jest.spyOn(core, 'getBooleanInput');
   const setFailedSpy = jest.spyOn(core, 'setFailed');
   const debugSpy = jest.spyOn(core, 'debug');
   const infoSpy = jest.spyOn(core, 'info');
@@ -25,13 +28,18 @@ describe('setup-dotnet tests', () => {
     'installDotnet'
   );
   const addToPathSpy = jest.spyOn(DotnetCoreInstaller, 'addToPath');
-
+  const isCacheFeatureAvailableSpy = jest.spyOn(
+    cacheUtils,
+    'isCacheFeatureAvailable'
+  );
+  const restoreCacheSpy = jest.spyOn(cacheRestore, 'restoreCache');
   const configAuthenticationSpy = jest.spyOn(auth, 'configAuthentication');
 
   describe('run() tests', () => {
     beforeEach(() => {
       getMultilineInputSpy.mockImplementation(input => inputs[input as string]);
       getInputSpy.mockImplementation(input => inputs[input as string]);
+      getBooleanInputSpy.mockImplementation(input => inputs[input as string]);
     });
 
     afterEach(() => {
@@ -141,6 +149,55 @@ describe('setup-dotnet tests', () => {
 
       await setup.run();
       expect(setOutputSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it(`should get 'cache-dependency-path' and call restoreCache() if input cache is set to true and cache feature is available`, async () => {
+      inputs['dotnet-version'] = ['6.0.300'];
+      inputs['dotnet-quality'] = '';
+      inputs['cache'] = true;
+      inputs['cache-dependency-path'] = 'fictitious.package.lock.json';
+
+      installDotnetSpy.mockImplementation(() => Promise.resolve(''));
+      addToPathSpy.mockImplementation(() => {});
+
+      isCacheFeatureAvailableSpy.mockImplementation(() => true);
+      restoreCacheSpy.mockImplementation(() => Promise.resolve());
+
+      await setup.run();
+      expect(isCacheFeatureAvailableSpy).toHaveBeenCalledTimes(1);
+      expect(restoreCacheSpy).toHaveBeenCalledWith(
+        inputs['cache-dependency-path']
+      );
+    });
+
+    it(`shouldn't call restoreCache() if input cache isn't set to true`, async () => {
+      inputs['dotnet-version'] = ['6.0.300'];
+      inputs['dotnet-quality'] = '';
+      inputs['cache'] = false;
+
+      installDotnetSpy.mockImplementation(() => Promise.resolve(''));
+      addToPathSpy.mockImplementation(() => {});
+
+      isCacheFeatureAvailableSpy.mockImplementation(() => true);
+      restoreCacheSpy.mockImplementation(() => Promise.resolve());
+
+      await setup.run();
+      expect(restoreCacheSpy).not.toHaveBeenCalled();
+    });
+
+    it(`shouldn't call restoreCache() if cache feature isn't available`, async () => {
+      inputs['dotnet-version'] = ['6.0.300'];
+      inputs['dotnet-quality'] = '';
+      inputs['cache'] = true;
+
+      installDotnetSpy.mockImplementation(() => Promise.resolve(''));
+      addToPathSpy.mockImplementation(() => {});
+
+      isCacheFeatureAvailableSpy.mockImplementation(() => false);
+      restoreCacheSpy.mockImplementation(() => Promise.resolve());
+
+      await setup.run();
+      expect(restoreCacheSpy).not.toHaveBeenCalled();
     });
   });
 });
