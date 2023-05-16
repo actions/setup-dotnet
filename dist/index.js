@@ -578,17 +578,6 @@ function run() {
             if (sourceUrl) {
                 auth.configAuthentication(sourceUrl, configFile);
             }
-            // const comparisonRange: string = globalJsonFileInput
-            //   ? versions[versions.length - 1]!
-            //   : '*';
-            // const versionToOutput = semver.maxSatisfying(
-            //   installedDotnetVersions,
-            //   comparisonRange,
-            //   {
-            //     includePrerelease: true
-            //   }
-            // );
-            // core.setOutput('dotnet-version', versionToOutput);
             outputInstalledVersion(installedDotnetVersions, globalJsonFileInput);
             const matchersPath = path_1.default.join(__dirname, '..', '.github');
             core.info(`##[add-matcher]${path_1.default.join(matchersPath, 'csc.json')}`);

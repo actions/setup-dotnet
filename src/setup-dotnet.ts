@@ -78,19 +78,6 @@ export async function run() {
       auth.configAuthentication(sourceUrl, configFile);
     }
 
-    // const comparisonRange: string = globalJsonFileInput
-    //   ? versions[versions.length - 1]!
-    //   : '*';
-
-    // const versionToOutput = semver.maxSatisfying(
-    //   installedDotnetVersions,
-    //   comparisonRange,
-    //   {
-    //     includePrerelease: true
-    //   }
-    // );
-
-    // core.setOutput('dotnet-version', versionToOutput);
     outputInstalledVersion(installedDotnetVersions, globalJsonFileInput);
 
     const matchersPath = path.join(__dirname, '..', '.github');
