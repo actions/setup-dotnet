@@ -27,7 +27,7 @@ export async function run() {
     // Proxy, auth, (etc) are still set up, even if no version is identified
     //
     const versions = core.getMultilineInput('dotnet-version');
-    const installedDotnetVersions: string[] = [];
+    const installedDotnetVersions: (string | null)[] = [];
 
     const globalJsonFileInput = core.getInput('global-json-file');
     if (globalJsonFileInput) {
@@ -78,19 +78,20 @@ export async function run() {
       auth.configAuthentication(sourceUrl, configFile);
     }
 
-    const comparisonRange: string = globalJsonFileInput
-      ? versions[versions.length - 1]!
-      : '*';
+    // const comparisonRange: string = globalJsonFileInput
+    //   ? versions[versions.length - 1]!
+    //   : '*';
 
-    const versionToOutput = semver.maxSatisfying(
-      installedDotnetVersions,
-      comparisonRange,
-      {
-        includePrerelease: true
-      }
-    );
+    // const versionToOutput = semver.maxSatisfying(
+    //   installedDotnetVersions,
+    //   comparisonRange,
+    //   {
+    //     includePrerelease: true
+    //   }
+    // );
 
-    core.setOutput('dotnet-version', versionToOutput);
+    // core.setOutput('dotnet-version', versionToOutput);
+    outputInstalledVersion(installedDotnetVersions, globalJsonFileInput);
 
     const matchersPath = path.join(__dirname, '..', '.github');
     core.info(`##[add-matcher]${path.join(matchersPath, 'csc.json')}`);
@@ -114,6 +115,39 @@ function getVersionFromGlobalJson(globalJsonPath: string): string {
     }
   }
   return version;
+}
+
+function outputInstalledVersion(
+  installedVersions: (string | null)[],
+  globalJsonFileInput: string
+): void {
+  if (!installedVersions.length) {
+    core.info(
+      `No .NET version was installed. The 'dotnet-version' output will not be set.`
+    );
+  }
+  if (installedVersions.includes(null)) {
+    core.warning(
+      `Failed to output the installed version of .NET. The 'dotnet-version' output will not be set.`
+    );
+    return;
+  }
+
+  if (globalJsonFileInput) {
+    const versionToOutput = installedVersions.at(-1);
+    core.setOutput('dotnet-version', versionToOutput);
+    return;
+  }
+
+  const versionToOutput = semver.maxSatisfying(
+    installedVersions as string[],
+    '*',
+    {
+      includePrerelease: true
+    }
+  );
+
+  core.setOutput('dotnet-version', versionToOutput);
 }
 
 run();

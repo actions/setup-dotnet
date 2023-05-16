@@ -197,7 +197,7 @@ export class DotnetCoreInstaller {
     }
   }
 
-  public async installDotnet(): Promise<string> {
+  public async installDotnet(): Promise<string | null> {
     const windowsDefaultOptions = [
       '-NoLogo',
       '-Sta',
@@ -271,14 +271,13 @@ export class DotnetCoreInstaller {
     return this.parseInstalledVersion(stdout);
   }
 
-  private parseInstalledVersion(stdout: string): string {
+  private parseInstalledVersion(stdout: string): string | null {
     const regex = /(?<version>\d+\.\d+\.\d+[a-z0-9._-]*)/gm;
     const matchedResult = regex.exec(stdout);
 
     if (!matchedResult) {
-      throw new Error(
-        `Failed to parse installed by the script version of .NET`
-      );
+      core.warning(`Failed to parse installed by the script version of .NET`);
+      return null;
     }
     return matchedResult.groups!.version;
   }

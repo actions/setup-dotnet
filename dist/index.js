@@ -439,7 +439,8 @@ class DotnetCoreInstaller {
         const regex = /(?<version>\d+\.\d+\.\d+[a-z0-9._-]*)/gm;
         const matchedResult = regex.exec(stdout);
         if (!matchedResult) {
-            throw new Error(`Failed to parse installed by the script version of .NET`);
+            core.warning(`Failed to parse installed by the script version of .NET`);
+            return null;
         }
         return matchedResult.groups.version;
     }
@@ -577,13 +578,18 @@ function run() {
             if (sourceUrl) {
                 auth.configAuthentication(sourceUrl, configFile);
             }
-            const comparisonRange = globalJsonFileInput
-                ? versions[versions.length - 1]
-                : '*';
-            const versionToOutput = semver_1.default.maxSatisfying(installedDotnetVersions, comparisonRange, {
-                includePrerelease: true
-            });
-            core.setOutput('dotnet-version', versionToOutput);
+            // const comparisonRange: string = globalJsonFileInput
+            //   ? versions[versions.length - 1]!
+            //   : '*';
+            // const versionToOutput = semver.maxSatisfying(
+            //   installedDotnetVersions,
+            //   comparisonRange,
+            //   {
+            //     includePrerelease: true
+            //   }
+            // );
+            // core.setOutput('dotnet-version', versionToOutput);
+            outputInstalledVersion(installedDotnetVersions, globalJsonFileInput);
             const matchersPath = path_1.default.join(__dirname, '..', '.github');
             core.info(`##[add-matcher]${path_1.default.join(matchersPath, 'csc.json')}`);
         }
@@ -607,6 +613,24 @@ function getVersionFromGlobalJson(globalJsonPath) {
         }
     }
     return version;
+}
+function outputInstalledVersion(installedVersions, globalJsonFileInput) {
+    if (!installedVersions.length) {
+        core.info(`No .NET version was installed. The 'dotnet-version' output will not be set.`);
+    }
+    if (installedVersions.includes(null)) {
+        core.warning(`Failed to output the installed version of .NET. The 'dotnet-version' output will not be set.`);
+        return;
+    }
+    if (globalJsonFileInput) {
+        const versionToOutput = installedVersions.at(-1);
+        core.setOutput('dotnet-version', versionToOutput);
+        return;
+    }
+    const versionToOutput = semver_1.default.maxSatisfying(installedVersions, '*', {
+        includePrerelease: true
+    });
+    core.setOutput('dotnet-version', versionToOutput);
 }
 run();
 
