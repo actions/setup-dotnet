@@ -25,9 +25,8 @@ describe('installer tests', () => {
     const maxSatisfyingSpy = jest.spyOn(semver, 'maxSatisfying');
     const chmodSyncSpy = jest.spyOn(fs, 'chmodSync');
     const readdirSpy = jest.spyOn(fspromises, 'readdir');
-    
-    describe('installDotnet() tests', () => {
 
+    describe('installDotnet() tests', () => {
       beforeAll(() => {
         whichSpy.mockImplementation(() => Promise.resolve('PathToShell'));
         chmodSyncSpy.mockImplementation(() => {});
@@ -42,7 +41,7 @@ describe('installer tests', () => {
         const inputVersion = '3.1.100';
         const inputQuality = '' as QualityOptions;
         const errorMessage = 'fictitious error message!';
-        
+
         getExecOutputSpy.mockImplementation(() => {
           return Promise.resolve({
             exitCode: 1,
@@ -50,7 +49,6 @@ describe('installer tests', () => {
             stderr: errorMessage
           });
         });
-
 
         const dotnetInstaller = new installer.DotnetCoreInstaller(
           inputVersion,
