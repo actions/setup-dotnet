@@ -1,5 +1,7 @@
 import each from 'jest-each';
 import semver from 'semver';
+import fs from 'fs';
+import fspromises from 'fs/promises';
 import * as exec from '@actions/exec';
 import * as core from '@actions/core';
 import * as io from '@actions/io';
@@ -21,14 +23,26 @@ describe('installer tests', () => {
     const warningSpy = jest.spyOn(core, 'warning');
     const whichSpy = jest.spyOn(io, 'which');
     const maxSatisfyingSpy = jest.spyOn(semver, 'maxSatisfying');
-
+    const chmodSyncSpy = jest.spyOn(fs, 'chmodSync');
+    const readdirSpy = jest.spyOn(fspromises, 'readdir');
+    
     describe('installDotnet() tests', () => {
-      whichSpy.mockImplementation(() => Promise.resolve('PathToShell'));
+
+      beforeAll(() => {
+        whichSpy.mockImplementation(() => Promise.resolve('PathToShell'));
+        chmodSyncSpy.mockImplementation(() => {});
+        readdirSpy.mockImplementation(() => Promise.resolve([]));
+      });
+
+      afterAll(() => {
+        jest.resetAllMocks();
+      });
 
       it('should throw the error in case of non-zero exit code of the installation script. The error message should contain logs.', async () => {
         const inputVersion = '3.1.100';
         const inputQuality = '' as QualityOptions;
         const errorMessage = 'fictitious error message!';
+        
         getExecOutputSpy.mockImplementation(() => {
           return Promise.resolve({
             exitCode: 1,
@@ -36,6 +50,8 @@ describe('installer tests', () => {
             stderr: errorMessage
           });
         });
+
+
         const dotnetInstaller = new installer.DotnetCoreInstaller(
           inputVersion,
           inputQuality
