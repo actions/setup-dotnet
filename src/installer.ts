@@ -121,7 +121,7 @@ export class DotnetInstallScript {
     this.escapedScript = path
       .join(__dirname, '..', 'externals', this.scriptName)
       .replace(/'/g, "''");
-    
+
     this.scriptReady = IS_WINDOWS
       ? this.setupScriptPowershell()
       : this.setupScriptBash();
@@ -148,7 +148,8 @@ export class DotnetInstallScript {
       this.scriptArguments.push(`-ProxyBypassList ${process.env['no_proxy']}`);
     }
 
-    this.scriptPath = (await io.which('pwsh', false)) || (await io.which('powershell', true));
+    this.scriptPath =
+      (await io.which('pwsh', false)) || (await io.which('powershell', true));
   }
 
   private async setupScriptBash() {
@@ -194,8 +195,8 @@ export class DotnetInstallScript {
     return exec.getExecOutput(
       `"${this.scriptPath}"`,
       this.scriptArguments,
-      getExecOutputOptions,
-    )
+      getExecOutputOptions
+    );
   }
 }
 
@@ -204,11 +205,13 @@ export abstract class DotnetInstallDir {
     linux: '/usr/share/dotnet',
     mac: path.join(process.env['HOME'] + '', '.dotnet'),
     windows: path.join(process.env['PROGRAMFILES'] + '', 'dotnet')
-  }
+  };
 
   public static readonly path = process.env['DOTNET_INSTALL_DIR']
-    ? DotnetInstallDir.convertInstallPathToAbsolute(process.env['DOTNET_INSTALL_DIR'])
-    : DotnetInstallDir.default[getPlatform()]
+    ? DotnetInstallDir.convertInstallPathToAbsolute(
+        process.env['DOTNET_INSTALL_DIR']
+      )
+    : DotnetInstallDir.default[getPlatform()];
 
   private static convertInstallPathToAbsolute(installDir: string): string {
     let transformedPath;
@@ -239,14 +242,16 @@ export class DotnetCoreInstaller {
     DotnetInstallDir.initialize;
   }
 
-  constructor(private version: string, private quality: QualityOptions) {};
+  constructor(private version: string, private quality: QualityOptions) {}
 
   public async installDotnet(): Promise<string> {
     const versionResolver = new DotnetVersionResolver(this.version);
     const dotnetVersion = await versionResolver.createDotnetVersion();
 
     const installScript = new DotnetInstallScript()
-      .useArguments(IS_WINDOWS ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files')
+      .useArguments(
+        IS_WINDOWS ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files'
+      )
       .useVersion(dotnetVersion, this.quality);
 
     const {exitCode, stderr} = await installScript.execute();

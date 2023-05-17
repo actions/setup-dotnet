@@ -344,7 +344,8 @@ class DotnetInstallScript {
             if (process.env['no_proxy'] != null) {
                 this.scriptArguments.push(`-ProxyBypassList ${process.env['no_proxy']}`);
             }
-            this.scriptPath = (yield io.which('pwsh', false)) || (yield io.which('powershell', true));
+            this.scriptPath =
+                (yield io.which('pwsh', false)) || (yield io.which('powershell', true));
         });
     }
     setupScriptBash() {
@@ -418,7 +419,6 @@ class DotnetCoreInstaller {
         this.version = version;
         this.quality = quality;
     }
-    ;
     installDotnet() {
         return __awaiter(this, void 0, void 0, function* () {
             const versionResolver = new DotnetVersionResolver(this.version);

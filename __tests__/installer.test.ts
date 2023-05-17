@@ -117,7 +117,7 @@ describe('DotnetCoreInstaller tests', () => {
 
   it('Throws if no location contains correct dotnet version', async () => {
     await expect(async () => {
-      await getDotnet('1000.0.0')
+      await getDotnet('1000.0.0');
     }).rejects.toThrow();
   }, 30000);
 
