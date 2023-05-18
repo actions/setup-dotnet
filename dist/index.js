@@ -270,7 +270,7 @@ class DotnetVersionResolver {
     }
     isLatestPatchSyntax() {
         var _b, _c;
-        const majorTag = (_c = (_b = this.inputVersion.match(/^(?<majorTag>\d+)\.\d+\.\d{1}(x|X|\*){2}$/)) === null || _b === void 0 ? void 0 : _b.groups) === null || _c === void 0 ? void 0 : _c.majorTag;
+        const majorTag = (_c = (_b = this.inputVersion.match(/^(?<majorTag>\d+)\.\d+\.\d{1}x{2}$/)) === null || _b === void 0 ? void 0 : _b.groups) === null || _c === void 0 ? void 0 : _c.majorTag;
         if (majorTag &&
             parseInt(majorTag) <
                 DotnetInstallerLimits.LatestPatchSyntaxMinimalMajorTag) {
