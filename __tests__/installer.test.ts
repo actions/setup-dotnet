@@ -119,7 +119,7 @@ describe('installer tests', () => {
         await dotnetInstaller.installDotnet();
 
         expect(warningSpy).toHaveBeenCalledWith(
-          `'dotnet-quality' input can be used only with .NET SDK version in A.B, A.B.x, A and A.x formats where the major tag is higher than 5. You specified: ${inputVersion}. 'dotnet-quality' input is ignored.`
+          `The 'dotnet-quality' input can be used only with .NET SDK version in A.B, A.B.x, A, A.x and A.B.Cxx formats where the major tag is higher than 5. You specified: ${inputVersion}. 'dotnet-quality' input is ignored.`
         );
       });
 
@@ -145,7 +145,7 @@ describe('installer tests', () => {
         await dotnetInstaller.installDotnet();
 
         expect(warningSpy).toHaveBeenCalledWith(
-          `'dotnet-quality' input can be used only with .NET SDK version in A.B, A.B.x, A and A.x formats where the major tag is higher than 5. You specified: ${inputVersion}. 'dotnet-quality' input is ignored.`
+          `The 'dotnet-quality' input can be used only with .NET SDK version in A.B, A.B.x, A, A.x and A.B.Cxx formats where the major tag is higher than 5. You specified: ${inputVersion}. 'dotnet-quality' input is ignored.`
         );
       });
 

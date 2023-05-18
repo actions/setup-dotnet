@@ -255,7 +255,7 @@ class DotnetVersionResolver {
     resolveVersionInput() {
         return __awaiter(this, void 0, void 0, function* () {
             if (!semver_1.default.validRange(this.inputVersion) && !this.isLatestPatchSyntax()) {
-                throw new Error(`'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B, A.B.x, A, A.x, A.B.Cxx`);
+                throw new Error(`The 'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B, A.B.x, A, A.x, A.B.Cxx`);
             }
             if (semver_1.default.valid(this.inputVersion)) {
                 this.createVersionArgument();
@@ -274,7 +274,7 @@ class DotnetVersionResolver {
         if (majorTag &&
             parseInt(majorTag) <
                 DotnetInstallerLimits.LatestPatchSyntaxMinimalMajorTag) {
-            throw new Error(`'dotnet-version' was supplied in invalid format: ${this.inputVersion}! The A.B.Cxx syntax is available since the .NET 5.0 release.`);
+            throw new Error(`The 'dotnet-version' was supplied in invalid format: ${this.inputVersion}! The A.B.Cxx syntax is available since the .NET 5.0 release.`);
         }
         return majorTag ? true : false;
     }
@@ -371,7 +371,7 @@ class DotnetCoreInstaller {
             scriptArguments.push(option, this.quality);
         }
         else {
-            core.warning(`'dotnet-quality' input can be used only with .NET SDK version in A.B, A.B.x, A, A.x and A.B.Cxx formats where the major tag is higher than 5. You specified: ${this.version}. 'dotnet-quality' input is ignored.`);
+            core.warning(`The 'dotnet-quality' input can be used only with .NET SDK version in A.B, A.B.x, A, A.x and A.B.Cxx formats where the major tag is higher than 5. You specified: ${this.version}. 'dotnet-quality' input is ignored.`);
         }
     }
     installDotnet() {
@@ -556,13 +556,13 @@ function run() {
                     versions.push(getVersionFromGlobalJson(globalJsonPath));
                 }
                 else {
-                    core.info(`global.json wasn't found in the root directory. No .NET version will be installed.`);
+                    core.info(`A global.json wasn't found in the root directory. No .NET version will be installed.`);
                 }
             }
             if (versions.length) {
                 const quality = core.getInput('dotnet-quality');
                 if (quality && !qualityOptions.includes(quality)) {
-                    throw new Error(`${quality} is not a supported value for 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`);
+                    throw new Error(`Value '${quality}' is not supported for the 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`);
                 }
                 let dotnetInstaller;
                 const uniqueVersions = new Set(versions);
@@ -605,7 +605,7 @@ function getVersionFromGlobalJson(globalJsonPath) {
 }
 function outputInstalledVersion(installedVersions, globalJsonFileInput) {
     if (!installedVersions.length) {
-        core.info(`No .NET version was installed. The 'dotnet-version' output will not be set.`);
+        core.info(`The 'dotnet-version' output will not be set.`);
         return;
     }
     if (installedVersions.includes(null)) {

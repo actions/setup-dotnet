@@ -48,7 +48,7 @@ export async function run() {
         versions.push(getVersionFromGlobalJson(globalJsonPath));
       } else {
         core.info(
-          `global.json wasn't found in the root directory. No .NET version will be installed.`
+          `A global.json wasn't found in the root directory. No .NET version will be installed.`
         );
       }
     }
@@ -58,7 +58,7 @@ export async function run() {
 
       if (quality && !qualityOptions.includes(quality)) {
         throw new Error(
-          `${quality} is not a supported value for 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`
+          `Value '${quality}' is not supported for the 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`
         );
       }
 
@@ -109,9 +109,7 @@ function outputInstalledVersion(
   globalJsonFileInput: string
 ): void {
   if (!installedVersions.length) {
-    core.info(
-      `No .NET version was installed. The 'dotnet-version' output will not be set.`
-    );
+    core.info(`The 'dotnet-version' output will not be set.`);
     return;
   }
 

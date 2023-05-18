@@ -33,7 +33,7 @@ export class DotnetVersionResolver {
   private async resolveVersionInput(): Promise<void> {
     if (!semver.validRange(this.inputVersion) && !this.isLatestPatchSyntax()) {
       throw new Error(
-        `'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B, A.B.x, A, A.x, A.B.Cxx`
+        `The 'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B, A.B.x, A, A.x, A.B.Cxx`
       );
     }
     if (semver.valid(this.inputVersion)) {
@@ -57,7 +57,7 @@ export class DotnetVersionResolver {
         DotnetInstallerLimits.LatestPatchSyntaxMinimalMajorTag
     ) {
       throw new Error(
-        `'dotnet-version' was supplied in invalid format: ${this.inputVersion}! The A.B.Cxx syntax is available since the .NET 5.0 release.`
+        `The 'dotnet-version' was supplied in invalid format: ${this.inputVersion}! The A.B.Cxx syntax is available since the .NET 5.0 release.`
       );
     }
     return majorTag ? true : false;
@@ -192,7 +192,7 @@ export class DotnetCoreInstaller {
       scriptArguments.push(option, this.quality);
     } else {
       core.warning(
-        `'dotnet-quality' input can be used only with .NET SDK version in A.B, A.B.x, A, A.x and A.B.Cxx formats where the major tag is higher than 5. You specified: ${this.version}. 'dotnet-quality' input is ignored.`
+        `The 'dotnet-quality' input can be used only with .NET SDK version in A.B, A.B.x, A, A.x and A.B.Cxx formats where the major tag is higher than 5. You specified: ${this.version}. 'dotnet-quality' input is ignored.`
       );
     }
   }
