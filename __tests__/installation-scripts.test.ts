@@ -2,12 +2,12 @@ import path from 'path';
 import fs from 'fs';
 import * as hc from '@actions/http-client';
 
+const HTTP_CLIENT_OPTIONS = { allowRetries: true, maxRetries: 10 } as const;
+const TEST_TIMEOUT = 30000;
+
 describe('Dotnet installation scripts tests', () => {
   it('Uses an up to date bash download script', async () => {
-    const httpCallbackClient = new hc.HttpClient('setup-dotnet-test', [], {
-      allowRetries: true,
-      maxRetries: 3
-    });
+    const httpCallbackClient = new hc.HttpClient('setup-dotnet-test', [], HTTP_CLIENT_OPTIONS);
     const response: hc.HttpClientResponse = await httpCallbackClient.get(
       'https://dot.net/v1/dotnet-install.sh'
     );
@@ -21,13 +21,10 @@ describe('Dotnet installation scripts tests', () => {
     expect(normalizeFileContents(currentContents)).toBe(
       normalizeFileContents(upToDateContents)
     );
-  }, 30000);
+  }, TEST_TIMEOUT);
 
   it('Uses an up to date powershell download script', async () => {
-    const httpCallbackClient = new hc.HttpClient('setup-dotnet-test', [], {
-      allowRetries: true,
-      maxRetries: 3
-    });
+    const httpCallbackClient = new hc.HttpClient('setup-dotnet-test', [], HTTP_CLIENT_OPTIONS);
     const response: hc.HttpClientResponse = await httpCallbackClient.get(
       'https://dot.net/v1/dotnet-install.ps1'
     );
@@ -41,7 +38,7 @@ describe('Dotnet installation scripts tests', () => {
     expect(normalizeFileContents(currentContents)).toBe(
       normalizeFileContents(upToDateContents)
     );
-  }, 30000);
+  }, TEST_TIMEOUT);
 });
 
 function normalizeFileContents(contents: string): string {
