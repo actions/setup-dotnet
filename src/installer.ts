@@ -192,7 +192,7 @@ export class DotnetCoreInstaller {
       scriptArguments.push(option, this.quality);
     } else {
       core.warning(
-        `'dotnet-quality' input can be used only with .NET SDK version in A.B, A.B.x, A and A.x formats where the major tag is higher than 5. You specified: ${this.version}. 'dotnet-quality' input is ignored.`
+        `'dotnet-quality' input can be used only with .NET SDK version in A.B, A.B.x, A, A.x and A.B.Cxx formats where the major tag is higher than 5. You specified: ${this.version}. 'dotnet-quality' input is ignored.`
       );
     }
   }
