@@ -306,7 +306,8 @@ describe('installer tests', () => {
         '3.1.*',
         '3.1.X',
         '3.1.2',
-        '3.1.0-preview1'
+        '3.1.0-preview1',
+        '6.0.2xx'
       ]).test(
         'if valid version is supplied (%s), it should return version object with some value',
         async version => {
@@ -358,7 +359,16 @@ describe('installer tests', () => {
         }
       );
 
-      each(['3', '3.1', '3.1.x', '3.1.*', '3.1.X']).test(
+      each([
+        '3',
+        '3.1',
+        '3.1.x',
+        '3.1.*',
+        '3.1.X',
+        '6.0.2xx',
+        '6.0.2XX',
+        '6.0.2**'
+      ]).test(
         "if version that can be resolved to 'channel' option is supplied (%s), it should set type to 'channel' in version object",
         async version => {
           const dotnetVersionResolver = new installer.DotnetVersionResolver(
@@ -373,7 +383,15 @@ describe('installer tests', () => {
         }
       );
 
-      each(['6.0', '6.0.x', '6.0.*', '6.0.X']).test(
+      each([
+        '6.0',
+        '6.0.x',
+        '6.0.*',
+        '6.0.X',
+        '6.0.2xx',
+        '6.0.2XX',
+        '6.0.2**'
+      ]).test(
         "if version that can be resolved to 'channel' option is supplied and its major tag is >= 6 (%s), it should set type to 'channel' and qualityFlag to 'true' in version object",
         async version => {
           const dotnetVersionResolver = new installer.DotnetVersionResolver(
@@ -425,6 +443,18 @@ describe('installer tests', () => {
           }
         }
       );
+
+      it(`should throw if dotnet-version is supplied in A.B.Cxx syntax with major tag lower that 5`, async () => {
+        const version = '3.0.1xx';
+        const dotnetVersionResolver = new installer.DotnetVersionResolver(
+          version
+        );
+        await expect(
+          async () => await dotnetVersionResolver.createDotNetVersion()
+        ).rejects.toThrow(
+          `'dotnet-version' was supplied in invalid format: ${version}! The A.B.Cxx syntax is available since the .NET 5.0 release.`
+        );
+      });
     });
   });
 });

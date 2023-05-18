@@ -112,7 +112,9 @@ function outputInstalledVersion(
     core.info(
       `No .NET version was installed. The 'dotnet-version' output will not be set.`
     );
+    return;
   }
+
   if (installedVersions.includes(null)) {
     core.warning(
       `Failed to output the installed version of .NET. The 'dotnet-version' output will not be set.`

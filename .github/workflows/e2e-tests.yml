@@ -133,6 +133,27 @@ jobs:
         shell: pwsh
         run: __tests__/verify-dotnet.ps1 -Patterns "^2.2", "^3.1"
 
+  test-ABCxx-syntax:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+
+      - name: Setup dotnet 6.0.4xx
+        uses: ./
+        with:
+          dotnet-version: '6.0.4xx'
+      - name: Verify dotnet
+        shell: pwsh
+        run: __tests__/verify-dotnet.ps1 -Patterns "^6\.0\.4\d{2}"
+
   test-setup-with-wildcard:
     runs-on: ${{ matrix.operating-system }}
     strategy:
@@ -183,6 +204,31 @@ jobs:
         shell: pwsh
         run: __tests__/verify-dotnet.ps1 -Patterns "^2.2", "^3.1"
 
+  test-setup-global-json-only:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+      - name: Write global.json
+        shell: bash
+        run: |
+          mkdir subdirectory
+          echo '{"sdk":{"version": "2.2.207","rollForward": "latestFeature"}}' > ./subdirectory/global.json
+      - name: Setup dotnet
+        uses: ./
+        with:
+          global-json-file: ./subdirectory/global.json
+      - name: Verify dotnet
+        shell: pwsh
+        run: __tests__/verify-dotnet.ps1 -Patterns "^2.2"
+
   test-setup-with-dotnet-quality:
     runs-on: ${{ matrix.operating-system }}
     strategy:
@@ -204,27 +250,6 @@ jobs:
       - name: Verify dotnet
         shell: pwsh
         run: __tests__/verify-dotnet.ps1 -Patterns "^7\.0\.\d+-"
-
-  test-ABCxx-syntax:
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      fail-fast: false
-      matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Clear toolcache
-        shell: pwsh
-        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-
-      - name: Setup dotnet 6.0.4xx
-        uses: ./
-        with:
-          dotnet-version: '6.0.4xx'
-      - name: Verify dotnet
-        shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^6\.0\.4\d{2}"
 
   test-dotnet-version-output-during-single-version-installation:
     runs-on: ${{ matrix.operating-system }}

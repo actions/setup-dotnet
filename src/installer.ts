@@ -49,7 +49,7 @@ export class DotnetVersionResolver {
 
   private isLatestPatchSyntax() {
     const majorTag = this.inputVersion.match(
-      /^(?<majorTag>\d+)\.\d+\.\d{1}x{2}$/
+      /^(?<majorTag>\d+)\.\d+\.\d{1}(x|X|\*){2}$/
     )?.groups?.majorTag;
     if (
       majorTag &&
