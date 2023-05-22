@@ -59,7 +59,7 @@ describe('setup-dotnet tests', () => {
 
       const expectedDebugMessage =
         'No version found, trying to find version from global.json';
-      const expectedInfoMessage = `A global.json wasn't found in the root directory. No .NET version will be installed.`;
+      const expectedInfoMessage = `The global.json wasn't found in the root directory. No .NET version will be installed.`;
 
       await setup.run();
 

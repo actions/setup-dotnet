@@ -48,7 +48,7 @@ export async function run() {
         versions.push(getVersionFromGlobalJson(globalJsonPath));
       } else {
         core.info(
-          `A global.json wasn't found in the root directory. No .NET version will be installed.`
+          `The global.json wasn't found in the root directory. No .NET version will be installed.`
         );
       }
     }
@@ -121,7 +121,7 @@ function outputInstalledVersion(
   }
 
   if (globalJsonFileInput) {
-    const versionToOutput = installedVersions.at(-1);
+    const versionToOutput = installedVersions.at(-1); // .NET SDK version parsed from the global.json file is installed last
     core.setOutput('dotnet-version', versionToOutput);
     return;
   }

@@ -242,11 +242,8 @@ const path_1 = __importDefault(__nccwpck_require__(1017));
 const os_1 = __importDefault(__nccwpck_require__(2037));
 const semver_1 = __importDefault(__nccwpck_require__(5911));
 const utils_1 = __nccwpck_require__(918);
-var DotnetInstallerLimits;
-(function (DotnetInstallerLimits) {
-    DotnetInstallerLimits[DotnetInstallerLimits["QualityInputMinimalMajorTag"] = 6] = "QualityInputMinimalMajorTag";
-    DotnetInstallerLimits[DotnetInstallerLimits["LatestPatchSyntaxMinimalMajorTag"] = 5] = "LatestPatchSyntaxMinimalMajorTag";
-})(DotnetInstallerLimits || (DotnetInstallerLimits = {}));
+const QUALITY_INPUT_MINIMAL_MAJOR_TAG = 6;
+const LATEST_PATCH_SYNTAX_MINIMAL_MAJOR_TAG = 5;
 class DotnetVersionResolver {
     constructor(version) {
         this.inputVersion = version.trim();
@@ -272,8 +269,7 @@ class DotnetVersionResolver {
         var _b, _c;
         const majorTag = (_c = (_b = this.inputVersion.match(/^(?<majorTag>\d+)\.\d+\.\d{1}x{2}$/)) === null || _b === void 0 ? void 0 : _b.groups) === null || _c === void 0 ? void 0 : _c.majorTag;
         if (majorTag &&
-            parseInt(majorTag) <
-                DotnetInstallerLimits.LatestPatchSyntaxMinimalMajorTag) {
+            parseInt(majorTag) < LATEST_PATCH_SYNTAX_MINIMAL_MAJOR_TAG) {
             throw new Error(`The 'dotnet-version' was supplied in invalid format: ${this.inputVersion}! The A.B.Cxx syntax is available since the .NET 5.0 release.`);
         }
         return majorTag ? true : false;
@@ -300,9 +296,7 @@ class DotnetVersionResolver {
                 this.resolvedArgument.value = 'LTS';
             }
             this.resolvedArgument.qualityFlag =
-                parseInt(major) >= DotnetInstallerLimits.QualityInputMinimalMajorTag
-                    ? true
-                    : false;
+                parseInt(major) >= QUALITY_INPUT_MINIMAL_MAJOR_TAG ? true : false;
         });
     }
     createDotNetVersion() {
@@ -556,7 +550,7 @@ function run() {
                     versions.push(getVersionFromGlobalJson(globalJsonPath));
                 }
                 else {
-                    core.info(`A global.json wasn't found in the root directory. No .NET version will be installed.`);
+                    core.info(`The global.json wasn't found in the root directory. No .NET version will be installed.`);
                 }
             }
             if (versions.length) {
@@ -613,7 +607,7 @@ function outputInstalledVersion(installedVersions, globalJsonFileInput) {
         return;
     }
     if (globalJsonFileInput) {
-        const versionToOutput = installedVersions.at(-1);
+        const versionToOutput = installedVersions.at(-1); // .NET SDK version parsed from the global.json file is installed last
         core.setOutput('dotnet-version', versionToOutput);
         return;
     }
