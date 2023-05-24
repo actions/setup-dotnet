@@ -142,8 +142,6 @@ export class DotnetInstallScript {
       : this.setupScriptBash();
   }
 
-
-
   private async setupScriptPowershell() {
     this.scriptArguments = [
       '-NoLogo',
