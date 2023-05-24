@@ -15,6 +15,7 @@ describe('setup-dotnet tests', () => {
   const getMultilineInputSpy = jest.spyOn(core, 'getMultilineInput');
   const getBooleanInputSpy = jest.spyOn(core, 'getBooleanInput');
   const setFailedSpy = jest.spyOn(core, 'setFailed');
+  const warningSpy = jest.spyOn(core, 'warning');
   const debugSpy = jest.spyOn(core, 'debug');
   const infoSpy = jest.spyOn(core, 'info');
   const setOutputSpy = jest.spyOn(core, 'setOutput');
@@ -66,7 +67,7 @@ describe('setup-dotnet tests', () => {
 
       const expectedDebugMessage =
         'No version found, trying to find version from global.json';
-      const expectedInfoMessage = `global.json wasn't found in the root directory. No .NET version will be installed.`;
+      const expectedInfoMessage = `The global.json wasn't found in the root directory. No .NET version will be installed.`;
 
       await setup.run();
 
@@ -80,7 +81,7 @@ describe('setup-dotnet tests', () => {
       inputs['dotnet-version'] = ['6.0'];
       inputs['dotnet-quality'] = 'fictitiousQuality';
 
-      const expectedErrorMessage = `${inputs['dotnet-quality']} is not a supported value for 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`;
+      const expectedErrorMessage = `Value '${inputs['dotnet-quality']}' is not supported for the 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`;
 
       await setup.run();
       expect(setFailedSpy).toHaveBeenCalledWith(expectedErrorMessage);
@@ -141,14 +142,40 @@ describe('setup-dotnet tests', () => {
       );
     });
 
-    it('should call setOutput() after installation complete', async () => {
+    it('should call setOutput() after installation complete successfully', async () => {
       inputs['dotnet-version'] = ['6.0.300'];
 
-      installDotnetSpy.mockImplementation(() => Promise.resolve(''));
+      installDotnetSpy.mockImplementation(() =>
+        Promise.resolve(`${inputs['dotnet-version']}`)
+      );
       addToPathSpy.mockImplementation(() => {});
 
       await setup.run();
       expect(setOutputSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it(`shouldn't call setOutput() if parsing dotnet-installer logs failed`, async () => {
+      inputs['dotnet-version'] = ['6.0.300'];
+      const warningMessage = `Failed to output the installed version of .NET. The 'dotnet-version' output will not be set.`;
+
+      installDotnetSpy.mockImplementation(() => Promise.resolve(null));
+      addToPathSpy.mockImplementation(() => {});
+
+      await setup.run();
+      expect(warningSpy).toHaveBeenCalledWith(warningMessage);
+      expect(setOutputSpy).not.toHaveBeenCalled();
+    });
+
+    it(`shouldn't call setOutput() if actions didn't install .NET`, async () => {
+      inputs['dotnet-version'] = [];
+      const warningMessage = `The 'dotnet-version' output will not be set.`;
+
+      addToPathSpy.mockImplementation(() => {});
+
+      await setup.run();
+
+      expect(infoSpy).toHaveBeenCalledWith(warningMessage);
+      expect(setOutputSpy).not.toHaveBeenCalled();
     });
 
     it(`should get 'cache-dependency-path' and call restoreCache() if input cache is set to true and cache feature is available`, async () => {

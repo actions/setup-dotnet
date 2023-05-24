@@ -62,8 +62,13 @@ describe('installer tests', () => {
       it('should return version of .NET SDK after installation complete', async () => {
         const inputVersion = '3.1.100';
         const inputQuality = '' as QualityOptions;
+        const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
         getExecOutputSpy.mockImplementation(() => {
-          return Promise.resolve({exitCode: 0, stdout: '', stderr: ''});
+          return Promise.resolve({
+            exitCode: 0,
+            stdout: `${stdout}`,
+            stderr: ''
+          });
         });
         maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
@@ -79,9 +84,14 @@ describe('installer tests', () => {
       it(`should supply 'version' argument to the installation script if supplied version is in A.B.C syntax`, async () => {
         const inputVersion = '6.0.300';
         const inputQuality = '' as QualityOptions;
+        const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
 
         getExecOutputSpy.mockImplementation(() => {
-          return Promise.resolve({exitCode: 0, stdout: '', stderr: ''});
+          return Promise.resolve({
+            exitCode: 0,
+            stdout: `${stdout}`,
+            stderr: ''
+          });
         });
         maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
@@ -105,9 +115,13 @@ describe('installer tests', () => {
       it(`should warn if the 'quality' input is set and the supplied version is in A.B.C syntax`, async () => {
         const inputVersion = '6.0.300';
         const inputQuality = 'ga' as QualityOptions;
-
+        const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
         getExecOutputSpy.mockImplementation(() => {
-          return Promise.resolve({exitCode: 0, stdout: '', stderr: ''});
+          return Promise.resolve({
+            exitCode: 0,
+            stdout: `${stdout}`,
+            stderr: ''
+          });
         });
         maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
@@ -119,16 +133,21 @@ describe('installer tests', () => {
         await dotnetInstaller.installDotnet();
 
         expect(warningSpy).toHaveBeenCalledWith(
-          `'dotnet-quality' input can be used only with .NET SDK version in A.B, A.B.x, A and A.x formats where the major tag is higher than 5. You specified: ${inputVersion}. 'dotnet-quality' input is ignored.`
+          `The 'dotnet-quality' input can be used only with .NET SDK version in A.B, A.B.x, A, A.x and A.B.Cxx formats where the major tag is higher than 5. You specified: ${inputVersion}. 'dotnet-quality' input is ignored.`
         );
       });
 
       it(`should warn if the 'quality' input is set and version isn't in A.B.C syntax but major tag is lower then 6`, async () => {
         const inputVersion = '3.1';
         const inputQuality = 'ga' as QualityOptions;
+        const stdout = `Fictitious dotnet version 3.1.100 is installed`;
 
         getExecOutputSpy.mockImplementation(() => {
-          return Promise.resolve({exitCode: 0, stdout: '', stderr: ''});
+          return Promise.resolve({
+            exitCode: 0,
+            stdout: `${stdout}`,
+            stderr: ''
+          });
         });
         maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
@@ -140,7 +159,7 @@ describe('installer tests', () => {
         await dotnetInstaller.installDotnet();
 
         expect(warningSpy).toHaveBeenCalledWith(
-          `'dotnet-quality' input can be used only with .NET SDK version in A.B, A.B.x, A and A.x formats where the major tag is higher than 5. You specified: ${inputVersion}. 'dotnet-quality' input is ignored.`
+          `The 'dotnet-quality' input can be used only with .NET SDK version in A.B, A.B.x, A, A.x and A.B.Cxx formats where the major tag is higher than 5. You specified: ${inputVersion}. 'dotnet-quality' input is ignored.`
         );
       });
 
@@ -149,10 +168,11 @@ describe('installer tests', () => {
         async inputVersion => {
           const inputQuality = 'ga' as QualityOptions;
           const exitCode = 0;
+          const stdout = `Fictitious dotnet version 6.0.0 is installed`;
           getExecOutputSpy.mockImplementation(() => {
             return Promise.resolve({
               exitCode: exitCode,
-              stdout: '',
+              stdout: `${stdout}`,
               stderr: ''
             });
           });
@@ -181,10 +201,11 @@ describe('installer tests', () => {
         async inputVersion => {
           const inputQuality = '' as QualityOptions;
           const exitCode = 0;
+          const stdout = `Fictitious dotnet version 6.0.0 is installed`;
           getExecOutputSpy.mockImplementation(() => {
             return Promise.resolve({
               exitCode: exitCode,
-              stdout: '',
+              stdout: `${stdout}`,
               stderr: ''
             });
           });
@@ -213,9 +234,14 @@ describe('installer tests', () => {
           process.env['https_proxy'] = 'https://proxy.com';
           const inputVersion = '6.0.100';
           const inputQuality = '' as QualityOptions;
+          const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
 
           getExecOutputSpy.mockImplementation(() => {
-            return Promise.resolve({exitCode: 0, stdout: '', stderr: ''});
+            return Promise.resolve({
+              exitCode: 0,
+              stdout: `${stdout}`,
+              stderr: ''
+            });
           });
           maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
@@ -239,9 +265,14 @@ describe('installer tests', () => {
           process.env['no_proxy'] = 'first.url,second.url';
           const inputVersion = '6.0.100';
           const inputQuality = '' as QualityOptions;
+          const stdout = `Fictitious dotnet version 6.0.0 is installed`;
 
           getExecOutputSpy.mockImplementation(() => {
-            return Promise.resolve({exitCode: 0, stdout: '', stderr: ''});
+            return Promise.resolve({
+              exitCode: 0,
+              stdout: `${stdout}`,
+              stderr: ''
+            });
           });
           maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
@@ -289,7 +320,8 @@ describe('installer tests', () => {
         '3.1.*',
         '3.1.X',
         '3.1.2',
-        '3.1.0-preview1'
+        '3.1.0-preview1',
+        '6.0.2xx'
       ]).test(
         'if valid version is supplied (%s), it should return version object with some value',
         async version => {
@@ -341,7 +373,7 @@ describe('installer tests', () => {
         }
       );
 
-      each(['3', '3.1', '3.1.x', '3.1.*', '3.1.X']).test(
+      each(['3', '3.1', '3.1.x', '3.1.*', '3.1.X', '6.0.2xx']).test(
         "if version that can be resolved to 'channel' option is supplied (%s), it should set type to 'channel' in version object",
         async version => {
           const dotnetVersionResolver = new installer.DotnetVersionResolver(
@@ -356,7 +388,7 @@ describe('installer tests', () => {
         }
       );
 
-      each(['6.0', '6.0.x', '6.0.*', '6.0.X']).test(
+      each(['6.0', '6.0.x', '6.0.*', '6.0.X', '6.0.2xx']).test(
         "if version that can be resolved to 'channel' option is supplied and its major tag is >= 6 (%s), it should set type to 'channel' and qualityFlag to 'true' in version object",
         async version => {
           const dotnetVersionResolver = new installer.DotnetVersionResolver(
@@ -408,6 +440,18 @@ describe('installer tests', () => {
           }
         }
       );
+
+      it(`should throw if dotnet-version is supplied in A.B.Cxx syntax with major tag lower that 5`, async () => {
+        const version = '3.0.1xx';
+        const dotnetVersionResolver = new installer.DotnetVersionResolver(
+          version
+        );
+        await expect(
+          async () => await dotnetVersionResolver.createDotNetVersion()
+        ).rejects.toThrow(
+          `'dotnet-version' was supplied in invalid format: ${version}! The A.B.Cxx syntax is available since the .NET 5.0 release.`
+        );
+      });
     });
   });
 });
