@@ -102,8 +102,15 @@ describe('installer tests', () => {
 
         await dotnetInstaller.installDotnet();
 
+        /**
+         * First time script would be called to
+         * install runtime, here we checking only the
+         * second one that installs actual SDK. i.e. 1
+         */
+        const callIndex = 1;
+
         const scriptArguments = (
-          getExecOutputSpy.mock.calls[0][1] as string[]
+          getExecOutputSpy.mock.calls[callIndex][1] as string[]
         ).join(' ');
         const expectedArgument = IS_WINDOWS
           ? `-Version ${inputVersion}`
@@ -185,8 +192,15 @@ describe('installer tests', () => {
 
           await dotnetInstaller.installDotnet();
 
+          /**
+           * First time script would be called to
+           * install runtime, here we checking only the
+           * second one that installs actual SDK. i.e. 1
+           */
+          const callIndex = 1;
+
           const scriptArguments = (
-            getExecOutputSpy.mock.calls[0][1] as string[]
+            getExecOutputSpy.mock.calls[callIndex][1] as string[]
           ).join(' ');
           const expectedArgument = IS_WINDOWS
             ? `-Quality ${inputQuality}`
@@ -218,8 +232,15 @@ describe('installer tests', () => {
 
           await dotnetInstaller.installDotnet();
 
+          /**
+           * First time script would be called to
+           * install runtime, here we checking only the
+           * second one that installs actual SDK. i.e. 1
+           */
+          const callIndex = 1;
+
           const scriptArguments = (
-            getExecOutputSpy.mock.calls[0][1] as string[]
+            getExecOutputSpy.mock.calls[callIndex][1] as string[]
           ).join(' ');
           const expectedArgument = IS_WINDOWS
             ? `-Channel 6.0`
@@ -252,8 +273,15 @@ describe('installer tests', () => {
 
           await dotnetInstaller.installDotnet();
 
+          /**
+           * First time script would be called to
+           * install runtime, here we checking only the
+           * second one that installs actual SDK. i.e. 1
+           */
+          const callIndex = 1;
+
           const scriptArguments = (
-            getExecOutputSpy.mock.calls[0][1] as string[]
+            getExecOutputSpy.mock.calls[callIndex][1] as string[]
           ).join(' ');
 
           expect(scriptArguments).toContain(
@@ -283,8 +311,15 @@ describe('installer tests', () => {
 
           await dotnetInstaller.installDotnet();
 
+          /**
+           * First time script would be called to
+           * install runtime, here we checking only the
+           * second one that installs actual SDK. i.e. 1
+           */
+          const callIndex = 1;
+
           const scriptArguments = (
-            getExecOutputSpy.mock.calls[0][1] as string[]
+            getExecOutputSpy.mock.calls[callIndex][1] as string[]
           ).join(' ');
 
           expect(scriptArguments).toContain(
