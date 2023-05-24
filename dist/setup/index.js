@@ -71180,11 +71180,12 @@ const exec = __importStar(__nccwpck_require__(1514));
 const io = __importStar(__nccwpck_require__(7436));
 const hc = __importStar(__nccwpck_require__(6255));
 const fs_1 = __nccwpck_require__(7147);
-const promises_1 = __nccwpck_require__(3292);
 const path_1 = __importDefault(__nccwpck_require__(1017));
 const os_1 = __importDefault(__nccwpck_require__(2037));
 const semver_1 = __importDefault(__nccwpck_require__(5911));
 const utils_1 = __nccwpck_require__(1314);
+const QUALITY_INPUT_MINIMAL_MAJOR_TAG = 6;
+const LATEST_PATCH_SYNTAX_MINIMAL_MAJOR_TAG = 5;
 class DotnetVersionResolver {
     constructor(version) {
         this.inputVersion = version.trim();
@@ -71192,34 +71193,53 @@ class DotnetVersionResolver {
     }
     resolveVersionInput() {
         return __awaiter(this, void 0, void 0, function* () {
-            if (!semver_1.default.validRange(this.inputVersion)) {
-                throw new Error(`'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B, A.B.x, A, A.x`);
+            if (!semver_1.default.validRange(this.inputVersion) && !this.isLatestPatchSyntax()) {
+                throw new Error(`The 'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B, A.B.x, A, A.x, A.B.Cxx`);
             }
             if (semver_1.default.valid(this.inputVersion)) {
-                this.resolvedArgument.type = 'version';
-                this.resolvedArgument.value = this.inputVersion;
+                this.createVersionArgument();
             }
             else {
-                const [major, minor] = this.inputVersion.split('.');
-                if (this.isNumericTag(major)) {
-                    this.resolvedArgument.type = 'channel';
-                    if (this.isNumericTag(minor)) {
-                        this.resolvedArgument.value = `${major}.${minor}`;
-                    }
-                    else {
-                        const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
-                            allowRetries: true,
-                            maxRetries: 3
-                        });
-                        this.resolvedArgument.value = yield this.getLatestVersion(httpClient, [major, minor]);
-                    }
-                }
-                this.resolvedArgument.qualityFlag = +major >= 6 ? true : false;
+                yield this.createChannelArgument();
             }
         });
     }
     isNumericTag(versionTag) {
         return /^\d+$/.test(versionTag);
+    }
+    isLatestPatchSyntax() {
+        var _b, _c;
+        const majorTag = (_c = (_b = this.inputVersion.match(/^(?<majorTag>\d+)\.\d+\.\d{1}x{2}$/)) === null || _b === void 0 ? void 0 : _b.groups) === null || _c === void 0 ? void 0 : _c.majorTag;
+        if (majorTag &&
+            parseInt(majorTag) < LATEST_PATCH_SYNTAX_MINIMAL_MAJOR_TAG) {
+            throw new Error(`The 'dotnet-version' was supplied in invalid format: ${this.inputVersion}! The A.B.Cxx syntax is available since the .NET 5.0 release.`);
+        }
+        return majorTag ? true : false;
+    }
+    createVersionArgument() {
+        this.resolvedArgument.type = 'version';
+        this.resolvedArgument.value = this.inputVersion;
+    }
+    createChannelArgument() {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.resolvedArgument.type = 'channel';
+            const [major, minor] = this.inputVersion.split('.');
+            if (this.isLatestPatchSyntax()) {
+                this.resolvedArgument.value = this.inputVersion;
+            }
+            else if (this.isNumericTag(major) && this.isNumericTag(minor)) {
+                this.resolvedArgument.value = `${major}.${minor}`;
+            }
+            else if (this.isNumericTag(major)) {
+                this.resolvedArgument.value = yield this.getLatestByMajorTag(major);
+            }
+            else {
+                // If "dotnet-version" is specified as *, x or X resolve latest version of .NET explicitly from LTS channel. The version argument will default to "latest" by install-dotnet script.
+                this.resolvedArgument.value = 'LTS';
+            }
+            this.resolvedArgument.qualityFlag =
+                parseInt(major) >= QUALITY_INPUT_MINIMAL_MAJOR_TAG ? true : false;
+        });
     }
     createDotNetVersion() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -71238,17 +71258,21 @@ class DotnetVersionResolver {
             return this.resolvedArgument;
         });
     }
-    getLatestVersion(httpClient, versionParts) {
+    getLatestByMajorTag(majorTag) {
         return __awaiter(this, void 0, void 0, function* () {
+            const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
+                allowRetries: true,
+                maxRetries: 3
+            });
             const response = yield httpClient.getJson(DotnetVersionResolver.DotNetCoreIndexUrl);
             const result = response.result || {};
             const releasesInfo = result['releases-index'];
             const releaseInfo = releasesInfo.find(info => {
                 const sdkParts = info['channel-version'].split('.');
-                return sdkParts[0] === versionParts[0];
+                return sdkParts[0] === majorTag;
             });
             if (!releaseInfo) {
-                throw new Error(`Could not find info for version ${versionParts.join('.')} at ${DotnetVersionResolver.DotNetCoreIndexUrl}`);
+                throw new Error(`Could not find info for version with major tag: "${majorTag}" at ${DotnetVersionResolver.DotNetCoreIndexUrl}`);
             }
             return releaseInfo['channel-version'];
         });
@@ -71283,7 +71307,7 @@ class DotnetCoreInstaller {
             scriptArguments.push(option, this.quality);
         }
         else {
-            core.warning(`'dotnet-quality' input can be used only with .NET SDK version in A.B, A.B.x, A and A.x formats where the major tag is higher than 5. You specified: ${this.version}. 'dotnet-quality' input is ignored.`);
+            core.warning(`The 'dotnet-quality' input can be used only with .NET SDK version in A.B, A.B.x, A, A.x and A.B.Cxx formats where the major tag is higher than 5. You specified: ${this.version}. 'dotnet-quality' input is ignored.`);
         }
     }
     installDotnet() {
@@ -71340,22 +71364,21 @@ class DotnetCoreInstaller {
                 ignoreReturnCode: true,
                 env: process.env
             };
-            const { exitCode, stderr } = yield exec.getExecOutput(`"${scriptPath}"`, scriptArguments, getExecOutputOptions);
+            const { exitCode, stdout, stderr } = yield exec.getExecOutput(`"${scriptPath}"`, scriptArguments, getExecOutputOptions);
             if (exitCode) {
                 throw new Error(`Failed to install dotnet, exit code: ${exitCode}. ${stderr}`);
             }
-            return this.outputDotnetVersion(dotnetVersion.value);
+            return this.parseInstalledVersion(stdout);
         });
     }
-    outputDotnetVersion(version) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const installationPath = process.env['DOTNET_INSTALL_DIR'];
-            const versionsOnRunner = yield (0, promises_1.readdir)(path_1.default.join(installationPath.replace(/'/g, ''), 'sdk'));
-            const installedVersion = semver_1.default.maxSatisfying(versionsOnRunner, version, {
-                includePrerelease: true
-            });
-            return installedVersion;
-        });
+    parseInstalledVersion(stdout) {
+        const regex = /(?<version>\d+\.\d+\.\d+[a-z0-9._-]*)/gm;
+        const matchedResult = regex.exec(stdout);
+        if (!matchedResult) {
+            core.warning(`Failed to parse installed by the script version of .NET`);
+            return null;
+        }
+        return matchedResult.groups.version;
     }
 }
 exports.DotnetCoreInstaller = DotnetCoreInstaller;
@@ -71472,13 +71495,13 @@ function run() {
                     versions.push(getVersionFromGlobalJson(globalJsonPath));
                 }
                 else {
-                    core.info(`global.json wasn't found in the root directory. No .NET version will be installed.`);
+                    core.info(`The global.json wasn't found in the root directory. No .NET version will be installed.`);
                 }
             }
             if (versions.length) {
                 const quality = core.getInput('dotnet-quality');
                 if (quality && !qualityOptions.includes(quality)) {
-                    throw new Error(`${quality} is not a supported value for 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`);
+                    throw new Error(`Value '${quality}' is not supported for the 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`);
                 }
                 let dotnetInstaller;
                 const uniqueVersions = new Set(versions);
@@ -71494,13 +71517,7 @@ function run() {
             if (sourceUrl) {
                 auth.configAuthentication(sourceUrl, configFile);
             }
-            const comparisonRange = globalJsonFileInput
-                ? versions[versions.length - 1]
-                : '*';
-            const versionToOutput = semver_1.default.maxSatisfying(installedDotnetVersions, comparisonRange, {
-                includePrerelease: true
-            });
-            core.setOutput(constants_1.Outputs.DotnetVersion, versionToOutput);
+            outputInstalledVersion(installedDotnetVersions, globalJsonFileInput);
             if (core.getBooleanInput('cache') && (0, cache_utils_1.isCacheFeatureAvailable)()) {
                 const cacheDependencyPath = core.getInput('cache-dependency-path');
                 yield (0, cache_restore_1.restoreCache)(cacheDependencyPath);
@@ -71528,6 +71545,25 @@ function getVersionFromGlobalJson(globalJsonPath) {
         }
     }
     return version;
+}
+function outputInstalledVersion(installedVersions, globalJsonFileInput) {
+    if (!installedVersions.length) {
+        core.info(`The '${constants_1.Outputs.DotnetVersion}' output will not be set.`);
+        return;
+    }
+    if (installedVersions.includes(null)) {
+        core.warning(`Failed to output the installed version of .NET. The '${constants_1.Outputs.DotnetVersion}' output will not be set.`);
+        return;
+    }
+    if (globalJsonFileInput) {
+        const versionToOutput = installedVersions.at(-1); // .NET SDK version parsed from the global.json file is installed last
+        core.setOutput(constants_1.Outputs.DotnetVersion, versionToOutput);
+        return;
+    }
+    const versionToOutput = semver_1.default.maxSatisfying(installedVersions, '*', {
+        includePrerelease: true
+    });
+    core.setOutput(constants_1.Outputs.DotnetVersion, versionToOutput);
 }
 run();
 
@@ -71600,14 +71636,6 @@ module.exports = require("events");
 
 "use strict";
 module.exports = require("fs");
-
-/***/ }),
-
-/***/ 3292:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("fs/promises");
 
 /***/ }),
 
