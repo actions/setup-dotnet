@@ -298,7 +298,7 @@ class DotnetVersionResolver {
                 parseInt(major) >= QUALITY_INPUT_MINIMAL_MAJOR_TAG ? true : false;
         });
     }
-    createDotNetVersion() {
+    createDotnetVersion() {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.resolveVersionInput();
             if (!this.resolvedArgument.type) {
@@ -321,7 +321,7 @@ class DotnetVersionResolver {
                 allowRetries: true,
                 maxRetries: 3
             });
-            const response = yield httpClient.getJson(DotnetVersionResolver.DotNetCoreIndexUrl);
+            const response = yield httpClient.getJson(DotnetVersionResolver.DotnetCoreIndexUrl);
             const result = response.result || {};
             const releasesInfo = result['releases-index'];
             const releaseInfo = releasesInfo.find(info => {
@@ -329,14 +329,14 @@ class DotnetVersionResolver {
                 return sdkParts[0] === majorTag;
             });
             if (!releaseInfo) {
-                throw new Error(`Could not find info for version with major tag: "${majorTag}" at ${DotnetVersionResolver.DotNetCoreIndexUrl}`);
+                throw new Error(`Could not find info for version with major tag: "${majorTag}" at ${DotnetVersionResolver.DotnetCoreIndexUrl}`);
             }
             return releaseInfo['channel-version'];
         });
     }
 }
 exports.DotnetVersionResolver = DotnetVersionResolver;
-DotnetVersionResolver.DotNetCoreIndexUrl = 'https://dotnetcli.azureedge.net/dotnet/release-metadata/releases-index.json';
+DotnetVersionResolver.DotnetCoreIndexUrl = 'https://dotnetcli.azureedge.net/dotnet/release-metadata/releases-index.json';
 class DotnetInstallScript {
     constructor() {
         this.scriptName = utils_1.IS_WINDOWS ? 'install-dotnet.ps1' : 'install-dotnet.sh';
@@ -441,7 +441,7 @@ class DotnetCoreInstaller {
     installDotnet() {
         return __awaiter(this, void 0, void 0, function* () {
             const versionResolver = new DotnetVersionResolver(this.version);
-            const dotnetVersion = yield versionResolver.createDotNetVersion();
+            const dotnetVersion = yield versionResolver.createDotnetVersion();
             const installScript = new DotnetInstallScript()
                 .useArguments(utils_1.IS_WINDOWS ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files')
                 .useVersion(dotnetVersion, this.quality);
