@@ -298,7 +298,7 @@ describe('installer tests', () => {
   });
 
   describe('DotnetVersionResolver tests', () => {
-    describe('createDotNetVersion() tests', () => {
+    describe('createDotnetVersion() tests', () => {
       each([
         '3.1',
         '3.x',
@@ -315,7 +315,7 @@ describe('installer tests', () => {
             version
           );
           const versionObject =
-            await dotnetVersionResolver.createDotNetVersion();
+            await dotnetVersionResolver.createDotnetVersion();
 
           expect(!!versionObject.value).toBe(true);
         }
@@ -354,7 +354,7 @@ describe('installer tests', () => {
           );
 
           await expect(
-            async () => await dotnetVersionResolver.createDotNetVersion()
+            async () => await dotnetVersionResolver.createDotnetVersion()
           ).rejects.toThrow();
         }
       );
@@ -366,7 +366,7 @@ describe('installer tests', () => {
             version
           );
           const versionObject =
-            await dotnetVersionResolver.createDotNetVersion();
+            await dotnetVersionResolver.createDotnetVersion();
 
           expect(versionObject.type.toLowerCase().includes('channel')).toBe(
             true
@@ -381,7 +381,7 @@ describe('installer tests', () => {
             version
           );
           const versionObject =
-            await dotnetVersionResolver.createDotNetVersion();
+            await dotnetVersionResolver.createDotnetVersion();
 
           expect(versionObject.type.toLowerCase().includes('channel')).toBe(
             true
@@ -397,7 +397,7 @@ describe('installer tests', () => {
             version
           );
           const versionObject =
-            await dotnetVersionResolver.createDotNetVersion();
+            await dotnetVersionResolver.createDotnetVersion();
 
           expect(versionObject.type.toLowerCase().includes('version')).toBe(
             true
@@ -413,7 +413,7 @@ describe('installer tests', () => {
             version
           );
           const versionObject =
-            await dotnetVersionResolver.createDotNetVersion();
+            await dotnetVersionResolver.createDotnetVersion();
           const windowsRegEx = new RegExp(/^-(Version|Channel)/);
           const nonWindowsRegEx = new RegExp(/^--(version|channel)/);
 
@@ -433,7 +433,7 @@ describe('installer tests', () => {
           version
         );
         await expect(
-          async () => await dotnetVersionResolver.createDotNetVersion()
+          async () => await dotnetVersionResolver.createDotnetVersion()
         ).rejects.toThrow(
           `'dotnet-version' was supplied in invalid format: ${version}! The A.B.Cxx syntax is available since the .NET 5.0 release.`
         );

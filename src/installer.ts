@@ -81,7 +81,7 @@ export class DotnetVersionResolver {
       parseInt(major) >= QUALITY_INPUT_MINIMAL_MAJOR_TAG ? true : false;
   }
 
-  public async createDotNetVersion(): Promise<DotnetVersion> {
+  public async createDotnetVersion(): Promise<DotnetVersion> {
     await this.resolveVersionInput();
     if (!this.resolvedArgument.type) {
       return this.resolvedArgument;
@@ -102,7 +102,7 @@ export class DotnetVersionResolver {
       maxRetries: 3
     });
     const response = await httpClient.getJson<any>(
-      DotnetVersionResolver.DotNetCoreIndexUrl
+      DotnetVersionResolver.DotnetCoreIndexUrl
     );
     const result = response.result || {};
     const releasesInfo: any[] = result['releases-index'];
@@ -114,14 +114,14 @@ export class DotnetVersionResolver {
 
     if (!releaseInfo) {
       throw new Error(
-        `Could not find info for version with major tag: "${majorTag}" at ${DotnetVersionResolver.DotNetCoreIndexUrl}`
+        `Could not find info for version with major tag: "${majorTag}" at ${DotnetVersionResolver.DotnetCoreIndexUrl}`
       );
     }
 
     return releaseInfo['channel-version'];
   }
 
-  static DotNetCoreIndexUrl =
+  static DotnetCoreIndexUrl =
     'https://dotnetcli.azureedge.net/dotnet/release-metadata/releases-index.json';
 }
 
@@ -256,7 +256,7 @@ export class DotnetCoreInstaller {
 
   public async installDotnet(): Promise<string | null> {
     const versionResolver = new DotnetVersionResolver(this.version);
-    const dotnetVersion = await versionResolver.createDotNetVersion();
+    const dotnetVersion = await versionResolver.createDotnetVersion();
 
     const installScript = new DotnetInstallScript()
       .useArguments(
