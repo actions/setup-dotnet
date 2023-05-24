@@ -49,12 +49,13 @@ The `dotnet-version` input supports following syntax:
 - **A.B.C** (e.g 6.0.400, 7.0.100-preview.7.22377.5) - installs exact version of .NET SDK
 - **A.B** or **A.B.x** (e.g. 3.1, 3.1.x) - installs the latest patch version of .NET SDK on the channel `3.1`, including prerelease versions (preview, rc)
 - **A** or **A.x** (e.g. 3, 3.x) - installs the latest minor version of the specified major tag, including prerelease versions (preview, rc)
+- **A.B.Cxx** (e.g. 6.0.4xx) - available since `.NET 5.0` release. Installs the latest version of the specific SDK release, including prerelease versions (preview, rc). 
 
 
 ## Using the `dotnet-quality` input
 This input sets up the action to install the latest build of the specified quality in the channel. The possible values of `dotnet-quality` are: **daily**, **signed**, **validated**, **preview**, **ga**.
 
-> **Note**: `dotnet-quality` input can be used only with .NET SDK version in 'A.B', 'A.B.x', 'A' and 'A.x' formats where the major version is higher than 5. In other cases, `dotnet-quality` input will be ignored.
+> **Note**: `dotnet-quality` input can be used only with .NET SDK version in 'A.B', 'A.B.x', 'A', 'A.x' and 'A.B.Cxx' formats where the major version is higher than 5. In other cases, `dotnet-quality` input will be ignored.
 
 ```yml
 steps:

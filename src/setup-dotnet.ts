@@ -27,7 +27,7 @@ export async function run() {
     // Proxy, auth, (etc) are still set up, even if no version is identified
     //
     const versions = core.getMultilineInput('dotnet-version');
-    const installedDotnetVersions: string[] = [];
+    const installedDotnetVersions: (string | null)[] = [];
 
     const globalJsonFileInput = core.getInput('global-json-file');
     if (globalJsonFileInput) {
@@ -48,7 +48,7 @@ export async function run() {
         versions.push(getVersionFromGlobalJson(globalJsonPath));
       } else {
         core.info(
-          `global.json wasn't found in the root directory. No .NET version will be installed.`
+          `The global.json wasn't found in the root directory. No .NET version will be installed.`
         );
       }
     }
@@ -58,7 +58,7 @@ export async function run() {
 
       if (quality && !qualityOptions.includes(quality)) {
         throw new Error(
-          `${quality} is not a supported value for 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`
+          `Value '${quality}' is not supported for the 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`
         );
       }
 
@@ -78,19 +78,7 @@ export async function run() {
       auth.configAuthentication(sourceUrl, configFile);
     }
 
-    const comparisonRange: string = globalJsonFileInput
-      ? versions[versions.length - 1]!
-      : '*';
-
-    const versionToOutput = semver.maxSatisfying(
-      installedDotnetVersions,
-      comparisonRange,
-      {
-        includePrerelease: true
-      }
-    );
-
-    core.setOutput('dotnet-version', versionToOutput);
+    outputInstalledVersion(installedDotnetVersions, globalJsonFileInput);
 
     const matchersPath = path.join(__dirname, '..', '.github');
     core.info(`##[add-matcher]${path.join(matchersPath, 'csc.json')}`);
@@ -114,6 +102,39 @@ function getVersionFromGlobalJson(globalJsonPath: string): string {
     }
   }
   return version;
+}
+
+function outputInstalledVersion(
+  installedVersions: (string | null)[],
+  globalJsonFileInput: string
+): void {
+  if (!installedVersions.length) {
+    core.info(`The 'dotnet-version' output will not be set.`);
+    return;
+  }
+
+  if (installedVersions.includes(null)) {
+    core.warning(
+      `Failed to output the installed version of .NET. The 'dotnet-version' output will not be set.`
+    );
+    return;
+  }
+
+  if (globalJsonFileInput) {
+    const versionToOutput = installedVersions.at(-1); // .NET SDK version parsed from the global.json file is installed last
+    core.setOutput('dotnet-version', versionToOutput);
+    return;
+  }
+
+  const versionToOutput = semver.maxSatisfying(
+    installedVersions as string[],
+    '*',
+    {
+      includePrerelease: true
+    }
+  );
+
+  core.setOutput('dotnet-version', versionToOutput);
 }
 
 run();
