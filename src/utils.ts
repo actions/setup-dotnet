@@ -1,7 +1,6 @@
 export const IS_WINDOWS = process.platform === 'win32';
-export const IS_LINUX = process.platform === 'linux';
-export const getPlatform = (): 'windows' | 'linux' | 'mac' => {
-  if (IS_WINDOWS) return 'windows';
-  if (IS_LINUX) return 'linux';
+export const PLATFORM = ((): 'windows' | 'linux' | 'mac' => {
+  if (process.platform === 'win32') return 'windows';
+  if (process.platform === 'linux') return 'linux';
   return 'mac';
-};
+})();

@@ -7,7 +7,7 @@ import {chmodSync} from 'fs';
 import path from 'path';
 import os from 'os';
 import semver from 'semver';
-import {IS_WINDOWS, getPlatform} from './utils';
+import {IS_WINDOWS, PLATFORM} from './utils';
 import {QualityOptions} from './setup-dotnet';
 
 export interface DotnetVersion {
@@ -223,7 +223,7 @@ export abstract class DotnetInstallDir {
     ? DotnetInstallDir.convertInstallPathToAbsolute(
         process.env['DOTNET_INSTALL_DIR']
       )
-    : DotnetInstallDir.default[getPlatform()];
+    : DotnetInstallDir.default[PLATFORM];
 
   private static convertInstallPathToAbsolute(installDir: string): string {
     if (path.isAbsolute(installDir)) return path.normalize(installDir);
