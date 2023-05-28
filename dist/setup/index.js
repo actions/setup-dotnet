@@ -70967,7 +70967,7 @@ const restoreCache = (cacheDependencyPath) => __awaiter(void 0, void 0, void 0, 
     const cacheKey = yield cache.restoreCache([cachePath], primaryKey);
     core.setOutput(constants_1.Outputs.CacheHit, Boolean(cacheKey));
     if (!cacheKey) {
-        core.info('dotnet cache is not found');
+        core.info('Dotnet cache is not found');
         return;
     }
     core.saveState(constants_1.State.CacheMatchedKey, cacheKey);
