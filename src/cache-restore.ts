@@ -27,7 +27,7 @@ export const restoreCache = async (cacheDependencyPath?: string) => {
   core.setOutput(Outputs.CacheHit, Boolean(cacheKey));
 
   if (!cacheKey) {
-    core.info('dotnet cache is not found');
+    core.info('Dotnet cache is not found');
     return;
   }
 
