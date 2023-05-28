@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>$(TEST_TARGET_FRAMEWORK)</TargetFramework>
     <IsPackable>false</IsPackable>
+    <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
   </PropertyGroup>
 
   <ItemGroup>

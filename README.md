@@ -99,6 +99,15 @@ steps:
 - run: dotnet restore --locked-mode
 ```
 
+> **Note:** This action will only restore `global-packages` folder, so you will get [NU1403](https://learn.microsoft.com/nuget/reference/errors-and-warnings/nu1403) error when running `dotnet restore`.
+> To avoid this, please use [`DisableImplicitNuGetFallbackFolder`](https://github.com/dotnet/reproducible-builds/blob/abfe986832aa28597d3340b92469d1a702013d23/Documentation/Reproducible-MSBuild/Techniques/DisableImplicitNuGetFallbackFolder.md) option.
+
+```xml
+<PropertyGroup>
+  <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+</PropertyGroup>
+```
+
 ### Reduce caching size
 
 **Note:** Use [`NUGET_PACKAGES`](https://learn.microsoft.com/nuget/reference/cli-reference/cli-ref-environment-variables) environment variable if available. Some action runners already has huge libraries. (ex. Xamarin)
