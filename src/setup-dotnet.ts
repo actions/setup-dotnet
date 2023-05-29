@@ -4,6 +4,9 @@ import * as fs from 'fs';
 import path from 'path';
 import semver from 'semver';
 import * as auth from './authutil';
+import {isCacheFeatureAvailable} from './cache-utils';
+import {restoreCache} from './cache-restore';
+import {Outputs} from './constants';
 
 const qualityOptions = [
   'daily',
@@ -80,7 +83,12 @@ export async function run() {
 
     outputInstalledVersion(installedDotnetVersions, globalJsonFileInput);
 
-    const matchersPath = path.join(__dirname, '..', '.github');
+    if (core.getBooleanInput('cache') && isCacheFeatureAvailable()) {
+      const cacheDependencyPath = core.getInput('cache-dependency-path');
+      await restoreCache(cacheDependencyPath);
+    }
+
+    const matchersPath = path.join(__dirname, '..', '..', '.github');
     core.info(`##[add-matcher]${path.join(matchersPath, 'csc.json')}`);
   } catch (error) {
     core.setFailed(error.message);
@@ -109,20 +117,20 @@ function outputInstalledVersion(
   globalJsonFileInput: string
 ): void {
   if (!installedVersions.length) {
-    core.info(`The 'dotnet-version' output will not be set.`);
+    core.info(`The '${Outputs.DotnetVersion}' output will not be set.`);
     return;
   }
 
   if (installedVersions.includes(null)) {
     core.warning(
-      `Failed to output the installed version of .NET. The 'dotnet-version' output will not be set.`
+      `Failed to output the installed version of .NET. The '${Outputs.DotnetVersion}' output will not be set.`
     );
     return;
   }
 
   if (globalJsonFileInput) {
     const versionToOutput = installedVersions.at(-1); // .NET SDK version parsed from the global.json file is installed last
-    core.setOutput('dotnet-version', versionToOutput);
+    core.setOutput(Outputs.DotnetVersion, versionToOutput);
     return;
   }
 
@@ -134,7 +142,7 @@ function outputInstalledVersion(
     }
   );
 
-  core.setOutput('dotnet-version', versionToOutput);
+  core.setOutput(Outputs.DotnetVersion, versionToOutput);
 }
 
 run();
