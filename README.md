@@ -99,8 +99,8 @@ steps:
 - run: dotnet restore --locked-mode
 ```
 
-> **Note**: This action will only restore `global-packages` folder, so you will get [NU1403](https://learn.microsoft.com/nuget/reference/errors-and-warnings/nu1403) error when running `dotnet restore`.
-> To avoid this, please use [`DisableImplicitNuGetFallbackFolder`](https://github.com/dotnet/reproducible-builds/blob/abfe986832aa28597d3340b92469d1a702013d23/Documentation/Reproducible-MSBuild/Techniques/DisableImplicitNuGetFallbackFolder.md) option.
+> **Note**: This action will only restore `global-packages` folder, so you will probably get the [NU1403](https://learn.microsoft.com/nuget/reference/errors-and-warnings/nu1403) error when running `dotnet restore`.
+> To avoid this, you can use [`DisableImplicitNuGetFallbackFolder`](https://github.com/dotnet/reproducible-builds/blob/abfe986832aa28597d3340b92469d1a702013d23/Documentation/Reproducible-MSBuild/Techniques/DisableImplicitNuGetFallbackFolder.md) option.
 
 ```xml
 <PropertyGroup>
