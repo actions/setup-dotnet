@@ -240,7 +240,7 @@ export abstract class DotnetInstallDir {
     core.exportVariable('DOTNET_ROOT', process.env['DOTNET_INSTALL_DIR']);
   }
 
-  public static initialize() {
+  public static setEnvironmentVariable() {
     process.env['DOTNET_INSTALL_DIR'] = DotnetInstallDir.dirPath;
   }
 }
@@ -249,7 +249,7 @@ export class DotnetCoreInstaller {
   static addToPath = DotnetInstallDir.addToPath;
 
   static {
-    DotnetInstallDir.initialize();
+    DotnetInstallDir.setEnvironmentVariable();
   }
 
   constructor(private version: string, private quality: QualityOptions) {}

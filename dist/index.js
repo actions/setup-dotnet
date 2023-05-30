@@ -420,8 +420,8 @@ class DotnetInstallDir {
         core.addPath(process.env['DOTNET_INSTALL_DIR']);
         core.exportVariable('DOTNET_ROOT', process.env['DOTNET_INSTALL_DIR']);
     }
-    static initialize() {
-        process.env['DOTNET_INSTALL_DIR'] = DotnetInstallDir.path;
+    static setEnvironmentVariable() {
+        process.env['DOTNET_INSTALL_DIR'] = DotnetInstallDir.dirPath;
     }
 }
 exports.DotnetInstallDir = DotnetInstallDir;
@@ -430,7 +430,7 @@ DotnetInstallDir.default = {
     mac: path_1.default.join(process.env['HOME'] + '', '.dotnet'),
     windows: path_1.default.join(process.env['PROGRAMFILES'] + '', 'dotnet')
 };
-DotnetInstallDir.path = process.env['DOTNET_INSTALL_DIR']
+DotnetInstallDir.dirPath = process.env['DOTNET_INSTALL_DIR']
     ? DotnetInstallDir.convertInstallPathToAbsolute(process.env['DOTNET_INSTALL_DIR'])
     : DotnetInstallDir.default[utils_1.PLATFORM];
 class DotnetCoreInstaller {
@@ -465,7 +465,7 @@ class DotnetCoreInstaller {
 exports.DotnetCoreInstaller = DotnetCoreInstaller;
 DotnetCoreInstaller.addToPath = DotnetInstallDir.addToPath;
 (() => {
-    DotnetInstallDir.initialize();
+    DotnetInstallDir.setEnvironmentVariable();
 })();
 
 
