@@ -219,7 +219,7 @@ export abstract class DotnetInstallDir {
     windows: path.join(process.env['PROGRAMFILES'] + '', 'dotnet')
   };
 
-  public static readonly path = process.env['DOTNET_INSTALL_DIR']
+  public static readonly dirPath = process.env['DOTNET_INSTALL_DIR']
     ? DotnetInstallDir.convertInstallPathToAbsolute(
         process.env['DOTNET_INSTALL_DIR']
       )
@@ -241,7 +241,7 @@ export abstract class DotnetInstallDir {
   }
 
   public static initialize() {
-    process.env['DOTNET_INSTALL_DIR'] = DotnetInstallDir.path;
+    process.env['DOTNET_INSTALL_DIR'] = DotnetInstallDir.dirPath;
   }
 }
 
