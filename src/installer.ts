@@ -143,7 +143,7 @@ export class DotnetInstallScript {
     this.setupScriptBash();
   }
 
-  private async setupScriptPowershell() {
+  private setupScriptPowershell() {
     this.scriptArguments = [
       '-NoLogo',
       '-Sta',
@@ -165,7 +165,7 @@ export class DotnetInstallScript {
     }
   }
 
-  private async setupScriptBash() {
+  private setupScriptBash() {
     chmodSync(this.escapedScript, '777');
   }
 

@@ -351,30 +351,26 @@ class DotnetInstallScript {
         this.setupScriptBash();
     }
     setupScriptPowershell() {
-        return __awaiter(this, void 0, void 0, function* () {
-            this.scriptArguments = [
-                '-NoLogo',
-                '-Sta',
-                '-NoProfile',
-                '-NonInteractive',
-                '-ExecutionPolicy',
-                'Unrestricted',
-                '-Command'
-            ];
-            this.scriptArguments.push('&', `'${this.escapedScript}'`);
-            if (process.env['https_proxy'] != null) {
-                this.scriptArguments.push(`-ProxyAddress ${process.env['https_proxy']}`);
-            }
-            // This is not currently an option
-            if (process.env['no_proxy'] != null) {
-                this.scriptArguments.push(`-ProxyBypassList ${process.env['no_proxy']}`);
-            }
-        });
+        this.scriptArguments = [
+            '-NoLogo',
+            '-Sta',
+            '-NoProfile',
+            '-NonInteractive',
+            '-ExecutionPolicy',
+            'Unrestricted',
+            '-Command'
+        ];
+        this.scriptArguments.push('&', `'${this.escapedScript}'`);
+        if (process.env['https_proxy'] != null) {
+            this.scriptArguments.push(`-ProxyAddress ${process.env['https_proxy']}`);
+        }
+        // This is not currently an option
+        if (process.env['no_proxy'] != null) {
+            this.scriptArguments.push(`-ProxyBypassList ${process.env['no_proxy']}`);
+        }
     }
     setupScriptBash() {
-        return __awaiter(this, void 0, void 0, function* () {
-            (0, fs_1.chmodSync)(this.escapedScript, '777');
-        });
+        (0, fs_1.chmodSync)(this.escapedScript, '777');
     }
     getScriptPath() {
         return __awaiter(this, void 0, void 0, function* () {
