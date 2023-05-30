@@ -463,7 +463,6 @@ class DotnetCoreInstaller {
     }
 }
 exports.DotnetCoreInstaller = DotnetCoreInstaller;
-DotnetCoreInstaller.addToPath = DotnetInstallDir.addToPath;
 (() => {
     DotnetInstallDir.setEnvironmentVariable();
 })();
@@ -571,7 +570,7 @@ function run() {
                     const installedVersion = yield dotnetInstaller.installDotnet();
                     installedDotnetVersions.push(installedVersion);
                 }
-                installer_1.DotnetCoreInstaller.addToPath();
+                installer_1.DotnetInstallDir.addToPath();
             }
             const sourceUrl = core.getInput('source-url');
             const configFile = core.getInput('config-file');

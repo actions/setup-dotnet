@@ -246,8 +246,6 @@ export abstract class DotnetInstallDir {
 }
 
 export class DotnetCoreInstaller {
-  static addToPath = DotnetInstallDir.addToPath;
-
   static {
     DotnetInstallDir.setEnvironmentVariable();
   }

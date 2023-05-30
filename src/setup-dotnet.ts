@@ -1,5 +1,5 @@
 import * as core from '@actions/core';
-import {DotnetCoreInstaller} from './installer';
+import {DotnetCoreInstaller, DotnetInstallDir} from './installer';
 import * as fs from 'fs';
 import path from 'path';
 import semver from 'semver';
@@ -69,7 +69,7 @@ export async function run() {
         const installedVersion = await dotnetInstaller.installDotnet();
         installedDotnetVersions.push(installedVersion);
       }
-      DotnetCoreInstaller.addToPath();
+      DotnetInstallDir.addToPath();
     }
 
     const sourceUrl: string = core.getInput('source-url');
