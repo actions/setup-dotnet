@@ -129,17 +129,18 @@ export class DotnetInstallScript {
   private scriptName = IS_WINDOWS ? 'install-dotnet.ps1' : 'install-dotnet.sh';
   private escapedScript: string;
   private scriptArguments: string[] = [];
-  private scriptPath = '';
-  private scriptReady: Promise<void>;
 
   constructor() {
     this.escapedScript = path
       .join(__dirname, '..', 'externals', this.scriptName)
       .replace(/'/g, "''");
 
-    this.scriptReady = IS_WINDOWS
-      ? this.setupScriptPowershell()
-      : this.setupScriptBash();
+    if (IS_WINDOWS) {
+      this.setupScriptPowershell();
+      return;
+    }
+
+    this.setupScriptBash();
   }
 
   private async setupScriptPowershell() {
@@ -162,14 +163,18 @@ export class DotnetInstallScript {
     if (process.env['no_proxy'] != null) {
       this.scriptArguments.push(`-ProxyBypassList ${process.env['no_proxy']}`);
     }
-
-    this.scriptPath =
-      (await io.which('pwsh', false)) || (await io.which('powershell', true));
   }
 
   private async setupScriptBash() {
     chmodSync(this.escapedScript, '777');
-    this.scriptPath = await io.which(this.escapedScript, true);
+  }
+
+  private async getScriptPath() {
+    if (IS_WINDOWS) {
+      return (await io.which('pwsh', false)) || io.which('powershell', true);
+    }
+
+    return io.which(this.escapedScript, true);
   }
 
   public useArguments(...args: string[]) {
@@ -202,10 +207,8 @@ export class DotnetInstallScript {
       env: process.env as {string: string}
     };
 
-    await this.scriptReady;
-
     return exec.getExecOutput(
-      `"${this.scriptPath}"`,
+      `"${await this.getScriptPath()}"`,
       this.scriptArguments,
       getExecOutputOptions
     );

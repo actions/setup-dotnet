@@ -341,13 +341,14 @@ class DotnetInstallScript {
     constructor() {
         this.scriptName = utils_1.IS_WINDOWS ? 'install-dotnet.ps1' : 'install-dotnet.sh';
         this.scriptArguments = [];
-        this.scriptPath = '';
         this.escapedScript = path_1.default
             .join(__dirname, '..', 'externals', this.scriptName)
             .replace(/'/g, "''");
-        this.scriptReady = utils_1.IS_WINDOWS
-            ? this.setupScriptPowershell()
-            : this.setupScriptBash();
+        if (utils_1.IS_WINDOWS) {
+            this.setupScriptPowershell();
+            return;
+        }
+        this.setupScriptBash();
     }
     setupScriptPowershell() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -368,14 +369,19 @@ class DotnetInstallScript {
             if (process.env['no_proxy'] != null) {
                 this.scriptArguments.push(`-ProxyBypassList ${process.env['no_proxy']}`);
             }
-            this.scriptPath =
-                (yield io.which('pwsh', false)) || (yield io.which('powershell', true));
         });
     }
     setupScriptBash() {
         return __awaiter(this, void 0, void 0, function* () {
             (0, fs_1.chmodSync)(this.escapedScript, '777');
-            this.scriptPath = yield io.which(this.escapedScript, true);
+        });
+    }
+    getScriptPath() {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (utils_1.IS_WINDOWS) {
+                return (yield io.which('pwsh', false)) || io.which('powershell', true);
+            }
+            return io.which(this.escapedScript, true);
         });
     }
     useArguments(...args) {
@@ -401,8 +407,7 @@ class DotnetInstallScript {
                 ignoreReturnCode: true,
                 env: process.env
             };
-            yield this.scriptReady;
-            return exec.getExecOutput(`"${this.scriptPath}"`, this.scriptArguments, getExecOutputOptions);
+            return exec.getExecOutput(`"${yield this.getScriptPath()}"`, this.scriptArguments, getExecOutputOptions);
         });
     }
 }
