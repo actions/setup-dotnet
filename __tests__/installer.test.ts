@@ -283,14 +283,14 @@ describe('installer tests', () => {
     describe('addToPath() tests', () => {
       it(`should export DOTNET_ROOT env.var with value from DOTNET_INSTALL_DIR env.var`, async () => {
         process.env['DOTNET_INSTALL_DIR'] = 'fictitious/dotnet/install/dir';
-        installer.DotnetCoreInstaller.addToPath();
+        installer.DotnetInstallDir.addToPath();
         const dotnet_root = process.env['DOTNET_ROOT'];
         expect(dotnet_root).toBe(process.env['DOTNET_INSTALL_DIR']);
       });
 
       it(`should export value from DOTNET_INSTALL_DIR env.var to the PATH`, async () => {
         process.env['DOTNET_INSTALL_DIR'] = 'fictitious/dotnet/install/dir';
-        installer.DotnetCoreInstaller.addToPath();
+        installer.DotnetInstallDir.addToPath();
         const path = process.env['PATH'];
         expect(path).toContain(process.env['DOTNET_INSTALL_DIR']);
       });
