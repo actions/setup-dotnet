@@ -132,7 +132,7 @@ export class DotnetInstallScript {
 
   constructor() {
     this.escapedScript = path
-      .join(__dirname, '..', 'externals', this.scriptName)
+      .join(__dirname, '..', '..', 'externals', this.scriptName)
       .replace(/'/g, "''");
 
     if (IS_WINDOWS) {
