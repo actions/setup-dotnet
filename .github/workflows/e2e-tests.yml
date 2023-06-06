@@ -451,3 +451,33 @@ jobs:
       - name: Verify dotnet
         shell: pwsh
         run: __tests__/verify-dotnet.ps1 -Patterns "^3.1.201$" -CheckNugetConfig
+
+  test-sequential-version-installation:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        lower-version: ['3.1.426']
+        higher-version: ['7.0.203']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+      # Install one version, use it for something, then switch to next version
+      - name: Setup dotnet (lower version)
+        uses: ./
+        with:
+          dotnet-version: ${{ matrix.lower-version }}
+      - name: Verify dotnet (lower version)
+        shell: pwsh
+        run: __tests__/verify-dotnet.ps1 -Patterns "^${{ matrix.lower-version }}$"
+      - name: Setup dotnet (higher version)
+        uses: ./
+        with:
+          dotnet-version: ${{ matrix.higher-version }}
+      - name: Verify dotnet (higher version)
+        shell: pwsh
+        run: __tests__/verify-dotnet.ps1 -Patterns "^${{ matrix.lower-version }}$", "^${{ matrix.higher-version }}$"
