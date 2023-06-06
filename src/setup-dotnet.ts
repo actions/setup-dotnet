@@ -7,6 +7,7 @@ import * as auth from './authutil';
 import {isCacheFeatureAvailable} from './cache-utils';
 import {restoreCache} from './cache-restore';
 import {Outputs} from './constants';
+import JSON5 from 'json5';
 
 const qualityOptions = [
   'daily',
@@ -97,9 +98,14 @@ export async function run() {
 
 function getVersionFromGlobalJson(globalJsonPath: string): string {
   let version = '';
-  const globalJson = JSON.parse(
+  const globalJson = JSON5.parse(
     // .trim() is necessary to strip BOM https://github.com/nodejs/node/issues/20649
-    fs.readFileSync(globalJsonPath, {encoding: 'utf8'}).trim()
+    fs.readFileSync(globalJsonPath, {encoding: 'utf8'}).trim(),
+    // is necessary as JSON5 supports wider variety of options for numbers: https://www.npmjs.com/package/json5#numbers
+    (key, value) => {
+      if (key === 'version' || key === 'rollForward') return String(value);
+      return value;
+    }
   );
   if (globalJson.sdk && globalJson.sdk.version) {
     version = globalJson.sdk.version;

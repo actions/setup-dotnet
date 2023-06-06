@@ -229,6 +229,31 @@ jobs:
         shell: pwsh
         run: __tests__/verify-dotnet.ps1 -Patterns "^2.2"
 
+  test-global-json-with-comments:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+      - name: Write global.json
+        shell: bash
+        run: |
+          mkdir subdirectory
+          echo '/* should support comments */ {"sdk":{"version": "2.2.207","rollForward": "latestFeature"}} // should support comments' > ./subdirectory/global.json
+      - name: Setup dotnet
+        uses: ./
+        with:
+          global-json-file: ./subdirectory/global.json
+      - name: Verify dotnet
+        shell: pwsh
+        run: __tests__/verify-dotnet.ps1 -Patterns "^2.2"
+
   test-setup-with-dotnet-quality:
     runs-on: ${{ matrix.operating-system }}
     strategy:
