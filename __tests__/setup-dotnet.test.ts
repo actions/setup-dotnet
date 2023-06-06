@@ -4,7 +4,7 @@ import semver from 'semver';
 import * as auth from '../src/authutil';
 
 import * as setup from '../src/setup-dotnet';
-import {DotnetCoreInstaller} from '../src/installer';
+import {DotnetCoreInstaller, DotnetInstallDir} from '../src/installer';
 import * as cacheUtils from '../src/cache-utils';
 import * as cacheRestore from '../src/cache-restore';
 
@@ -28,22 +28,25 @@ describe('setup-dotnet tests', () => {
     DotnetCoreInstaller.prototype,
     'installDotnet'
   );
-  const addToPathSpy = jest.spyOn(DotnetCoreInstaller, 'addToPath');
+
   const isCacheFeatureAvailableSpy = jest.spyOn(
     cacheUtils,
     'isCacheFeatureAvailable'
   );
   const restoreCacheSpy = jest.spyOn(cacheRestore, 'restoreCache');
   const configAuthenticationSpy = jest.spyOn(auth, 'configAuthentication');
+  const addToPathOriginal = DotnetInstallDir.addToPath;
 
   describe('run() tests', () => {
     beforeEach(() => {
+      DotnetInstallDir.addToPath = jest.fn();
       getMultilineInputSpy.mockImplementation(input => inputs[input as string]);
       getInputSpy.mockImplementation(input => inputs[input as string]);
       getBooleanInputSpy.mockImplementation(input => inputs[input as string]);
     });
 
     afterEach(() => {
+      DotnetInstallDir.addToPath = addToPathOriginal;
       jest.clearAllMocks();
       jest.resetAllMocks();
     });
@@ -104,10 +107,9 @@ describe('setup-dotnet tests', () => {
       inputs['dotnet-quality'] = '';
 
       installDotnetSpy.mockImplementation(() => Promise.resolve(''));
-      addToPathSpy.mockImplementation(() => {});
 
       await setup.run();
-      expect(addToPathSpy).toHaveBeenCalledTimes(1);
+      expect(DotnetInstallDir.addToPath).toHaveBeenCalledTimes(1);
     });
 
     it('should call auth.configAuthentication() if source-url input is provided', async () => {
@@ -148,10 +150,9 @@ describe('setup-dotnet tests', () => {
       installDotnetSpy.mockImplementation(() =>
         Promise.resolve(`${inputs['dotnet-version']}`)
       );
-      addToPathSpy.mockImplementation(() => {});
 
       await setup.run();
-      expect(setOutputSpy).toHaveBeenCalledTimes(1);
+      expect(DotnetInstallDir.addToPath).toHaveBeenCalledTimes(1);
     });
 
     it(`shouldn't call setOutput() if parsing dotnet-installer logs failed`, async () => {
@@ -159,7 +160,6 @@ describe('setup-dotnet tests', () => {
       const warningMessage = `Failed to output the installed version of .NET. The 'dotnet-version' output will not be set.`;
 
       installDotnetSpy.mockImplementation(() => Promise.resolve(null));
-      addToPathSpy.mockImplementation(() => {});
 
       await setup.run();
       expect(warningSpy).toHaveBeenCalledWith(warningMessage);
@@ -169,8 +169,6 @@ describe('setup-dotnet tests', () => {
     it(`shouldn't call setOutput() if actions didn't install .NET`, async () => {
       inputs['dotnet-version'] = [];
       const warningMessage = `The 'dotnet-version' output will not be set.`;
-
-      addToPathSpy.mockImplementation(() => {});
 
       await setup.run();
 
@@ -185,7 +183,6 @@ describe('setup-dotnet tests', () => {
       inputs['cache-dependency-path'] = 'fictitious.package.lock.json';
 
       installDotnetSpy.mockImplementation(() => Promise.resolve(''));
-      addToPathSpy.mockImplementation(() => {});
 
       isCacheFeatureAvailableSpy.mockImplementation(() => true);
       restoreCacheSpy.mockImplementation(() => Promise.resolve());
@@ -203,7 +200,6 @@ describe('setup-dotnet tests', () => {
       inputs['cache'] = false;
 
       installDotnetSpy.mockImplementation(() => Promise.resolve(''));
-      addToPathSpy.mockImplementation(() => {});
 
       isCacheFeatureAvailableSpy.mockImplementation(() => true);
       restoreCacheSpy.mockImplementation(() => Promise.resolve());
@@ -218,7 +214,6 @@ describe('setup-dotnet tests', () => {
       inputs['cache'] = true;
 
       installDotnetSpy.mockImplementation(() => Promise.resolve(''));
-      addToPathSpy.mockImplementation(() => {});
 
       isCacheFeatureAvailableSpy.mockImplementation(() => false);
       restoreCacheSpy.mockImplementation(() => Promise.resolve());
