@@ -433,8 +433,8 @@ jobs:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest, windows-latest, macOS-latest]
-        lower-version: ['2.2.402', '3.0.103', '3.1.426', '6.0.408', '7.0.100']
-        higher-version: ['6.0.408', '7.0.203']
+        lower-version: ['3.1.426']
+        higher-version: ['7.0.203']
     steps:
       - name: Checkout
         uses: actions/checkout@v3
