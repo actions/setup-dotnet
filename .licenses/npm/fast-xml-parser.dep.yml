@@ -1,6 +1,6 @@
 ---
 name: fast-xml-parser
-version: 4.0.10
+version: 4.2.4
 type: npm
 summary: Validate XML, Parse XML to JS Object, or Build XML from JS Object without C/C++ based libraries and no callback.
 homepage: https://github.com/NaturalIntelligence/fast-xml-parser#readme
