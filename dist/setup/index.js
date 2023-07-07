@@ -51211,7 +51211,9 @@ module.exports = toXml;
 /***/ }),
 
 /***/ 6072:
-/***/ ((module) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const util = __nccwpck_require__(8280);
 
 //TODO: handle comments
 function readDocType(xmlData, i){
@@ -51355,19 +51357,15 @@ function isNotation(xmlData, i){
     return false
 }
 
-//an entity name should not contains special characters that may be used in regex
-//Eg !?\\\/[]$%{}^&*()<>
-const specialChar = "!?\\\/[]$%{}^&*()<>|+";
-
 function validateEntityName(name){
-    for (let i = 0; i < specialChar.length; i++) {
-        const ch = specialChar[i];
-        if(name.indexOf(ch) !== -1) throw new Error(`Invalid character ${ch} in entity name`);
-    }
-    return name;
+    if (util.isName(name))
+	return name;
+    else
+        throw new Error(`Invalid entity name ${name}`);
 }
 
 module.exports = readDocType;
+
 
 /***/ }),
 
