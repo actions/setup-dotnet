@@ -1,9 +1,13 @@
 import * as core from '@actions/core';
-import {DotnetCoreInstaller} from './installer';
+import {DotnetCoreInstaller, DotnetInstallDir} from './installer';
 import * as fs from 'fs';
 import path from 'path';
 import semver from 'semver';
 import * as auth from './authutil';
+import {isCacheFeatureAvailable} from './cache-utils';
+import {restoreCache} from './cache-restore';
+import {Outputs} from './constants';
+import JSON5 from 'json5';
 
 const qualityOptions = [
   'daily',
@@ -13,7 +17,7 @@ const qualityOptions = [
   'ga'
 ] as const;
 
-export type QualityOptions = typeof qualityOptions[number];
+export type QualityOptions = (typeof qualityOptions)[number];
 
 export async function run() {
   try {
@@ -27,11 +31,11 @@ export async function run() {
     // Proxy, auth, (etc) are still set up, even if no version is identified
     //
     const versions = core.getMultilineInput('dotnet-version');
-    const installedDotnetVersions: string[] = [];
+    const installedDotnetVersions: (string | null)[] = [];
 
     const globalJsonFileInput = core.getInput('global-json-file');
     if (globalJsonFileInput) {
-      const globalJsonPath = path.join(process.cwd(), globalJsonFileInput);
+      const globalJsonPath = path.resolve(process.cwd(), globalJsonFileInput);
       if (!fs.existsSync(globalJsonPath)) {
         throw new Error(
           `The specified global.json file '${globalJsonFileInput}' does not exist`
@@ -48,7 +52,7 @@ export async function run() {
         versions.push(getVersionFromGlobalJson(globalJsonPath));
       } else {
         core.info(
-          `global.json wasn't found in the root directory. No .NET version will be installed.`
+          `The global.json wasn't found in the root directory. No .NET version will be installed.`
         );
       }
     }
@@ -58,7 +62,7 @@ export async function run() {
 
       if (quality && !qualityOptions.includes(quality)) {
         throw new Error(
-          `${quality} is not a supported value for 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`
+          `Value '${quality}' is not supported for the 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`
         );
       }
 
@@ -69,7 +73,7 @@ export async function run() {
         const installedVersion = await dotnetInstaller.installDotnet();
         installedDotnetVersions.push(installedVersion);
       }
-      DotnetCoreInstaller.addToPath();
+      DotnetInstallDir.addToPath();
     }
 
     const sourceUrl: string = core.getInput('source-url');
@@ -78,21 +82,14 @@ export async function run() {
       auth.configAuthentication(sourceUrl, configFile);
     }
 
-    const comparisonRange: string = globalJsonFileInput
-      ? versions[versions.length - 1]!
-      : '*';
+    outputInstalledVersion(installedDotnetVersions, globalJsonFileInput);
 
-    const versionToOutput = semver.maxSatisfying(
-      installedDotnetVersions,
-      comparisonRange,
-      {
-        includePrerelease: true
-      }
-    );
+    if (core.getBooleanInput('cache') && isCacheFeatureAvailable()) {
+      const cacheDependencyPath = core.getInput('cache-dependency-path');
+      await restoreCache(cacheDependencyPath);
+    }
 
-    core.setOutput('dotnet-version', versionToOutput);
-
-    const matchersPath = path.join(__dirname, '..', '.github');
+    const matchersPath = path.join(__dirname, '..', '..', '.github');
     core.info(`##[add-matcher]${path.join(matchersPath, 'csc.json')}`);
   } catch (error) {
     core.setFailed(error.message);
@@ -100,10 +97,15 @@ export async function run() {
 }
 
 function getVersionFromGlobalJson(globalJsonPath: string): string {
-  let version: string = '';
-  const globalJson = JSON.parse(
+  let version = '';
+  const globalJson = JSON5.parse(
     // .trim() is necessary to strip BOM https://github.com/nodejs/node/issues/20649
-    fs.readFileSync(globalJsonPath, {encoding: 'utf8'}).trim()
+    fs.readFileSync(globalJsonPath, {encoding: 'utf8'}).trim(),
+    // is necessary as JSON5 supports wider variety of options for numbers: https://www.npmjs.com/package/json5#numbers
+    (key, value) => {
+      if (key === 'version' || key === 'rollForward') return String(value);
+      return value;
+    }
   );
   if (globalJson.sdk && globalJson.sdk.version) {
     version = globalJson.sdk.version;
@@ -114,6 +116,39 @@ function getVersionFromGlobalJson(globalJsonPath: string): string {
     }
   }
   return version;
+}
+
+function outputInstalledVersion(
+  installedVersions: (string | null)[],
+  globalJsonFileInput: string
+): void {
+  if (!installedVersions.length) {
+    core.info(`The '${Outputs.DotnetVersion}' output will not be set.`);
+    return;
+  }
+
+  if (installedVersions.includes(null)) {
+    core.warning(
+      `Failed to output the installed version of .NET. The '${Outputs.DotnetVersion}' output will not be set.`
+    );
+    return;
+  }
+
+  if (globalJsonFileInput) {
+    const versionToOutput = installedVersions.at(-1); // .NET SDK version parsed from the global.json file is installed last
+    core.setOutput(Outputs.DotnetVersion, versionToOutput);
+    return;
+  }
+
+  const versionToOutput = semver.maxSatisfying(
+    installedVersions as string[],
+    '*',
+    {
+      includePrerelease: true
+    }
+  );
+
+  core.setOutput(Outputs.DotnetVersion, versionToOutput);
 }
 
 run();
