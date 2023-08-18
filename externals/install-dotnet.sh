@@ -314,6 +314,10 @@ get_machine_architecture() {
             echo "ppc64le"
             return 0
             ;;
+        loongarch64)
+            echo "loongarch64"
+            return 0
+            ;;
         esac
     fi
 
@@ -353,6 +357,10 @@ get_normalized_architecture_from_architecture() {
             ;;
         ppc64le)
             echo "ppc64le"
+            return 0
+            ;;
+        loongarch64)
+            echo "loongarch64"
             return 0
             ;;
     esac
@@ -1663,7 +1671,7 @@ do
             echo "      -InstallDir"
             echo "  --architecture <ARCHITECTURE>      Architecture of dotnet binaries to be installed, Defaults to \`$architecture\`."
             echo "      --arch,-Architecture,-Arch"
-            echo "          Possible values: x64, arm, arm64, s390x and ppc64le"
+            echo "          Possible values: x64, arm, arm64, s390x, ppc64le and loongarch64"
             echo "  --os <system>                    Specifies operating system to be used when selecting the installer."
             echo "          Overrides the OS determination approach used by the script. Supported values: osx, linux, linux-musl, freebsd, rhel.6."
             echo "          In case any other value is provided, the platform will be determined by the script based on machine configuration."
