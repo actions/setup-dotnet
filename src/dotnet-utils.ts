@@ -1,13 +1,11 @@
 import * as exec from '@actions/exec';
 
 export const listSdks = async () => {
-  const {stdout, exitCode} = await exec.getExecOutput(
-    'dotnet',
-    ['--list-sdks'],
-    {
+  const {stdout, exitCode} = await exec
+    .getExecOutput('dotnet', ['--list-sdks'], {
       ignoreReturnCode: true
-    }
-  );
+    })
+    .catch(() => ({stdout: '', exitCode: 1}));
 
   if (exitCode) {
     return [];
