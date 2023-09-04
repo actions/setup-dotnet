@@ -28,7 +28,21 @@ export const listSdks = async () => {
  * correct version number like '3.1.201', '3.1.201', '3.1.201', '3.1.201', '6.0.402'
  */
 export const matchVersionToList = (version: string, versions: string[]) => {
-  const versionRegex = new RegExp(`^${version.replace(/x/g, '\\d+')}`);
+  if (!version || version === 'x' || version === '*') {
+    return versions.at(0);
+  }
+
+  const versionArray = version.split('.');
+
+  if (versionArray.length < 3) {
+    versionArray.push(...Array(3 - versionArray.length).fill('x'));
+  }
+
+  const normalizedVersion = versionArray.join('.');
+
+  const versionRegex = new RegExp(
+    `^${normalizedVersion.replace(/x/g, '\\d+')}`
+  );
   const matchedVersion = versions.find(v => versionRegex.test(v));
 
   return matchedVersion;
