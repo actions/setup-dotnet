@@ -493,7 +493,7 @@ jobs:
         uses: actions/checkout@v3
       - name: Clear toolcache
         shell: pwsh
-        run: __tests__/clear-toolcache.sh ${{ runner.os }}
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
       - name: Setup dotnet (first)
         uses: ./
         with:
