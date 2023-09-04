@@ -125,6 +125,50 @@ describe('installer tests', () => {
         expect(scriptArguments).toContain(expectedArgument);
       });
 
+      it(`should supply 'runtime' argument to the installation script if runtimeOnly parameter is true`, async () => {
+        const inputVersion = '6.0.300';
+        const inputQuality = '' as QualityOptions;
+        const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
+
+        const resolvedVersion = await new installer.DotnetVersionResolver(
+          inputVersion
+        ).createDotnetVersion();
+
+        getExecOutputSpy.mockImplementation(() => {
+          return Promise.resolve({
+            exitCode: 0,
+            stdout: `${stdout}`,
+            stderr: ''
+          });
+        });
+        maxSatisfyingSpy.mockImplementation(() => inputVersion);
+
+        const dotnetInstaller = new installer.DotnetCoreInstaller(
+          resolvedVersion,
+          inputQuality,
+          true
+        );
+
+        await dotnetInstaller.installDotnet();
+
+        /**
+         * First time script would be called to
+         * install runtime of the latest version in order
+         * to provide latest CLI, here we are checking only the
+         * second one that installs actual requested runtime
+         */
+        const callIndex = 1;
+
+        const scriptArguments = (
+          getExecOutputSpy.mock.calls[callIndex][1] as string[]
+        ).join(' ');
+        const expectedArgument = IS_WINDOWS
+          ? `-Runtime`
+          : `--runtime`;
+
+        expect(scriptArguments).toContain(expectedArgument);
+      });
+
       it(`should warn if the 'quality' input is set and the supplied version is in A.B.C syntax`, async () => {
         const inputVersion = '6.0.300';
         const inputQuality = 'ga' as QualityOptions;
