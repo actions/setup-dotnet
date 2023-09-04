@@ -9,6 +9,10 @@ inputs:
     description: 'Optional SDK version(s) to use. If not provided, will install global.json version when available. Examples: 2.2.104, 3.1, 3.1.x, 3.x, 6.0.2xx'
   dotnet-quality:
     description: 'Optional quality of the build. The possible values are: daily, signed, validated, preview, ga.'
+  prefer-installed:
+    description: 'Optional flag to prefer an already installed version of the SDK (when partial version syntax is used). If not provided, latest version with specified quality will be installed.'
+    required: false
+    default: false
   global-json-file:
     description: 'Optional global.json location, if your global.json isn''t located in the root of the repo.'
   source-url:

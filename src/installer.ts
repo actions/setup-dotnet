@@ -9,6 +9,7 @@ import os from 'os';
 import semver from 'semver';
 import {IS_WINDOWS, PLATFORM} from './utils';
 import {QualityOptions} from './setup-dotnet';
+import {listSdks, matchVersionToList} from './dotnet-utils';
 
 export interface DotnetVersion {
   type: string;
@@ -22,7 +23,7 @@ export class DotnetVersionResolver {
   private inputVersion: string;
   private resolvedArgument: DotnetVersion;
 
-  constructor(version: string) {
+  constructor(version: string, private preferInstalled = false) {
     this.inputVersion = version.trim();
     this.resolvedArgument = {type: '', value: '', qualityFlag: false};
   }
@@ -33,11 +34,30 @@ export class DotnetVersionResolver {
         `The 'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B, A.B.x, A, A.x, A.B.Cxx`
       );
     }
+
     if (semver.valid(this.inputVersion)) {
       this.createVersionArgument();
-    } else {
-      await this.createChannelArgument();
+      return;
     }
+
+    if (!this.preferInstalled) {
+      await this.createChannelArgument();
+      return;
+    }
+
+    const requestedVersion = this.inputVersion;
+    const installedVersions = await listSdks();
+    const matchingInstalledVersion = matchVersionToList(
+      requestedVersion,
+      installedVersions
+    );
+
+    if (matchingInstalledVersion === undefined) {
+      this.createChannelArgument();
+      return;
+    }
+
+    this.createVersionArgument(matchingInstalledVersion);
   }
 
   private isNumericTag(versionTag): boolean {
@@ -59,9 +79,9 @@ export class DotnetVersionResolver {
     return majorTag ? true : false;
   }
 
-  private createVersionArgument() {
+  private createVersionArgument(updatedVersion?: string) {
     this.resolvedArgument.type = 'version';
-    this.resolvedArgument.value = this.inputVersion;
+    this.resolvedArgument.value = updatedVersion ?? this.inputVersion;
   }
 
   private async createChannelArgument() {
@@ -253,10 +273,17 @@ export class DotnetCoreInstaller {
     DotnetInstallDir.setEnvironmentVariable();
   }
 
-  constructor(private version: string, private quality: QualityOptions) {}
+  constructor(
+    private version: string,
+    private quality: QualityOptions,
+    private preferInstalled = false
+  ) {}
 
   public async installDotnet(): Promise<string | null> {
-    const versionResolver = new DotnetVersionResolver(this.version);
+    const versionResolver = new DotnetVersionResolver(
+      this.version,
+      this.preferInstalled
+    );
     const dotnetVersion = await versionResolver.createDotnetVersion();
 
     /**

@@ -72747,6 +72747,77 @@ var Outputs;
 
 /***/ }),
 
+/***/ 2971:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.matchVersionToList = exports.listSdks = void 0;
+const exec = __importStar(__nccwpck_require__(1514));
+const listSdks = () => __awaiter(void 0, void 0, void 0, function* () {
+    const { stdout, exitCode } = yield exec.getExecOutput('dotnet', ['--list-sdks'], {
+        ignoreReturnCode: true
+    });
+    if (exitCode) {
+        return [];
+    }
+    return (stdout
+        .trim()
+        .split('\n')
+        .map(versionInfo => versionInfo.trim())
+        .map(versionInfo => versionInfo.split(' ')[0])
+        // reverses output so newer versions are first
+        .reverse());
+});
+exports.listSdks = listSdks;
+/**
+ * Function that matches string like that
+ * '3.1', '3.1.x', '3', '3.x', '6.0.4xx' to
+ * correct version number like '3.1.201', '3.1.201', '3.1.201', '3.1.201', '6.0.402'
+ */
+const matchVersionToList = (version, versions) => {
+    const versionRegex = new RegExp(`^${version.replace(/x/g, '\\d+')}`);
+    const matchedVersion = versions.find(v => versionRegex.test(v));
+    return matchedVersion;
+};
+exports.matchVersionToList = matchVersionToList;
+
+
+/***/ }),
+
 /***/ 2574:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -72799,10 +72870,12 @@ const path_1 = __importDefault(__nccwpck_require__(1017));
 const os_1 = __importDefault(__nccwpck_require__(2037));
 const semver_1 = __importDefault(__nccwpck_require__(5911));
 const utils_1 = __nccwpck_require__(1314);
+const dotnet_utils_1 = __nccwpck_require__(2971);
 const QUALITY_INPUT_MINIMAL_MAJOR_TAG = 6;
 const LATEST_PATCH_SYNTAX_MINIMAL_MAJOR_TAG = 5;
 class DotnetVersionResolver {
-    constructor(version) {
+    constructor(version, preferInstalled = false) {
+        this.preferInstalled = preferInstalled;
         this.inputVersion = version.trim();
         this.resolvedArgument = { type: '', value: '', qualityFlag: false };
     }
@@ -72813,10 +72886,20 @@ class DotnetVersionResolver {
             }
             if (semver_1.default.valid(this.inputVersion)) {
                 this.createVersionArgument();
+                return;
             }
-            else {
+            if (!this.preferInstalled) {
                 yield this.createChannelArgument();
+                return;
             }
+            const requestedVersion = this.inputVersion;
+            const installedVersions = yield (0, dotnet_utils_1.listSdks)();
+            const matchingInstalledVersion = (0, dotnet_utils_1.matchVersionToList)(requestedVersion, installedVersions);
+            if (matchingInstalledVersion === undefined) {
+                this.createChannelArgument();
+                return;
+            }
+            this.createVersionArgument(matchingInstalledVersion);
         });
     }
     isNumericTag(versionTag) {
@@ -72831,9 +72914,9 @@ class DotnetVersionResolver {
         }
         return majorTag ? true : false;
     }
-    createVersionArgument() {
+    createVersionArgument(updatedVersion) {
         this.resolvedArgument.type = 'version';
-        this.resolvedArgument.value = this.inputVersion;
+        this.resolvedArgument.value = updatedVersion !== null && updatedVersion !== void 0 ? updatedVersion : this.inputVersion;
     }
     createChannelArgument() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -72993,13 +73076,14 @@ DotnetInstallDir.dirPath = process.env['DOTNET_INSTALL_DIR']
     ? DotnetInstallDir.convertInstallPathToAbsolute(process.env['DOTNET_INSTALL_DIR'])
     : DotnetInstallDir.default[utils_1.PLATFORM];
 class DotnetCoreInstaller {
-    constructor(version, quality) {
+    constructor(version, quality, preferInstalled = false) {
         this.version = version;
         this.quality = quality;
+        this.preferInstalled = preferInstalled;
     }
     installDotnet() {
         return __awaiter(this, void 0, void 0, function* () {
-            const versionResolver = new DotnetVersionResolver(this.version);
+            const versionResolver = new DotnetVersionResolver(this.version, this.preferInstalled);
             const dotnetVersion = yield versionResolver.createDotnetVersion();
             /**
              * Install dotnet runitme first in order to get
@@ -73148,13 +73232,14 @@ function run() {
             }
             if (versions.length) {
                 const quality = core.getInput('dotnet-quality');
+                const preferInstalled = core.getBooleanInput('prefer-installed');
                 if (quality && !qualityOptions.includes(quality)) {
                     throw new Error(`Value '${quality}' is not supported for the 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`);
                 }
                 let dotnetInstaller;
                 const uniqueVersions = new Set(versions);
                 for (const version of uniqueVersions) {
-                    dotnetInstaller = new installer_1.DotnetCoreInstaller(version, quality);
+                    dotnetInstaller = new installer_1.DotnetCoreInstaller(version, quality, preferInstalled);
                     const installedVersion = yield dotnetInstaller.installDotnet();
                     installedDotnetVersions.push(installedVersion);
                 }

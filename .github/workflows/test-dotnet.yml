@@ -41,3 +41,25 @@ jobs:
         shell: pwsh
         run: |
           __tests__/verify-dotnet.ps1 -Patterns "^${{ matrix.dotnet-version }}"
+  setup-versions-prefer-installed:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        dotnet-version: ['2.1', '2.2', '3.0', '3.1', '5.0', '6.0', '7.0', '8.0']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+      - name: Setup dotnet ${{ matrix.dotnet-version }}
+        uses: ./
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}
+          prefer-installed: true
+      - name: Verify installed version
+        shell: pwsh
+        run: |
+          __tests__/verify-dotnet.ps1 -Patterns "^${{ matrix.dotnet-version }}"
