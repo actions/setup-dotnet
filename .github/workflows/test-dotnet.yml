@@ -66,3 +66,24 @@ jobs:
       - name: List installed versions
         shell: pwsh
         run: dotnet --list-sdks
+  setup-version-already-installed:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+      - name: Setup dotnet 6.0
+        uses: ./
+        with:
+          dotnet-version: '6.0'
+          prefer-installed: true
+      - name: Verify installed version
+        shell: pwsh
+        run: |
+          __tests__/verify-dotnet.ps1 -Patterns "^6.0"
