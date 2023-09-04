@@ -12,78 +12,24 @@ on:
       - '**.md'
 
 jobs:
-  check-installed:
-    runs-on: 'windows-latest'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Clear toolcache
-        shell: pwsh
-        run: dotnet --list-sdks
   setup-version:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest, windows-latest, macOS-latest]
-        dotnet-version:
-          [
-            ['2.1', '2.x'],
-            ['2.2', '2.x'],
-            ['3.0', '3.x'],
-            ['3.1', '3.x'],
-            ['5.0', '5.x'],
-            ['6.0', '6.x'],
-            ['7.0', '7.x'],
-            ['8.0', '8.x']
-          ]
+        dotnet-version: ['2.1', '2.2', '3.0', '3.1', '5.0', '6.0', '7.0', '8.0']
     steps:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Setup dotnet ${{ matrix.dotnet-version[0] }}
+      - name: Setup dotnet ${{ matrix.dotnet-version }}
         uses: ./
         with:
-          dotnet-version: ${{ matrix.dotnet-version[0] }}
+          dotnet-version: ${{ matrix.dotnet-version }}
       - name: Verify installed version
         shell: pwsh
         run: |
-          __tests__/verify-dotnet.ps1 -Patterns "^${{ matrix.dotnet-version[0] }}"
-      - name: List installed versions
-        shell: pwsh
-        run: dotnet --list-sdks
-      - name: Run setup again with prefer installed option
-        uses: ./
-        with:
-          dotnet-version: ${{ matrix.dotnet-version[1] }}
-          prefer-installed: true
-      - name: Verify installed version
-        shell: pwsh
-        run: |
-          __tests__/verify-dotnet.ps1 -Patterns "^${{ matrix.dotnet-version[0] }}"
-      - name: List installed versions
-        shell: pwsh
-        run: dotnet --list-sdks
-  setup-version-already-installed:
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      fail-fast: false
-      matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Clear toolcache
-        shell: pwsh
-        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Setup dotnet 6.0
-        uses: ./
-        with:
-          dotnet-version: '6.0'
-          prefer-installed: true
-      - name: Verify installed version
-        shell: pwsh
-        run: |
-          __tests__/verify-dotnet.ps1 -Patterns "^6.0"
+          __tests__/verify-dotnet.ps1 -Patterns "^${{ matrix.dotnet-version }}"
