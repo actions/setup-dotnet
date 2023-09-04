@@ -78,7 +78,8 @@ export async function run() {
         dotnetVersionResolver = new DotnetVersionResolver(version);
         dotnetInstaller = new DotnetCoreInstaller(
           await dotnetVersionResolver.createDotnetVersion(),
-          quality
+          quality,
+          core.getBooleanInput('runtime-only')
         );
         const installedVersion = await dotnetInstaller.installDotnet();
         installedDotnetVersions.push(installedVersion);
