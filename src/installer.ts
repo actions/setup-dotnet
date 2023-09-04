@@ -275,7 +275,7 @@ export class DotnetCoreInstaller {
 
   constructor(
     private dotnetVersion: DotnetVersion,
-    private quality: QualityOptions,
+    private quality: QualityOptions
   ) {}
 
   public async installDotnet(): Promise<string | null> {
