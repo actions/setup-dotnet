@@ -1,5 +1,5 @@
 import * as core from '@actions/core';
-import {DotnetCoreInstaller, DotnetInstallDir} from './installer';
+import {DotnetCoreInstaller, DotnetInstallDir, DotnetVersionResolver} from './installer';
 import * as fs from 'fs';
 import path from 'path';
 import semver from 'semver';
@@ -68,12 +68,14 @@ export async function run() {
       }
 
       let dotnetInstaller: DotnetCoreInstaller;
+      let dotnetVersionResolver: DotnetVersionResolver;
+
       const uniqueVersions = new Set<string>(versions);
       for (const version of uniqueVersions) {
+        dotnetVersionResolver = new DotnetVersionResolver(version, preferInstalled);
         dotnetInstaller = new DotnetCoreInstaller(
-          version,
+          await dotnetVersionResolver.createDotnetVersion(),
           quality,
-          preferInstalled
         );
         const installedVersion = await dotnetInstaller.installDotnet();
         installedDotnetVersions.push(installedVersion);
