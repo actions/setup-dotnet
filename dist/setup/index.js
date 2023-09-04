@@ -72788,9 +72788,11 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.matchVersionToList = exports.listSdks = void 0;
 const exec = __importStar(__nccwpck_require__(1514));
 const listSdks = () => __awaiter(void 0, void 0, void 0, function* () {
-    const { stdout, exitCode } = yield exec.getExecOutput('dotnet', ['--list-sdks'], {
+    const { stdout, exitCode } = yield exec
+        .getExecOutput('dotnet', ['--list-sdks'], {
         ignoreReturnCode: true
-    });
+    })
+        .catch(() => ({ stdout: '', exitCode: 1 }));
     if (exitCode) {
         return [];
     }
