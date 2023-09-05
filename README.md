@@ -22,7 +22,7 @@ See [action.yml](action.yml)
 **Basic**:
 ```yaml
 steps:
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 - uses: actions/setup-dotnet@v3
   with:
     dotnet-version: '3.1.x'
@@ -33,7 +33,7 @@ steps:
 **Multiple version installation**:
 ```yml
 steps:
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 - name: Setup dotnet
   uses: actions/setup-dotnet@v3
   with:
@@ -59,7 +59,7 @@ This input sets up the action to install the latest build of the specified quali
 
 ```yml
 steps:
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 - uses: actions/setup-dotnet@v3
   with:
     dotnet-version: '6.0.x'
@@ -74,7 +74,7 @@ steps:
 
 ```yml
 steps:
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 - uses: actions/setup-dotnet@v3
   with:
     global-json-file: csharp/global.json
@@ -91,7 +91,7 @@ The action searches for [NuGet Lock files](https://learn.microsoft.com/nuget/con
 
 ```yaml
 steps:
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 - uses: actions/setup-dotnet@v3
   with:
     dotnet-version: 6.x
@@ -116,7 +116,7 @@ steps:
 env:
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
 steps:
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 - uses: actions/setup-dotnet@v3
   with:
     dotnet-version: 6.x
@@ -130,7 +130,7 @@ steps:
 env:
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
 steps:
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 - uses: actions/setup-dotnet@v3
   with:
     dotnet-version: 6.x
@@ -150,7 +150,7 @@ jobs:
         dotnet: [ '2.1.x', '3.1.x', '5.0.x' ]
     name: Dotnet ${{ matrix.dotnet }} sample
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup dotnet
         uses: actions/setup-dotnet@v3
         with:
@@ -170,7 +170,7 @@ jobs:
         dotnet: [ '2.1.x', '3.1.x', '5.0.x' ]
     name: Dotnet ${{ matrix.dotnet }} sample
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup dotnet
         uses: actions/setup-dotnet@v3
         id: stepid
@@ -186,7 +186,7 @@ jobs:
 ### Github Package Registry (GPR)
 ```yml
 steps:
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 - uses: actions/setup-dotnet@v3
   with:
     dotnet-version: '3.1.x'
