@@ -51,7 +51,7 @@ describe('installer tests', () => {
         });
 
         const dotnetInstaller = new installer.DotnetCoreInstaller(
-          inputVersion,
+          await (new installer.DotnetVersionResolver(inputVersion)).createDotnetVersion(),
           inputQuality
         );
         await expect(dotnetInstaller.installDotnet()).rejects.toThrow(
@@ -73,7 +73,7 @@ describe('installer tests', () => {
         maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
         const dotnetInstaller = new installer.DotnetCoreInstaller(
-          inputVersion,
+          await (new installer.DotnetVersionResolver(inputVersion)).createDotnetVersion(),
           inputQuality
         );
         const installedVersion = await dotnetInstaller.installDotnet();
@@ -96,7 +96,7 @@ describe('installer tests', () => {
         maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
         const dotnetInstaller = new installer.DotnetCoreInstaller(
-          inputVersion,
+          await (new installer.DotnetVersionResolver(inputVersion)).createDotnetVersion(),
           inputQuality
         );
 
@@ -133,7 +133,7 @@ describe('installer tests', () => {
         maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
         const dotnetInstaller = new installer.DotnetCoreInstaller(
-          inputVersion,
+          await (new installer.DotnetVersionResolver(inputVersion)).createDotnetVersion(),
           inputQuality
         );
 
@@ -159,7 +159,7 @@ describe('installer tests', () => {
         maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
         const dotnetInstaller = new installer.DotnetCoreInstaller(
-          inputVersion,
+          await (new installer.DotnetVersionResolver(inputVersion)).createDotnetVersion(),
           inputQuality
         );
 
@@ -186,7 +186,7 @@ describe('installer tests', () => {
           maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
           const dotnetInstaller = new installer.DotnetCoreInstaller(
-            inputVersion,
+            await (new installer.DotnetVersionResolver(inputVersion)).createDotnetVersion(),
             inputQuality
           );
 
@@ -226,7 +226,7 @@ describe('installer tests', () => {
           maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
           const dotnetInstaller = new installer.DotnetCoreInstaller(
-            inputVersion,
+            await (new installer.DotnetVersionResolver(inputVersion)).createDotnetVersion(),
             inputQuality
           );
 
@@ -267,7 +267,7 @@ describe('installer tests', () => {
           maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
           const dotnetInstaller = new installer.DotnetCoreInstaller(
-            inputVersion,
+            await (new installer.DotnetVersionResolver(inputVersion)).createDotnetVersion(),
             inputQuality
           );
 
@@ -305,7 +305,7 @@ describe('installer tests', () => {
           maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
           const dotnetInstaller = new installer.DotnetCoreInstaller(
-            inputVersion,
+            await (new installer.DotnetVersionResolver(inputVersion)).createDotnetVersion(),
             inputQuality
           );
 

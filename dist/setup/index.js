@@ -72993,14 +72993,12 @@ DotnetInstallDir.dirPath = process.env['DOTNET_INSTALL_DIR']
     ? DotnetInstallDir.convertInstallPathToAbsolute(process.env['DOTNET_INSTALL_DIR'])
     : DotnetInstallDir.default[utils_1.PLATFORM];
 class DotnetCoreInstaller {
-    constructor(version, quality) {
-        this.version = version;
+    constructor(dotnetVersion, quality) {
+        this.dotnetVersion = dotnetVersion;
         this.quality = quality;
     }
     installDotnet() {
         return __awaiter(this, void 0, void 0, function* () {
-            const versionResolver = new DotnetVersionResolver(this.version);
-            const dotnetVersion = yield versionResolver.createDotnetVersion();
             /**
              * Install dotnet runitme first in order to get
              * the latest stable version of dotnet CLI
@@ -73028,7 +73026,7 @@ class DotnetCoreInstaller {
                 // Don't overwrite CLI because it should be already installed
                 .useArguments(utils_1.IS_WINDOWS ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files')
                 // Use version provided by user
-                .useVersion(dotnetVersion, this.quality)
+                .useVersion(this.dotnetVersion, this.quality)
                 .execute();
             if (dotnetInstallOutput.exitCode) {
                 throw new Error(`Failed to install dotnet, exit code: ${dotnetInstallOutput.exitCode}. ${dotnetInstallOutput.stderr}`);
@@ -73152,9 +73150,11 @@ function run() {
                     throw new Error(`Value '${quality}' is not supported for the 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`);
                 }
                 let dotnetInstaller;
+                let dotnetVersionResolver;
                 const uniqueVersions = new Set(versions);
                 for (const version of uniqueVersions) {
-                    dotnetInstaller = new installer_1.DotnetCoreInstaller(version, quality);
+                    dotnetVersionResolver = new installer_1.DotnetVersionResolver(version);
+                    dotnetInstaller = new installer_1.DotnetCoreInstaller(yield dotnetVersionResolver.createDotnetVersion(), quality);
                     const installedVersion = yield dotnetInstaller.installDotnet();
                     installedDotnetVersions.push(installedVersion);
                 }
