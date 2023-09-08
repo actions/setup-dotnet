@@ -162,9 +162,7 @@ describe('installer tests', () => {
         const scriptArguments = (
           getExecOutputSpy.mock.calls[callIndex][1] as string[]
         ).join(' ');
-        const expectedArgument = IS_WINDOWS
-          ? `-Runtime`
-          : `--runtime`;
+        const expectedArgument = IS_WINDOWS ? `-Runtime` : `--runtime`;
 
         expect(scriptArguments).toContain(expectedArgument);
       });
