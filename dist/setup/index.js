@@ -72785,7 +72785,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.matchVersionToList = exports.listSdks = void 0;
+exports.findMatchingVersion = exports.listSdks = void 0;
 const exec = __importStar(__nccwpck_require__(1514));
 const listSdks = () => __awaiter(void 0, void 0, void 0, function* () {
     const { stdout, exitCode } = yield exec
@@ -72810,20 +72810,19 @@ exports.listSdks = listSdks;
  * '3.1', '3.1.x', '3', '3.x', '6.0.4xx' to
  * correct version number like '3.1.201', '3.1.201', '3.1.201', '3.1.201', '6.0.402'
  */
-const matchVersionToList = (version, versions) => {
-    if (!version || version === 'x' || version === '*') {
+const findMatchingVersion = (versionPattern, versions) => {
+    if (!versionPattern || versionPattern === 'x' || versionPattern === '*') {
         return versions.at(0);
     }
-    const versionArray = version.split('.');
+    const versionArray = versionPattern.split('.');
     if (versionArray.length < 3) {
         versionArray.push(...Array(3 - versionArray.length).fill('x'));
     }
     const normalizedVersion = versionArray.join('.');
     const versionRegex = new RegExp(`^${normalizedVersion.replace(/x/g, '\\d+')}`);
-    const matchedVersion = versions.find(v => versionRegex.test(v));
-    return matchedVersion;
+    return versions.find(v => versionRegex.test(v));
 };
-exports.matchVersionToList = matchVersionToList;
+exports.findMatchingVersion = findMatchingVersion;
 
 
 /***/ }),
@@ -72895,7 +72894,7 @@ class DotnetVersionResolver {
                 throw new Error(`The 'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B, A.B.x, A, A.x, A.B.Cxx`);
             }
             if (semver_1.default.valid(this.inputVersion)) {
-                this.createVersionArgument();
+                this.createVersionArgument(this.inputVersion);
                 return;
             }
             if (!this.preferInstalled) {
@@ -72904,12 +72903,12 @@ class DotnetVersionResolver {
             }
             const requestedVersion = this.inputVersion;
             const installedVersions = yield (0, dotnet_utils_1.listSdks)();
-            const matchingInstalledVersion = (0, dotnet_utils_1.matchVersionToList)(requestedVersion, installedVersions);
-            if (matchingInstalledVersion === undefined) {
-                this.createChannelArgument();
+            const matchingInstalledVersion = (0, dotnet_utils_1.findMatchingVersion)(requestedVersion, installedVersions);
+            if (matchingInstalledVersion) {
+                this.createVersionArgument(matchingInstalledVersion);
                 return;
             }
-            this.createVersionArgument(matchingInstalledVersion);
+            this.createChannelArgument();
         });
     }
     isNumericTag(versionTag) {
@@ -72924,9 +72923,9 @@ class DotnetVersionResolver {
         }
         return majorTag ? true : false;
     }
-    createVersionArgument(updatedVersion) {
+    createVersionArgument(version) {
         this.resolvedArgument.type = 'version';
-        this.resolvedArgument.value = updatedVersion !== null && updatedVersion !== void 0 ? updatedVersion : this.inputVersion;
+        this.resolvedArgument.value = version;
     }
     createChannelArgument() {
         return __awaiter(this, void 0, void 0, function* () {

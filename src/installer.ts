@@ -9,7 +9,7 @@ import os from 'os';
 import semver from 'semver';
 import {IS_WINDOWS, PLATFORM} from './utils';
 import {QualityOptions} from './setup-dotnet';
-import {listSdks, matchVersionToList} from './dotnet-utils';
+import {listSdks, findMatchingVersion} from './dotnet-utils';
 
 export interface DotnetVersion {
   type: string;
@@ -36,7 +36,7 @@ export class DotnetVersionResolver {
     }
 
     if (semver.valid(this.inputVersion)) {
-      this.createVersionArgument();
+      this.createVersionArgument(this.inputVersion);
       return;
     }
 
@@ -47,17 +47,17 @@ export class DotnetVersionResolver {
 
     const requestedVersion = this.inputVersion;
     const installedVersions = await listSdks();
-    const matchingInstalledVersion = matchVersionToList(
+    const matchingInstalledVersion = findMatchingVersion(
       requestedVersion,
       installedVersions
     );
 
-    if (matchingInstalledVersion === undefined) {
-      this.createChannelArgument();
+    if (matchingInstalledVersion) {
+      this.createVersionArgument(matchingInstalledVersion);
       return;
     }
 
-    this.createVersionArgument(matchingInstalledVersion);
+    this.createChannelArgument();
   }
 
   private isNumericTag(versionTag): boolean {
@@ -79,9 +79,9 @@ export class DotnetVersionResolver {
     return majorTag ? true : false;
   }
 
-  private createVersionArgument(updatedVersion?: string) {
+  private createVersionArgument(version: string) {
     this.resolvedArgument.type = 'version';
-    this.resolvedArgument.value = updatedVersion ?? this.inputVersion;
+    this.resolvedArgument.value = version;
   }
 
   private async createChannelArgument() {
@@ -274,8 +274,8 @@ export class DotnetCoreInstaller {
   }
 
   constructor(
-    private dotnetVersion: DotnetVersion,
-    private quality: QualityOptions
+    private readonly dotnetVersion: DotnetVersion,
+    private readonly quality: QualityOptions
   ) {}
 
   public async installDotnet(): Promise<string | null> {

@@ -2,43 +2,43 @@ import * as dotnetUtils from '../src/dotnet-utils';
 import * as exec from '@actions/exec';
 
 describe('dotnet-utils', () => {
-  describe('matchVersionToList', () => {
+  describe('findMatchingVersion', () => {
     it('matches all versions with all syntaxes correctly', () => {
       expect(
-        dotnetUtils.matchVersionToList('3.1', ['3.1.201', '6.0.402'])
+        dotnetUtils.findMatchingVersion('3.1', ['3.1.201', '6.0.402'])
       ).toEqual('3.1.201');
       expect(
-        dotnetUtils.matchVersionToList('3.1.x', ['3.1.201', '6.0.402'])
+        dotnetUtils.findMatchingVersion('3.1.x', ['3.1.201', '6.0.402'])
       ).toEqual('3.1.201');
       expect(
-        dotnetUtils.matchVersionToList('3', ['3.1.201', '6.0.402'])
+        dotnetUtils.findMatchingVersion('3', ['3.1.201', '6.0.402'])
       ).toEqual('3.1.201');
       expect(
-        dotnetUtils.matchVersionToList('3.x', ['3.1.201', '6.0.402'])
+        dotnetUtils.findMatchingVersion('3.x', ['3.1.201', '6.0.402'])
       ).toEqual('3.1.201');
       expect(
-        dotnetUtils.matchVersionToList('6.0.4xx', ['3.1.201', '6.0.402'])
+        dotnetUtils.findMatchingVersion('6.0.4xx', ['3.1.201', '6.0.402'])
       ).toEqual('6.0.402');
     });
 
     it('returns undefined if no version is matched', () => {
       expect(
-        dotnetUtils.matchVersionToList('6.0.5xx', ['3.1.201', '6.0.403'])
+        dotnetUtils.findMatchingVersion('6.0.5xx', ['3.1.201', '6.0.403'])
       ).toEqual(undefined);
-      expect(dotnetUtils.matchVersionToList('6.0.5xx', [])).toEqual(undefined);
+      expect(dotnetUtils.findMatchingVersion('6.0.5xx', [])).toEqual(undefined);
     });
 
     it("returns the first version if 'x' or '*' version is provided", () => {
       expect(
-        dotnetUtils.matchVersionToList('x', ['3.1.201', '6.0.403'])
+        dotnetUtils.findMatchingVersion('x', ['3.1.201', '6.0.403'])
       ).toEqual('3.1.201');
       expect(
-        dotnetUtils.matchVersionToList('*', ['3.1.201', '6.0.403'])
+        dotnetUtils.findMatchingVersion('*', ['3.1.201', '6.0.403'])
       ).toEqual('3.1.201');
     });
 
     it('returns undefined if empty version list is provided', () => {
-      expect(dotnetUtils.matchVersionToList('6.0.4xx', [])).toEqual(undefined);
+      expect(dotnetUtils.findMatchingVersion('6.0.4xx', [])).toEqual(undefined);
     });
   });
 
