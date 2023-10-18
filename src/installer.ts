@@ -253,12 +253,13 @@ export class DotnetCoreInstaller {
     DotnetInstallDir.setEnvironmentVariable();
   }
 
-  constructor(private version: string, private quality: QualityOptions) {}
+  constructor(
+    private readonly dotnetVersion: DotnetVersion,
+    private readonly quality: QualityOptions,
+    private readonly runtimeOnly = false
+  ) {}
 
   public async installDotnet(): Promise<string | null> {
-    const versionResolver = new DotnetVersionResolver(this.version);
-    const dotnetVersion = await versionResolver.createDotnetVersion();
-
     /**
      * Install dotnet runitme first in order to get
      * the latest stable version of dotnet CLI
@@ -288,14 +289,22 @@ export class DotnetCoreInstaller {
      * Install dotnet over the latest version of
      * dotnet CLI
      */
-    const dotnetInstallOutput = await new DotnetInstallScript()
+    const dotnetInstallScript = new DotnetInstallScript()
       // Don't overwrite CLI because it should be already installed
       .useArguments(
         IS_WINDOWS ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files'
       )
       // Use version provided by user
-      .useVersion(dotnetVersion, this.quality)
-      .execute();
+      .useVersion(this.dotnetVersion, this.quality);
+
+    if (this.runtimeOnly) {
+      dotnetInstallScript.useArguments(
+        IS_WINDOWS ? '-Runtime' : '--runtime',
+        'dotnet'
+      );
+    }
+
+    const dotnetInstallOutput = await dotnetInstallScript.execute();
 
     if (dotnetInstallOutput.exitCode) {
       throw new Error(
