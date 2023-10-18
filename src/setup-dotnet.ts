@@ -1,5 +1,9 @@
 import * as core from '@actions/core';
-import {DotnetCoreInstaller, DotnetInstallDir} from './installer';
+import {
+  DotnetCoreInstaller,
+  DotnetInstallDir,
+  DotnetVersionResolver
+} from './installer';
 import * as fs from 'fs';
 import path from 'path';
 import semver from 'semver';
@@ -59,6 +63,7 @@ export async function run() {
 
     if (versions.length) {
       const quality = core.getInput('dotnet-quality') as QualityOptions;
+      const preferInstalled = core.getBooleanInput('prefer-installed');
 
       if (quality && !qualityOptions.includes(quality)) {
         throw new Error(
@@ -67,9 +72,18 @@ export async function run() {
       }
 
       let dotnetInstaller: DotnetCoreInstaller;
+      let dotnetVersionResolver: DotnetVersionResolver;
+
       const uniqueVersions = new Set<string>(versions);
       for (const version of uniqueVersions) {
-        dotnetInstaller = new DotnetCoreInstaller(version, quality);
+        dotnetVersionResolver = new DotnetVersionResolver(
+          version,
+          preferInstalled
+        );
+        dotnetInstaller = new DotnetCoreInstaller(
+          await dotnetVersionResolver.createDotnetVersion(),
+          quality
+        );
         const installedVersion = await dotnetInstaller.installDotnet();
         installedDotnetVersions.push(installedVersion);
       }

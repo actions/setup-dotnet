@@ -481,3 +481,31 @@ jobs:
       - name: Verify dotnet (higher version)
         shell: pwsh
         run: __tests__/verify-dotnet.ps1 -Patterns "^${{ matrix.lower-version }}$", "^${{ matrix.higher-version }}$"
+
+  test-version-already-installed:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+      - name: Setup dotnet (first)
+        uses: ./
+        with:
+          dotnet-version: '6.0'
+      - name: Verify dotnet (first)
+        shell: pwsh
+        run: __tests__/verify-dotnet.ps1 -Patterns "^6.0"
+      - name: Setup dotnet (same major, any minor)
+        uses: ./
+        with:
+          dotnet-version: '6.x'
+          prefer-installed: true
+      - name: Verify dotnet (same major, any minor)
+        shell: pwsh
+        run: __tests__/verify-dotnet.ps1 -Patterns "^6.0"

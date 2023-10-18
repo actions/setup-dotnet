@@ -72789,6 +72789,86 @@ var Outputs;
 
 /***/ }),
 
+/***/ 2971:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.findMatchingVersion = exports.listSdks = void 0;
+const exec = __importStar(__nccwpck_require__(1514));
+const listSdks = () => __awaiter(void 0, void 0, void 0, function* () {
+    const { stdout, exitCode } = yield exec
+        .getExecOutput('dotnet', ['--list-sdks'], {
+        ignoreReturnCode: true
+    })
+        .catch(() => ({ stdout: '', exitCode: 1 }));
+    if (exitCode) {
+        return [];
+    }
+    return (stdout
+        .trim()
+        .split('\n')
+        .map(versionInfo => versionInfo.trim())
+        .map(versionInfo => versionInfo.split(' ')[0])
+        // reverses output so newer versions are first
+        .reverse());
+});
+exports.listSdks = listSdks;
+/**
+ * Function that matches string like that
+ * '3.1', '3.1.x', '3', '3.x', '6.0.4xx' to
+ * correct version number like '3.1.201', '3.1.201', '3.1.201', '3.1.201', '6.0.402'
+ */
+const findMatchingVersion = (versionPattern, versions) => {
+    if (!versionPattern || versionPattern === 'x' || versionPattern === '*') {
+        return versions.at(0);
+    }
+    const versionArray = versionPattern.split('.');
+    if (versionArray.length < 3) {
+        versionArray.push(...Array(3 - versionArray.length).fill('x'));
+    }
+    const normalizedVersion = versionArray.join('.');
+    const versionRegex = new RegExp(`^${normalizedVersion.replace(/x/g, '\\d+')}`);
+    return versions.find(v => versionRegex.test(v));
+};
+exports.findMatchingVersion = findMatchingVersion;
+
+
+/***/ }),
+
 /***/ 2574:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -72841,10 +72921,12 @@ const path_1 = __importDefault(__nccwpck_require__(1017));
 const os_1 = __importDefault(__nccwpck_require__(2037));
 const semver_1 = __importDefault(__nccwpck_require__(5911));
 const utils_1 = __nccwpck_require__(1314);
+const dotnet_utils_1 = __nccwpck_require__(2971);
 const QUALITY_INPUT_MINIMAL_MAJOR_TAG = 6;
 const LATEST_PATCH_SYNTAX_MINIMAL_MAJOR_TAG = 5;
 class DotnetVersionResolver {
-    constructor(version) {
+    constructor(version, preferInstalled = false) {
+        this.preferInstalled = preferInstalled;
         this.inputVersion = version.trim();
         this.resolvedArgument = { type: '', value: '', qualityFlag: false };
     }
@@ -72854,11 +72936,21 @@ class DotnetVersionResolver {
                 throw new Error(`The 'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B, A.B.x, A, A.x, A.B.Cxx`);
             }
             if (semver_1.default.valid(this.inputVersion)) {
-                this.createVersionArgument();
+                this.createVersionArgument(this.inputVersion);
+                return;
             }
-            else {
+            if (!this.preferInstalled) {
                 yield this.createChannelArgument();
+                return;
             }
+            const requestedVersion = this.inputVersion;
+            const installedVersions = yield (0, dotnet_utils_1.listSdks)();
+            const matchingInstalledVersion = (0, dotnet_utils_1.findMatchingVersion)(requestedVersion, installedVersions);
+            if (matchingInstalledVersion) {
+                this.createVersionArgument(matchingInstalledVersion);
+                return;
+            }
+            this.createChannelArgument();
         });
     }
     isNumericTag(versionTag) {
@@ -72873,9 +72965,9 @@ class DotnetVersionResolver {
         }
         return majorTag ? true : false;
     }
-    createVersionArgument() {
+    createVersionArgument(version) {
         this.resolvedArgument.type = 'version';
-        this.resolvedArgument.value = this.inputVersion;
+        this.resolvedArgument.value = version;
     }
     createChannelArgument() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -73035,14 +73127,12 @@ DotnetInstallDir.dirPath = process.env['DOTNET_INSTALL_DIR']
     ? DotnetInstallDir.convertInstallPathToAbsolute(process.env['DOTNET_INSTALL_DIR'])
     : DotnetInstallDir.default[utils_1.PLATFORM];
 class DotnetCoreInstaller {
-    constructor(version, quality) {
-        this.version = version;
+    constructor(dotnetVersion, quality) {
+        this.dotnetVersion = dotnetVersion;
         this.quality = quality;
     }
     installDotnet() {
         return __awaiter(this, void 0, void 0, function* () {
-            const versionResolver = new DotnetVersionResolver(this.version);
-            const dotnetVersion = yield versionResolver.createDotnetVersion();
             /**
              * Install dotnet runitme first in order to get
              * the latest stable version of dotnet CLI
@@ -73070,7 +73160,7 @@ class DotnetCoreInstaller {
                 // Don't overwrite CLI because it should be already installed
                 .useArguments(utils_1.IS_WINDOWS ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files')
                 // Use version provided by user
-                .useVersion(dotnetVersion, this.quality)
+                .useVersion(this.dotnetVersion, this.quality)
                 .execute();
             if (dotnetInstallOutput.exitCode) {
                 throw new Error(`Failed to install dotnet, exit code: ${dotnetInstallOutput.exitCode}. ${dotnetInstallOutput.stderr}`);
@@ -73190,13 +73280,16 @@ function run() {
             }
             if (versions.length) {
                 const quality = core.getInput('dotnet-quality');
+                const preferInstalled = core.getBooleanInput('prefer-installed');
                 if (quality && !qualityOptions.includes(quality)) {
                     throw new Error(`Value '${quality}' is not supported for the 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`);
                 }
                 let dotnetInstaller;
+                let dotnetVersionResolver;
                 const uniqueVersions = new Set(versions);
                 for (const version of uniqueVersions) {
-                    dotnetInstaller = new installer_1.DotnetCoreInstaller(version, quality);
+                    dotnetVersionResolver = new installer_1.DotnetVersionResolver(version, preferInstalled);
+                    dotnetInstaller = new installer_1.DotnetCoreInstaller(yield dotnetVersionResolver.createDotnetVersion(), quality);
                     const installedVersion = yield dotnetInstaller.installDotnet();
                     installedDotnetVersions.push(installedVersion);
                 }

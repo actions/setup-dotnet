@@ -42,6 +42,10 @@ describe('installer tests', () => {
         const inputQuality = '' as QualityOptions;
         const errorMessage = 'fictitious error message!';
 
+        const resolvedVersion = await new installer.DotnetVersionResolver(
+          inputVersion
+        ).createDotnetVersion();
+
         getExecOutputSpy.mockImplementation(() => {
           return Promise.resolve({
             exitCode: 1,
@@ -51,7 +55,7 @@ describe('installer tests', () => {
         });
 
         const dotnetInstaller = new installer.DotnetCoreInstaller(
-          inputVersion,
+          resolvedVersion,
           inputQuality
         );
         await expect(dotnetInstaller.installDotnet()).rejects.toThrow(
@@ -63,6 +67,11 @@ describe('installer tests', () => {
         const inputVersion = '3.1.100';
         const inputQuality = '' as QualityOptions;
         const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
+
+        const resolvedVersion = await new installer.DotnetVersionResolver(
+          inputVersion
+        ).createDotnetVersion();
+
         getExecOutputSpy.mockImplementation(() => {
           return Promise.resolve({
             exitCode: 0,
@@ -73,7 +82,7 @@ describe('installer tests', () => {
         maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
         const dotnetInstaller = new installer.DotnetCoreInstaller(
-          inputVersion,
+          resolvedVersion,
           inputQuality
         );
         const installedVersion = await dotnetInstaller.installDotnet();
@@ -86,6 +95,10 @@ describe('installer tests', () => {
         const inputQuality = '' as QualityOptions;
         const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
 
+        const resolvedVersion = await new installer.DotnetVersionResolver(
+          inputVersion
+        ).createDotnetVersion();
+
         getExecOutputSpy.mockImplementation(() => {
           return Promise.resolve({
             exitCode: 0,
@@ -96,7 +109,7 @@ describe('installer tests', () => {
         maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
         const dotnetInstaller = new installer.DotnetCoreInstaller(
-          inputVersion,
+          resolvedVersion,
           inputQuality
         );
 
@@ -123,6 +136,11 @@ describe('installer tests', () => {
         const inputVersion = '6.0.300';
         const inputQuality = 'ga' as QualityOptions;
         const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
+
+        const resolvedVersion = await new installer.DotnetVersionResolver(
+          inputVersion
+        ).createDotnetVersion();
+
         getExecOutputSpy.mockImplementation(() => {
           return Promise.resolve({
             exitCode: 0,
@@ -133,7 +151,7 @@ describe('installer tests', () => {
         maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
         const dotnetInstaller = new installer.DotnetCoreInstaller(
-          inputVersion,
+          resolvedVersion,
           inputQuality
         );
 
@@ -149,6 +167,10 @@ describe('installer tests', () => {
         const inputQuality = 'ga' as QualityOptions;
         const stdout = `Fictitious dotnet version 3.1.100 is installed`;
 
+        const resolvedVersion = await new installer.DotnetVersionResolver(
+          inputVersion
+        ).createDotnetVersion();
+
         getExecOutputSpy.mockImplementation(() => {
           return Promise.resolve({
             exitCode: 0,
@@ -159,7 +181,7 @@ describe('installer tests', () => {
         maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
         const dotnetInstaller = new installer.DotnetCoreInstaller(
-          inputVersion,
+          resolvedVersion,
           inputQuality
         );
 
@@ -173,6 +195,10 @@ describe('installer tests', () => {
       each(['6', '6.0', '6.0.x', '6.0.*', '6.0.X']).test(
         `should supply 'quality' argument to the installation script if quality input is set and version (%s) is not in A.B.C syntax`,
         async inputVersion => {
+          const resolvedVersion = await new installer.DotnetVersionResolver(
+            inputVersion
+          ).createDotnetVersion();
+
           const inputQuality = 'ga' as QualityOptions;
           const exitCode = 0;
           const stdout = `Fictitious dotnet version 6.0.0 is installed`;
@@ -186,7 +212,7 @@ describe('installer tests', () => {
           maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
           const dotnetInstaller = new installer.DotnetCoreInstaller(
-            inputVersion,
+            resolvedVersion,
             inputQuality
           );
 
@@ -216,6 +242,11 @@ describe('installer tests', () => {
           const inputQuality = '' as QualityOptions;
           const exitCode = 0;
           const stdout = `Fictitious dotnet version 6.0.0 is installed`;
+
+          const resolvedVersion = await new installer.DotnetVersionResolver(
+            inputVersion
+          ).createDotnetVersion();
+
           getExecOutputSpy.mockImplementation(() => {
             return Promise.resolve({
               exitCode: exitCode,
@@ -226,7 +257,7 @@ describe('installer tests', () => {
           maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
           const dotnetInstaller = new installer.DotnetCoreInstaller(
-            inputVersion,
+            resolvedVersion,
             inputQuality
           );
 
@@ -257,6 +288,10 @@ describe('installer tests', () => {
           const inputQuality = '' as QualityOptions;
           const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
 
+          const resolvedVersion = await new installer.DotnetVersionResolver(
+            inputVersion
+          ).createDotnetVersion();
+
           getExecOutputSpy.mockImplementation(() => {
             return Promise.resolve({
               exitCode: 0,
@@ -267,7 +302,7 @@ describe('installer tests', () => {
           maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
           const dotnetInstaller = new installer.DotnetCoreInstaller(
-            inputVersion,
+            resolvedVersion,
             inputQuality
           );
 
@@ -295,6 +330,10 @@ describe('installer tests', () => {
           const inputQuality = '' as QualityOptions;
           const stdout = `Fictitious dotnet version 6.0.0 is installed`;
 
+          const resolvedVersion = await new installer.DotnetVersionResolver(
+            inputVersion
+          ).createDotnetVersion();
+
           getExecOutputSpy.mockImplementation(() => {
             return Promise.resolve({
               exitCode: 0,
@@ -305,7 +344,7 @@ describe('installer tests', () => {
           maxSatisfyingSpy.mockImplementation(() => inputVersion);
 
           const dotnetInstaller = new installer.DotnetCoreInstaller(
-            inputVersion,
+            resolvedVersion,
             inputQuality
           );
 
