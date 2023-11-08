@@ -3,11 +3,11 @@ import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as io from '@actions/io';
 import * as hc from '@actions/http-client';
-import {chmodSync} from 'fs';
+import fs, {chmodSync} from 'fs';
 import path from 'path';
 import os from 'os';
 import semver from 'semver';
-import {IS_WINDOWS, PLATFORM} from './utils';
+import {IS_WINDOWS, isSelfHosted, PLATFORM} from './utils';
 import {QualityOptions} from './setup-dotnet';
 
 export interface DotnetVersion {
@@ -215,11 +215,23 @@ export class DotnetInstallScript {
   }
 }
 
+// Workaround for slow installation on Windows with network attached C: drive
+// see https://github.com/actions/setup-dotnet/issues/260
+const fixWindowsInstallDir = (installDir: string): string => {
+  if (!isSelfHosted() && fs.existsSync('d:\\')) {
+    return installDir.replace(/^[cC]:\\/, 'd:\\');
+  } else {
+    return installDir;
+  }
+};
+
 export abstract class DotnetInstallDir {
   private static readonly default = {
     linux: '/usr/share/dotnet',
     mac: path.join(process.env['HOME'] + '', '.dotnet'),
-    windows: path.join(process.env['PROGRAMFILES'] + '', 'dotnet')
+    windows: fixWindowsInstallDir(
+      path.join(process.env['PROGRAMFILES'] + '', 'dotnet')
+    )
   };
 
   public static readonly dirPath = process.env['DOTNET_INSTALL_DIR']

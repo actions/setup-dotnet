@@ -72836,7 +72836,7 @@ const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const io = __importStar(__nccwpck_require__(7436));
 const hc = __importStar(__nccwpck_require__(6255));
-const fs_1 = __nccwpck_require__(7147);
+const fs_1 = __importStar(__nccwpck_require__(7147));
 const path_1 = __importDefault(__nccwpck_require__(1017));
 const os_1 = __importDefault(__nccwpck_require__(2037));
 const semver_1 = __importDefault(__nccwpck_require__(5911));
@@ -73008,6 +73008,16 @@ class DotnetInstallScript {
     }
 }
 exports.DotnetInstallScript = DotnetInstallScript;
+// Workaround for slow installation on Windows with network attached C: drive
+// see https://github.com/actions/setup-dotnet/issues/260
+const fixWindowsInstallDir = (installDir) => {
+    if (!(0, utils_1.isSelfHosted)() && fs_1.default.existsSync('d:\\')) {
+        return installDir.replace(/^[cC]:\\/, 'd:\\');
+    }
+    else {
+        return installDir;
+    }
+};
 class DotnetInstallDir {
     static convertInstallPathToAbsolute(installDir) {
         if (path_1.default.isAbsolute(installDir))
@@ -73029,7 +73039,7 @@ exports.DotnetInstallDir = DotnetInstallDir;
 DotnetInstallDir.default = {
     linux: '/usr/share/dotnet',
     mac: path_1.default.join(process.env['HOME'] + '', '.dotnet'),
-    windows: path_1.default.join(process.env['PROGRAMFILES'] + '', 'dotnet')
+    windows: fixWindowsInstallDir(path_1.default.join(process.env['PROGRAMFILES'] + '', 'dotnet'))
 };
 DotnetInstallDir.dirPath = process.env['DOTNET_INSTALL_DIR']
     ? DotnetInstallDir.convertInstallPathToAbsolute(process.env['DOTNET_INSTALL_DIR'])
@@ -73272,7 +73282,7 @@ run();
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.PLATFORM = exports.IS_WINDOWS = void 0;
+exports.isSelfHosted = exports.PLATFORM = exports.IS_WINDOWS = void 0;
 exports.IS_WINDOWS = process.platform === 'win32';
 exports.PLATFORM = (() => {
     if (process.platform === 'win32')
@@ -73281,6 +73291,10 @@ exports.PLATFORM = (() => {
         return 'linux';
     return 'mac';
 })();
+const isSelfHosted = () => process.env['AGENT_ISSELFHOSTED'] === '1' ||
+    (process.env['AGENT_ISSELFHOSTED'] === undefined &&
+        process.env['RUNNER_ENVIRONMENT'] !== 'github-hosted');
+exports.isSelfHosted = isSelfHosted;
 
 
 /***/ }),
