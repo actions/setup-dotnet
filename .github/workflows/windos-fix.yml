@@ -1,0 +1,52 @@
+name: Windows fix validation
+
+on:
+  pull_request:
+    paths-ignore:
+      - '**.md'
+  push:
+    branches:
+      - main
+      - releases/*
+    paths-ignore:
+      - '**.md'
+      -
+jobs:
+  setup-version:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [windows-2019, windows-2020]
+        dotnet-version: ['2.1', '2.2', '3.0', '3.1', '5.0', '6.0', '7.0', '8.0']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+
+      - name: Take note of the current time
+        run: Get-Date | Out-File -FilePath "timestamp.txt"
+
+      - name: Setup dotnet ${{ matrix.dotnet-version }}
+        uses: ./
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}
+
+      - name: Verify the action took less than 1 minute
+        run: |
+          $timestamp = Get-Content -Path "timestamp.txt"
+          $now = Get-Date
+          $diff = $now - $timestamp
+          if ($diff.TotalMinutes -gt 1) {
+              throw "The action took longer than 1 minute to run"
+          }
+
+      - name: Verify dotnet was installed on drive D
+        run: |
+          $dotnetPath = Get-ChildItem -Path "D:\Program Files\dotnet" -Directory -Name
+          if ($dotnetPath -eq $null) {
+              throw "dotnet was not installed on drive D"
+          }
