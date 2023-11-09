@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [windows-2019, windows-2020]
+        operating-system: [windows-2019, windows-2022]
         dotnet-version: ['2.1', '2.2', '3.0', '3.1', '5.0', '6.0', '7.0', '8.0']
     steps:
       - name: Checkout
@@ -37,10 +37,12 @@ jobs:
 
       - name: Verify the action took less than 1 minute
         run: |
-          $timestamp = Get-Content -Path "timestamp.txt"
+          $timestampContent = Get-Content -Path "timestamp.txt"
+          $timestamp = [DateTime]::Parse($timestampContent)
           $now = Get-Date
-          $diff = $now - $timestamp
-          if ($diff.TotalMinutes -gt 1) {
+
+          $diff = New-TimeSpan -Start $timestamp  -End $now      
+          if ($diff.Minutes -gt 1) {
               throw "The action took longer than 1 minute to run"
           }
 
