@@ -111,7 +111,7 @@ function getVersionFromGlobalJson(globalJsonPath: string): string {
     version = globalJson.sdk.version;
     const rollForward = globalJson.sdk.rollForward;
     if (rollForward && rollForward.startsWith('latest')) {
-      const [major, minor, featurePatch] = version.split('.');
+      const [major, minor, featurePatch] = (version || '').split('.');
       const feature = featurePatch.substring(0, 1);
       
       switch (rollForward) {
