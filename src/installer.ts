@@ -8,7 +8,7 @@ import path from 'path';
 import os from 'os';
 import semver from 'semver';
 import {IS_WINDOWS, PLATFORM} from './utils';
-import {QualityOptions} from './setup-dotnet';
+import {QualityOptions, ArchitectureOptions} from './setup-dotnet';
 
 export interface DotnetVersion {
   type: string;
@@ -182,7 +182,11 @@ export class DotnetInstallScript {
     return this;
   }
 
-  public useVersion(dotnetVersion: DotnetVersion, quality?: QualityOptions) {
+  public useVersion(
+    dotnetVersion: DotnetVersion,
+    quality?: QualityOptions,
+    architecture?: ArchitectureOptions
+  ) {
     if (dotnetVersion.type) {
       this.useArguments(dotnetVersion.type, dotnetVersion.value);
     }
@@ -196,6 +200,13 @@ export class DotnetInstallScript {
 
     if (quality) {
       this.useArguments(IS_WINDOWS ? '-Quality' : '--quality', quality);
+    }
+
+    if (architecture) {
+      this.useArguments(
+        IS_WINDOWS ? '-Architecture' : '--architecture',
+        architecture
+      );
     }
 
     return this;
@@ -253,7 +264,11 @@ export class DotnetCoreInstaller {
     DotnetInstallDir.setEnvironmentVariable();
   }
 
-  constructor(private version: string, private quality: QualityOptions) {}
+  constructor(
+    private version: string,
+    private quality: QualityOptions,
+    private architecture?: ArchitectureOptions
+  ) {}
 
   public async installDotnet(): Promise<string | null> {
     const versionResolver = new DotnetVersionResolver(this.version);
@@ -294,7 +309,7 @@ export class DotnetCoreInstaller {
         IS_WINDOWS ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files'
       )
       // Use version provided by user
-      .useVersion(dotnetVersion, this.quality)
+      .useVersion(dotnetVersion, this.quality, this.architecture)
       .execute();
 
     if (dotnetInstallOutput.exitCode) {

@@ -8,7 +8,7 @@ import * as io from '@actions/io';
 import * as installer from '../src/installer';
 
 import {IS_WINDOWS} from '../src/utils';
-import {QualityOptions} from '../src/setup-dotnet';
+import {QualityOptions, ArchitectureOptions} from '../src/setup-dotnet';
 
 describe('installer tests', () => {
   const env = process.env;
@@ -115,6 +115,86 @@ describe('installer tests', () => {
         const expectedArgument = IS_WINDOWS
           ? `-Version ${inputVersion}`
           : `--version ${inputVersion}`;
+
+        expect(scriptArguments).toContain(expectedArgument);
+      });
+
+      it(`should not supply 'architecture' argument to the installation script when architecture is an empty string`, async () => {
+        const inputVersion = '6.0.300';
+        const inputQuality = '' as QualityOptions;
+        const inputArchitecture = '' as ArchitectureOptions;
+        const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
+
+        getExecOutputSpy.mockImplementation(() => {
+          return Promise.resolve({
+            exitCode: 0,
+            stdout: `${stdout}`,
+            stderr: ''
+          });
+        });
+        maxSatisfyingSpy.mockImplementation(() => inputVersion);
+
+        const dotnetInstaller = new installer.DotnetCoreInstaller(
+          inputVersion,
+          inputQuality,
+          inputArchitecture
+        );
+
+        await dotnetInstaller.installDotnet();
+
+        /**
+         * First time script would be called to
+         * install runtime, here we checking only the
+         * second one that installs actual SDK. i.e. 1
+         */
+        const callIndex = 1;
+
+        const scriptArguments = (
+          getExecOutputSpy.mock.calls[callIndex][1] as string[]
+        ).join(' ');
+        const unexpectedArgument = IS_WINDOWS
+          ? `-Architecture`
+          : `--architecture`;
+
+        expect(scriptArguments).not.toContain(unexpectedArgument);
+      });
+
+      it(`should supply 'architecture' argument to the installation script when arrchitecture is supplied`, async () => {
+        const inputVersion = '6.0.300';
+        const inputQuality = '' as QualityOptions;
+        const inputArchitecture = 'x86';
+        const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
+
+        getExecOutputSpy.mockImplementation(() => {
+          return Promise.resolve({
+            exitCode: 0,
+            stdout: `${stdout}`,
+            stderr: ''
+          });
+        });
+        maxSatisfyingSpy.mockImplementation(() => inputVersion);
+
+        const dotnetInstaller = new installer.DotnetCoreInstaller(
+          inputVersion,
+          inputQuality,
+          inputArchitecture
+        );
+
+        await dotnetInstaller.installDotnet();
+
+        /**
+         * First time script would be called to
+         * install runtime, here we checking only the
+         * second one that installs actual SDK. i.e. 1
+         */
+        const callIndex = 1;
+
+        const scriptArguments = (
+          getExecOutputSpy.mock.calls[callIndex][1] as string[]
+        ).join(' ');
+        const expectedArgument = IS_WINDOWS
+          ? `-Architecture ${inputArchitecture}`
+          : `--architecture ${inputArchitecture}`;
 
         expect(scriptArguments).toContain(expectedArgument);
       });

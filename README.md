@@ -30,6 +30,17 @@ steps:
 ```
 > **Warning**: Unless a concrete version is specified in the [`global.json`](https://learn.microsoft.com/en-us/dotnet/core/tools/global-json) file, **_the latest .NET version installed on the runner (including preinstalled versions) will be used [by default](https://learn.microsoft.com/en-us/dotnet/core/versions/selection#the-sdk-uses-the-latest-installed-version)_**. Please refer to the [documentation](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-software) for the currently preinstalled .NET SDK versions.
 
+**Specific architecture:**
+```yml
+steps:
+- uses: actions/checkout@v3
+- uses: actions/setup-dotnet@v2
+  with:
+    dotnet-version: '8.0.x'
+    architecture: 'x86'
+- run: dotnet build <my project>
+```
+
 **Multiple version installation**:
 ```yml
 steps:
@@ -49,8 +60,7 @@ The `dotnet-version` input supports following syntax:
 - **A.B.C** (e.g 6.0.400, 7.0.100-preview.7.22377.5) - installs exact version of .NET SDK
 - **A.B** or **A.B.x** (e.g. 3.1, 3.1.x) - installs the latest patch version of .NET SDK on the channel `3.1`, including prerelease versions (preview, rc)
 - **A** or **A.x** (e.g. 3, 3.x) - installs the latest minor version of the specified major tag, including prerelease versions (preview, rc)
-- **A.B.Cxx** (e.g. 6.0.4xx) - available since `.NET 5.0` release. Installs the latest version of the specific SDK release, including prerelease versions (preview, rc). 
-
+- **A.B.Cxx** (e.g. 6.0.4xx) - available since `.NET 5.0` release. Installs the latest version of the specific SDK release, including prerelease versions (preview, rc).
 
 ## Using the `dotnet-quality` input
 This input sets up the action to install the latest build of the specified quality in the channel. The possible values of `dotnet-quality` are: **daily**, **signed**, **validated**, **preview**, **ga**.

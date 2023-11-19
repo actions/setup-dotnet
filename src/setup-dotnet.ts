@@ -19,6 +19,19 @@ const qualityOptions = [
 
 export type QualityOptions = (typeof qualityOptions)[number];
 
+const architectureOptions = [
+  'amd64',
+  'x64',
+  'x86',
+  'arm64',
+  'arm',
+  's390x',
+  'ppc64le',
+  'loongarch64'
+] as const;
+
+export type ArchitectureOptions = (typeof architectureOptions)[number];
+
 export async function run() {
   try {
     //
@@ -59,17 +72,33 @@ export async function run() {
 
     if (versions.length) {
       const quality = core.getInput('dotnet-quality') as QualityOptions;
-
       if (quality && !qualityOptions.includes(quality)) {
         throw new Error(
-          `Value '${quality}' is not supported for the 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`
+          `Value '${quality}' is not supported for the 'dotnet-quality' option. Supported values are: ${qualityOptions.join(
+            ', '
+          )}.`
+        );
+      }
+
+      const architecture = core.getInput(
+        'dotnet-architecture'
+      ) as ArchitectureOptions;
+      if (architecture && !architectureOptions.includes(architecture)) {
+        throw new Error(
+          `Value '${architecture}' is not supported for the 'dotnet-architecture' option. Supported values are: ${architectureOptions.join(
+            ', '
+          )}.`
         );
       }
 
       let dotnetInstaller: DotnetCoreInstaller;
       const uniqueVersions = new Set<string>(versions);
       for (const version of uniqueVersions) {
-        dotnetInstaller = new DotnetCoreInstaller(version, quality);
+        dotnetInstaller = new DotnetCoreInstaller(
+          version,
+          quality,
+          architecture
+        );
         const installedVersion = await dotnetInstaller.installDotnet();
         installedDotnetVersions.push(installedVersion);
       }
