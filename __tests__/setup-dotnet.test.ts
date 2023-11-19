@@ -9,7 +9,7 @@ import * as cacheUtils from '../src/cache-utils';
 import * as cacheRestore from '../src/cache-restore';
 
 describe('setup-dotnet tests', () => {
-  const inputs = {} as any;
+  let inputs = {} as any;
 
   const getInputSpy = jest.spyOn(core, 'getInput');
   const getMultilineInputSpy = jest.spyOn(core, 'getMultilineInput');
@@ -49,6 +49,7 @@ describe('setup-dotnet tests', () => {
       DotnetInstallDir.addToPath = addToPathOriginal;
       jest.clearAllMocks();
       jest.resetAllMocks();
+      inputs = {};
     });
 
     it('should fail the action if global-json-file input is present, but the file does not exist in the file system', async () => {
@@ -62,7 +63,6 @@ describe('setup-dotnet tests', () => {
     });
 
     test(`if 'dotnet-version' and 'global-json-file' inputs aren't present, should log into debug output, try to find global.json in the repo root, fail and log message into info output`, async () => {
-      inputs['global-json-file'] = '';
       inputs['dotnet-version'] = [];
 
       maxSatisfyingSpy.mockImplementation(() => null);
@@ -80,7 +80,6 @@ describe('setup-dotnet tests', () => {
     });
 
     it('should fail the action if quality is supplied but its value is not supported', async () => {
-      inputs['global-json-file'] = '';
       inputs['dotnet-version'] = ['6.0'];
       inputs['dotnet-quality'] = 'fictitiousQuality';
 
@@ -90,10 +89,19 @@ describe('setup-dotnet tests', () => {
       expect(setFailedSpy).toHaveBeenCalledWith(expectedErrorMessage);
     });
 
+    it('should fail the action if architecture is supplied but its value is not supported', async () => {
+      console.log(inputs);
+      inputs['dotnet-version'] = ['6.0'];
+      inputs['dotnet-architecture'] = 'fictitiousArchitecture';
+
+      const expectedErrorMessage = `Value '${inputs['dotnet-architecture']}' is not supported for the 'dotnet-architecture' option. Supported values are: amd64, x64, x86, arm64, arm, s390x, ppc64le, loongarch64.`;
+
+      await setup.run();
+      expect(setFailedSpy).toHaveBeenCalledWith(expectedErrorMessage);
+    });
+
     it('should call installDotnet() multiple times if dotnet-version multiline input is provided', async () => {
-      inputs['global-json-file'] = '';
       inputs['dotnet-version'] = ['6.0', '7.0'];
-      inputs['dotnet-quality'] = '';
 
       installDotnetSpy.mockImplementation(() => Promise.resolve(''));
 
@@ -102,9 +110,7 @@ describe('setup-dotnet tests', () => {
     });
 
     it('should call addToPath() after installation complete', async () => {
-      inputs['global-json-file'] = '';
       inputs['dotnet-version'] = ['6.0', '7.0'];
-      inputs['dotnet-quality'] = '';
 
       installDotnetSpy.mockImplementation(() => Promise.resolve(''));
 
@@ -113,9 +119,7 @@ describe('setup-dotnet tests', () => {
     });
 
     it('should call auth.configAuthentication() if source-url input is provided', async () => {
-      inputs['global-json-file'] = '';
       inputs['dotnet-version'] = [];
-      inputs['dotnet-quality'] = '';
       inputs['source-url'] = 'fictitious.source.url';
 
       configAuthenticationSpy.mockImplementation(() => {});
@@ -128,9 +132,7 @@ describe('setup-dotnet tests', () => {
     });
 
     it('should call auth.configAuthentication() with proper parameters if source-url and config-file inputs are provided', async () => {
-      inputs['global-json-file'] = '';
       inputs['dotnet-version'] = [];
-      inputs['dotnet-quality'] = '';
       inputs['source-url'] = 'fictitious.source.url';
       inputs['config-file'] = 'fictitious.path';
 
@@ -178,7 +180,6 @@ describe('setup-dotnet tests', () => {
 
     it(`should get 'cache-dependency-path' and call restoreCache() if input cache is set to true and cache feature is available`, async () => {
       inputs['dotnet-version'] = ['6.0.300'];
-      inputs['dotnet-quality'] = '';
       inputs['cache'] = true;
       inputs['cache-dependency-path'] = 'fictitious.package.lock.json';
 
@@ -196,7 +197,6 @@ describe('setup-dotnet tests', () => {
 
     it(`shouldn't call restoreCache() if input cache isn't set to true`, async () => {
       inputs['dotnet-version'] = ['6.0.300'];
-      inputs['dotnet-quality'] = '';
       inputs['cache'] = false;
 
       installDotnetSpy.mockImplementation(() => Promise.resolve(''));
@@ -210,7 +210,6 @@ describe('setup-dotnet tests', () => {
 
     it(`shouldn't call restoreCache() if cache feature isn't available`, async () => {
       inputs['dotnet-version'] = ['6.0.300'];
-      inputs['dotnet-quality'] = '';
       inputs['cache'] = true;
 
       installDotnetSpy.mockImplementation(() => Promise.resolve(''));

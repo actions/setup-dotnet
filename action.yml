@@ -9,6 +9,8 @@ inputs:
     description: 'Optional SDK version(s) to use. If not provided, will install global.json version when available. Examples: 2.2.104, 3.1, 3.1.x, 3.x, 6.0.2xx'
   dotnet-quality:
     description: 'Optional quality of the build. The possible values are: daily, signed, validated, preview, ga.'
+  dotnet-architecture:
+    description: 'Optional architecture of the .NET binaries to install. Possible values: amd64, x64, x86, arm64, arm, s390x, ppc64le and loongarch64. If not provided, defaults to the OS architecture.'
   global-json-file:
     description: 'Optional global.json location, if your global.json isn''t located in the root of the repo.'
   source-url:
