@@ -30,7 +30,7 @@ outputs:
   dotnet-version:
     description: 'Contains the installed by action .NET SDK version for reuse.'
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'dist/setup/index.js'
   post: 'dist/cache-save/index.js'
   post-if: success()
