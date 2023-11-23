@@ -1,6 +1,6 @@
 {
   "name": "setup-dotnet",
-  "version": "3.0.2",
+  "version": "4.0.0",
   "private": true,
   "description": "setup dotnet action",
   "main": "dist/setup/index.js",
