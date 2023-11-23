@@ -253,7 +253,10 @@ export class DotnetCoreInstaller {
     DotnetInstallDir.setEnvironmentVariable();
   }
 
-  constructor(private version: string, private quality: QualityOptions) {}
+  constructor(
+    private version: string,
+    private quality: QualityOptions
+  ) {}
 
   public async installDotnet(): Promise<string | null> {
     const versionResolver = new DotnetVersionResolver(this.version);
