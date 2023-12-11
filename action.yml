@@ -3,7 +3,7 @@ description: 'Used to build and publish .NET source. Set up a specific version o
 author: 'GitHub'
 branding:
   icon: play
-  color: green
+  color: blue
 inputs:
   dotnet-version:
     description: 'Optional SDK version(s) to use. If not provided, will install global.json version when available. Examples: 2.2.104, 3.1, 3.1.x, 3.x, 6.0.2xx'
