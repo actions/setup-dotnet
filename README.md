@@ -204,7 +204,7 @@ steps:
 ```yml
 - uses: actions/setup-dotnet@v4
   with:
-    source-url: https://pkgs.dev.azure.com/<your-organization>/_packaging/<your-feed-name>/nuget/v4/index.json
+    source-url: https://pkgs.dev.azure.com/<your-organization>/_packaging/<your-feed-name>/nuget/v3/index.json
   env:
     NUGET_AUTH_TOKEN: ${{secrets.AZURE_DEVOPS_PAT}} # Note, create a secret with this name in Settings
 - name: Publish the package to Azure Artifacts
@@ -217,7 +217,7 @@ steps:
   with:
     dotnet-version: 3.1.x
 - name: Publish the package to nuget.org
-  run: dotnet nuget push */bin/Release/*.nupkg -k $NUGET_AUTH_TOKEN -s https://api.nuget.org/v4/index.json
+  run: dotnet nuget push */bin/Release/*.nupkg -k $NUGET_AUTH_TOKEN -s https://api.nuget.org/v3/index.json
   env:
     NUGET_AUTH_TOKEN: ${{ secrets.NUGET_TOKEN }}
 ```
