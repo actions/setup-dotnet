@@ -19,6 +19,11 @@ const qualityOptions = [
 
 export type QualityOptions = (typeof qualityOptions)[number];
 
+let cancelled = false;
+process.on('SIGINT', () => {
+  cancelled = true;
+});
+
 export async function run() {
   try {
     //
@@ -69,6 +74,9 @@ export async function run() {
       let dotnetInstaller: DotnetCoreInstaller;
       const uniqueVersions = new Set<string>(versions);
       for (const version of uniqueVersions) {
+        if (cancelled) {
+          throw new Error('Cancelled');
+        }
         dotnetInstaller = new DotnetCoreInstaller(version, quality);
         const installedVersion = await dotnetInstaller.installDotnet();
         installedDotnetVersions.push(installedVersion);
@@ -92,7 +100,11 @@ export async function run() {
     const matchersPath = path.join(__dirname, '..', '..', '.github');
     core.info(`##[add-matcher]${path.join(matchersPath, 'csc.json')}`);
   } catch (error) {
-    core.setFailed(error.message);
+    if (error.message === 'Cancelled') {
+      'Cleaning up...';
+    } else {
+      core.setFailed(error.message);
+    }
   }
 }
 

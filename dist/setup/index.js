@@ -93335,6 +93335,10 @@ const qualityOptions = [
     'preview',
     'ga'
 ];
+let cancelled = false;
+process.on('SIGINT', () => {
+    cancelled = true;
+});
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -93358,8 +93362,6 @@ function run() {
                 versions.push(getVersionFromGlobalJson(globalJsonPath));
             }
             if (!versions.length) {
-                // Try to fall back to global.json
-                core.debug('No version found, trying to find version from global.json');
                 const globalJsonPath = path_1.default.join(process.cwd(), 'global.json');
                 if (fs.existsSync(globalJsonPath)) {
                     versions.push(getVersionFromGlobalJson(globalJsonPath));
@@ -93376,6 +93378,9 @@ function run() {
                 let dotnetInstaller;
                 const uniqueVersions = new Set(versions);
                 for (const version of uniqueVersions) {
+                    if (cancelled) {
+                        throw new Error('Cancelled');
+                    }
                     dotnetInstaller = new installer_1.DotnetCoreInstaller(version, quality);
                     const installedVersion = yield dotnetInstaller.installDotnet();
                     installedDotnetVersions.push(installedVersion);
@@ -93396,7 +93401,12 @@ function run() {
             core.info(`##[add-matcher]${path_1.default.join(matchersPath, 'csc.json')}`);
         }
         catch (error) {
-            core.setFailed(error.message);
+            if (error.message === 'Cancelled') {
+                console.log('Cleaning up...');
+            }
+            else {
+                core.setFailed(error.message);
+            }
         }
     });
 }
