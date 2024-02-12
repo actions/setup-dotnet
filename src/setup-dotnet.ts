@@ -8,6 +8,7 @@ import {isCacheFeatureAvailable} from './cache-utils';
 import {restoreCache} from './cache-restore';
 import {Outputs} from './constants';
 import JSON5 from 'json5';
+import * as os from 'os';
 
 const qualityOptions = [
   'daily',
@@ -20,6 +21,8 @@ const qualityOptions = [
 export type QualityOptions = (typeof qualityOptions)[number];
 
 let cancelled = false;
+let errorOccurred = false;
+let unsupportedPlatform = false;
 process.on('SIGINT', () => {
   cancelled = true;
 });
@@ -97,13 +100,29 @@ export async function run() {
       await restoreCache(cacheDependencyPath);
     }
 
-    const matchersPath = path.join(__dirname, '..', '..', '.github');
-    core.info(`##[add-matcher]${path.join(matchersPath, 'csc.json')}`);
   } catch (error) {
-    if (error.message === 'Cancelled') {
-      'Cleaning up...';
-    } else {
-      core.setFailed(error.message);
+    core.setFailed(error.message);
+    errorOccurred = true;
+  } finally {
+    if (errorOccurred || cancelled) {
+      ('Cleaning up...');
+      let directoryPath: string;
+      switch (os.platform()) {
+        case 'win32':
+          directoryPath = 'C:\\Program Files\\dotnet';
+          break;
+        case 'darwin':
+          directoryPath = '/usr/local/share/dotnet';
+          break;
+        case 'linux':
+          directoryPath = '/usr/share/dotnet';
+          break;
+        default:
+          directoryPath = 'Unsupported platform';
+      }
+      if (!unsupportedPlatform && fs.existsSync(directoryPath)) {
+        fs.rmdirSync(directoryPath, { recursive: true });
+        core.info(`Directory ${directoryPath} has been deleted.`);
     }
   }
 }

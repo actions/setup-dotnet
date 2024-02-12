@@ -93328,6 +93328,7 @@ const cache_utils_1 = __nccwpck_require__(1678);
 const cache_restore_1 = __nccwpck_require__(9517);
 const constants_1 = __nccwpck_require__(9042);
 const json5_1 = __importDefault(__nccwpck_require__(6904));
+const os = __importStar(__nccwpck_require__(2037));
 const qualityOptions = [
     'daily',
     'signed',
@@ -93336,6 +93337,7 @@ const qualityOptions = [
     'ga'
 ];
 let cancelled = false;
+let errorOccurred = false;
 process.on('SIGINT', () => {
     cancelled = true;
 });
@@ -93362,6 +93364,8 @@ function run() {
                 versions.push(getVersionFromGlobalJson(globalJsonPath));
             }
             if (!versions.length) {
+                // Try to fall back to global.json
+                core.debug('No version found, trying to find version from global.json');
                 const globalJsonPath = path_1.default.join(process.cwd(), 'global.json');
                 if (fs.existsSync(globalJsonPath)) {
                     versions.push(getVersionFromGlobalJson(globalJsonPath));
@@ -93401,11 +93405,28 @@ function run() {
             core.info(`##[add-matcher]${path_1.default.join(matchersPath, 'csc.json')}`);
         }
         catch (error) {
-            if (error.message === 'Cancelled') {
+            core.setFailed(error.message);
+            errorOccurred = true;
+        }
+        finally {
+            if (errorOccurred || cancelled) {
                 console.log('Cleaning up...');
-            }
-            else {
-                core.setFailed(error.message);
+                let directoryPath;
+                switch (os.platform()) {
+                    case 'win32':
+                        directoryPath = 'C:\\Program Files\\dotnet';
+                        break;
+                    case 'darwin':
+                        directoryPath = '/usr/local/share/dotnet';
+                        break;
+                    case 'linux':
+                        directoryPath = '/usr/share/dotnet';
+                        break;
+                    default:
+                        throw new Error(`Unsupported platform: ${os.platform()}`);
+                }
+                fs.rmdirSync(directoryPath, { recursive: true });
+                console.log(`Directory ${directoryPath} has been deleted.`);
             }
         }
     });
