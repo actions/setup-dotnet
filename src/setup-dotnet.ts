@@ -22,7 +22,7 @@ export type QualityOptions = (typeof qualityOptions)[number];
 
 let cancelled = false;
 let errorOccurred = false;
-let unsupportedPlatform = false;
+const unsupportedPlatform = false;
 process.on('SIGINT', () => {
   cancelled = true;
 });
@@ -99,7 +99,6 @@ export async function run() {
       const cacheDependencyPath = core.getInput('cache-dependency-path');
       await restoreCache(cacheDependencyPath);
     }
-
   } catch (error) {
     core.setFailed(error.message);
     errorOccurred = true;
@@ -121,8 +120,9 @@ export async function run() {
           directoryPath = 'Unsupported platform';
       }
       if (!unsupportedPlatform && fs.existsSync(directoryPath)) {
-        fs.rmdirSync(directoryPath, { recursive: true });
+        fs.rmdirSync(directoryPath, {recursive: true});
         core.info(`Directory ${directoryPath} has been deleted.`);
+      }
     }
   }
 }
