@@ -22,8 +22,8 @@ See [action.yml](action.yml)
 **Basic**:
 ```yaml
 steps:
-- uses: actions/checkout@v3
-- uses: actions/setup-dotnet@v3
+- uses: actions/checkout@v4
+- uses: actions/setup-dotnet@v4
   with:
     dotnet-version: '3.1.x'
 - run: dotnet build <my project>
@@ -33,9 +33,9 @@ steps:
 **Multiple version installation**:
 ```yml
 steps:
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 - name: Setup dotnet
-  uses: actions/setup-dotnet@v3
+  uses: actions/setup-dotnet@v4
   with:
     dotnet-version: | 
       3.1.x
@@ -59,8 +59,8 @@ This input sets up the action to install the latest build of the specified quali
 
 ```yml
 steps:
-- uses: actions/checkout@v3
-- uses: actions/setup-dotnet@v3
+- uses: actions/checkout@v4
+- uses: actions/setup-dotnet@v4
   with:
     dotnet-version: '6.0.x'
     dotnet-quality: 'preview'
@@ -74,8 +74,8 @@ steps:
 
 ```yml
 steps:
-- uses: actions/checkout@v3
-- uses: actions/setup-dotnet@v3
+- uses: actions/checkout@v4
+- uses: actions/setup-dotnet@v4
   with:
     global-json-file: csharp/global.json
 - run: dotnet build <my project>
@@ -91,8 +91,8 @@ The action searches for [NuGet Lock files](https://learn.microsoft.com/nuget/con
 
 ```yaml
 steps:
-- uses: actions/checkout@v3
-- uses: actions/setup-dotnet@v3
+- uses: actions/checkout@v4
+- uses: actions/setup-dotnet@v4
   with:
     dotnet-version: 6.x
     cache: true
@@ -116,8 +116,8 @@ steps:
 env:
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
 steps:
-- uses: actions/checkout@v3
-- uses: actions/setup-dotnet@v3
+- uses: actions/checkout@v4
+- uses: actions/setup-dotnet@v4
   with:
     dotnet-version: 6.x
     cache: true
@@ -130,8 +130,8 @@ steps:
 env:
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
 steps:
-- uses: actions/checkout@v3
-- uses: actions/setup-dotnet@v3
+- uses: actions/checkout@v4
+- uses: actions/setup-dotnet@v4
   with:
     dotnet-version: 6.x
     cache: true
@@ -150,9 +150,9 @@ jobs:
         dotnet: [ '2.1.x', '3.1.x', '5.0.x' ]
     name: Dotnet ${{ matrix.dotnet }} sample
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup dotnet
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ matrix.dotnet }}
       - name: Execute dotnet
@@ -170,9 +170,9 @@ jobs:
         dotnet: [ '2.1.x', '3.1.x', '5.0.x' ]
     name: Dotnet ${{ matrix.dotnet }} sample
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup dotnet
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         id: stepid
         with:
           dotnet-version: ${{ matrix.dotnet }}
@@ -186,8 +186,8 @@ jobs:
 ### Github Package Registry (GPR)
 ```yml
 steps:
-- uses: actions/checkout@v3
-- uses: actions/setup-dotnet@v3
+- uses: actions/checkout@v4
+- uses: actions/setup-dotnet@v4
   with:
     dotnet-version: '3.1.x'
     source-url: https://nuget.pkg.github.com/<owner>/index.json
@@ -202,7 +202,7 @@ steps:
 
 ### Azure Artifacts
 ```yml
-- uses: actions/setup-dotnet@v3
+- uses: actions/setup-dotnet@v4
   with:
     source-url: https://pkgs.dev.azure.com/<your-organization>/_packaging/<your-feed-name>/nuget/v3/index.json
   env:
@@ -213,7 +213,7 @@ steps:
 
 ### nuget.org
 ```yml
-- uses: actions/setup-dotnet@v3
+- uses: actions/setup-dotnet@v4
   with:
     dotnet-version: 3.1.x
 - name: Publish the package to nuget.org
@@ -236,7 +236,7 @@ Using the **dotnet-version** output it's possible to get the installed by the ac
 In case of a single version installation, the `dotnet-version` output contains the version that is installed by the action.
 
 ```yaml
-    - uses: actions/setup-dotnet@v3
+    - uses: actions/setup-dotnet@v4
       id: stepid
       with:
         dotnet-version: 3.1.422
@@ -248,7 +248,7 @@ In case of a single version installation, the `dotnet-version` output contains t
 In case of a multiple version installation, the `dotnet-version` output contains the latest version that is installed by the action.
 
 ```yaml
-    - uses: actions/setup-dotnet@v3
+    - uses: actions/setup-dotnet@v4
       id: stepid
       with:
         dotnet-version: | 
@@ -261,7 +261,7 @@ In case of a multiple version installation, the `dotnet-version` output contains
 When the `dotnet-version` input is used along with the `global-json-file` input, the `dotnet-version` output contains the version resolved from the `global.json`.
 
 ```yaml
-    - uses: actions/setup-dotnet@v3
+    - uses: actions/setup-dotnet@v4
       id: stepid
       with:
         dotnet-version: | 
@@ -302,7 +302,7 @@ build:
     NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
   steps:
     - uses: actions/checkout@main
-    - uses: actions/setup-dotnet@v3
+    - uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '3.1.x'
         cache: true
