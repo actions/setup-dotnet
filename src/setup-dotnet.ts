@@ -8,6 +8,7 @@ import {isCacheFeatureAvailable} from './cache-utils';
 import {restoreCache} from './cache-restore';
 import {Outputs} from './constants';
 import JSON5 from 'json5';
+import * as os from 'os';
 
 const qualityOptions = [
   'daily',
@@ -18,6 +19,13 @@ const qualityOptions = [
 ] as const;
 
 export type QualityOptions = (typeof qualityOptions)[number];
+
+let cancelled = false;
+let errorOccurred = false;
+const unsupportedPlatform = false;
+process.on('SIGINT', () => {
+  cancelled = true;
+});
 
 export async function run() {
   try {
@@ -69,6 +77,9 @@ export async function run() {
       let dotnetInstaller: DotnetCoreInstaller;
       const uniqueVersions = new Set<string>(versions);
       for (const version of uniqueVersions) {
+        if (cancelled) {
+          throw new Error('Cancelled');
+        }
         dotnetInstaller = new DotnetCoreInstaller(version, quality);
         const installedVersion = await dotnetInstaller.installDotnet();
         installedDotnetVersions.push(installedVersion);
@@ -88,11 +99,31 @@ export async function run() {
       const cacheDependencyPath = core.getInput('cache-dependency-path');
       await restoreCache(cacheDependencyPath);
     }
-
-    const matchersPath = path.join(__dirname, '..', '..', '.github');
-    core.info(`##[add-matcher]${path.join(matchersPath, 'csc.json')}`);
   } catch (error) {
     core.setFailed(error.message);
+    errorOccurred = true;
+  } finally {
+    if (errorOccurred || cancelled) {
+      ('Cleaning up...');
+      let directoryPath: string;
+      switch (os.platform()) {
+        case 'win32':
+          directoryPath = 'C:\\Program Files\\dotnet';
+          break;
+        case 'darwin':
+          directoryPath = '/usr/local/share/dotnet';
+          break;
+        case 'linux':
+          directoryPath = '/usr/share/dotnet';
+          break;
+        default:
+          directoryPath = 'Unsupported platform';
+      }
+      if (!unsupportedPlatform && fs.existsSync(directoryPath)) {
+        fs.rmdirSync(directoryPath, {recursive: true});
+        core.info(`Directory ${directoryPath} has been deleted.`);
+      }
+    }
   }
 }
 

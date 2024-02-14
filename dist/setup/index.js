@@ -93328,6 +93328,7 @@ const cache_utils_1 = __nccwpck_require__(1678);
 const cache_restore_1 = __nccwpck_require__(9517);
 const constants_1 = __nccwpck_require__(9042);
 const json5_1 = __importDefault(__nccwpck_require__(6904));
+const os = __importStar(__nccwpck_require__(2037));
 const qualityOptions = [
     'daily',
     'signed',
@@ -93335,6 +93336,11 @@ const qualityOptions = [
     'preview',
     'ga'
 ];
+let cancelled = false;
+let errorOccurred = false;
+process.on('SIGINT', () => {
+    cancelled = true;
+});
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -93376,6 +93382,9 @@ function run() {
                 let dotnetInstaller;
                 const uniqueVersions = new Set(versions);
                 for (const version of uniqueVersions) {
+                    if (cancelled) {
+                        throw new Error('Cancelled');
+                    }
                     dotnetInstaller = new installer_1.DotnetCoreInstaller(version, quality);
                     const installedVersion = yield dotnetInstaller.installDotnet();
                     installedDotnetVersions.push(installedVersion);
@@ -93397,6 +93406,28 @@ function run() {
         }
         catch (error) {
             core.setFailed(error.message);
+            errorOccurred = true;
+        }
+        finally {
+            if (errorOccurred || cancelled) {
+                console.log('Cleaning up...');
+                let directoryPath;
+                switch (os.platform()) {
+                    case 'win32':
+                        directoryPath = 'C:\\Program Files\\dotnet';
+                        break;
+                    case 'darwin':
+                        directoryPath = '/usr/local/share/dotnet';
+                        break;
+                    case 'linux':
+                        directoryPath = '/usr/share/dotnet';
+                        break;
+                    default:
+                        throw new Error(`Unsupported platform: ${os.platform()}`);
+                }
+                fs.rmdirSync(directoryPath, { recursive: true });
+                console.log(`Directory ${directoryPath} has been deleted.`);
+            }
         }
     });
 }
