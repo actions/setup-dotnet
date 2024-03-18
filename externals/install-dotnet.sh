@@ -303,6 +303,11 @@ get_machine_architecture() {
             return 0
             ;;
         aarch64|arm64)
+            if [ "$(getconf LONG_BIT)" -lt 64 ]; then
+                # This is 32-bit OS running on 64-bit CPU (for example Raspberry Pi OS)
+                echo "arm"
+                return 0
+            fi
             echo "arm64"
             return 0
             ;;
@@ -1708,7 +1713,11 @@ do
         -?|--?|-h|--help|-[Hh]elp)
             script_name="$(basename "$0")"
             echo ".NET Tools Installer"
-            echo "Usage: $script_name [-c|--channel <CHANNEL>] [-v|--version <VERSION>] [-p|--prefix <DESTINATION>]"
+            echo "Usage:"
+            echo "       # Install a .NET SDK of a given Quality from a given Channel"
+            echo "       $script_name [-c|--channel <CHANNEL>] [-q|--quality <QUALITY>]"
+            echo "       # Install a .NET SDK of a specific public version"
+            echo "       $script_name [-v|--version <VERSION>]"
             echo "       $script_name -h|-?|--help"
             echo ""
             echo "$script_name is a simple command line interface for obtaining dotnet cli."
