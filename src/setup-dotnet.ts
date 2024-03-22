@@ -128,7 +128,7 @@ function getVersionFromGlobalJson(globalJsonPath: string): string {
           break;
           
         case 'latestPatch':
-          version = `${major}.${minor}.${feature}`
+          version = `${major}.${minor}.${feature}xx`
           break;
       }
     }
