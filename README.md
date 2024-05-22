@@ -82,6 +82,63 @@ steps:
   working-directory: csharp
 ```
 
+## Caching NuGet Packages
+The action has a built-in functionality for caching and restoring dependencies. It uses [toolkit/cache](https://github.com/actions/toolkit/tree/main/packages/cache) under the hood for caching global packages data but requires less configuration settings. The `cache` input is optional, and caching is turned off by default.
+
+The action searches for [NuGet Lock files](https://learn.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies) (`packages.lock.json`) in the repository root, calculates their hash and uses it as a part of the cache key. If lock file does not exist, this action throws error. Use `cache-dependency-path` for cases when multiple dependency files are used, or they are located in different subdirectories.
+
+> **Warning**: Caching NuGet packages is available since .NET SDK 2.1.500 and 2.2.100 as the NuGet lock file [is available](https://learn.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies) only for NuGet 4.9 and above.
+
+```yaml
+steps:
+- uses: actions/checkout@v3
+- uses: actions/setup-dotnet@v3
+  with:
+    dotnet-version: 6.x
+    cache: true
+- run: dotnet restore --locked-mode
+```
+
+> **Note**: This action will only restore `global-packages` folder, so you will probably get the [NU1403](https://learn.microsoft.com/nuget/reference/errors-and-warnings/nu1403) error when running `dotnet restore`.
+> To avoid this, you can use [`DisableImplicitNuGetFallbackFolder`](https://github.com/dotnet/reproducible-builds/blob/abfe986832aa28597d3340b92469d1a702013d23/Documentation/Reproducible-MSBuild/Techniques/DisableImplicitNuGetFallbackFolder.md) option.
+
+```xml
+<PropertyGroup>
+  <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+</PropertyGroup>
+```
+
+### Reduce caching size
+
+> **Note**: Use [`NUGET_PACKAGES`](https://learn.microsoft.com/nuget/reference/cli-reference/cli-ref-environment-variables) environment variable if available. Some action runners already has huge libraries. (ex. Xamarin)
+
+```yaml
+env:
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+steps:
+- uses: actions/checkout@v3
+- uses: actions/setup-dotnet@v3
+  with:
+    dotnet-version: 6.x
+    cache: true
+- run: dotnet restore --locked-mode
+```
+
+### Caching NuGet packages in monorepos
+
+```yaml
+env:
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+steps:
+- uses: actions/checkout@v3
+- uses: actions/setup-dotnet@v3
+  with:
+    dotnet-version: 6.x
+    cache: true
+    cache-dependency-path: subdir/packages.lock.json
+- run: dotnet restore --locked-mode
+```
+
 ## Matrix Testing
 Using `setup-dotnet` it's possible to use [matrix syntax](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstrategymatrix) to install several versions of .NET SDK:
 ```yml
@@ -214,6 +271,9 @@ When the `dotnet-version` input is used along with the `global-json-file` input,
     - run: echo '${{ steps.stepid.outputs.dotnet-version }}' # outputs 2.2.207
 ```
 
+### `cache-hit`
+A boolean value to indicate an exact match was found for the cache key (follows [actions/cache](https://github.com/actions/cache#outputs))
+
 ## Environment variables
 
 Some environment variables may be necessary for your particular case or to improve logging. Some examples are listed below, but the full list with complete details can be found here: https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-environment-variables
@@ -224,25 +284,28 @@ Some environment variables may be necessary for your particular case or to impro
 | DOTNET_NOLOGO      |Removes logo and telemetry message from first run of dotnet cli|*false*|
 | DOTNET_CLI_TELEMETRY_OPTOUT   |Opt-out of telemetry being sent to Microsoft|*false*|
 | DOTNET_MULTILEVEL_LOOKUP   |Configures whether the global install location is used as a fall-back|*true*|
+| NUGET_PACKAGES |Configures a path to the [NuGet `global-packages` folder](https://learn.microsoft.com/nuget/consume-packages/managing-the-global-packages-and-cache-folders)|*default value for each OS* |
 
-The default value of the `DOTNET_INSTALL_DIR` environment variable depends on the operation system which is used on a runner:
-| **Operation system**      | **Default value** |
-| ----------- | ----------- |
-| **Windows** | `C:\Program Files\dotnet` |
-| **Ubuntu** | `/usr/share/dotnet` |
-| **macOS** | `/Users/runner/.dotnet` |
+The default values of the `DOTNET_INSTALL_DIR` and `NUGET_PACKAGES` environment variables depend on the operation system which is used on a runner:
+| **Operation system** | `DOTNET_INSTALL_DIR` | `NUGET_PACKAGES` |
+| ----------- | ----------- | ----------- |
+| **Windows** | `C:\Program Files\dotnet` | `%userprofile%\.nuget\packages` |
+| **Ubuntu** | `/usr/share/dotnet` | `~/.nuget/packages` |
+| **macOS** | `/Users/runner/.dotnet` | `~/.nuget/packages` |
 
-**Example usage**:
+**Example usage of environment variable**:
 ```yml
 build:
   runs-on: ubuntu-latest
   env:
     DOTNET_INSTALL_DIR: "path/to/directory"
+    NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
   steps:
     - uses: actions/checkout@main
     - uses: actions/setup-dotnet@v3
       with:
         dotnet-version: '3.1.x'
+        cache: true
 ```
 
 ## License

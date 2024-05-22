@@ -229,6 +229,31 @@ jobs:
         shell: pwsh
         run: __tests__/verify-dotnet.ps1 -Patterns "^2.2"
 
+  test-global-json-with-comments:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+      - name: Write global.json
+        shell: bash
+        run: |
+          mkdir subdirectory
+          echo '/* should support comments */ {"sdk":{"version": "2.2.207","rollForward": "latestFeature"}} // should support comments' > ./subdirectory/global.json
+      - name: Setup dotnet
+        uses: ./
+        with:
+          global-json-file: ./subdirectory/global.json
+      - name: Verify dotnet
+        shell: pwsh
+        run: __tests__/verify-dotnet.ps1 -Patterns "^2.2"
+
   test-setup-with-dotnet-quality:
     runs-on: ${{ matrix.operating-system }}
     strategy:
@@ -250,6 +275,66 @@ jobs:
       - name: Verify dotnet
         shell: pwsh
         run: __tests__/verify-dotnet.ps1 -Patterns "^7\.0\.\d+-"
+
+  test-setup-with-cache:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+    env:
+      NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+      - name: Copy NuGet lock file to root
+        shell: bash
+        run: cp ./__tests__/e2e-test-csproj/packages.lock.json ./packages.lock.json
+      - name: Setup .NET Core 3.1
+        id: setup-dotnet
+        uses: ./
+        with:
+          dotnet-version: 3.1
+          cache: true
+      - name: Verify Cache
+        if: steps.setup-dotnet.outputs.cache-hit == 'true'
+        shell: bash
+        run: if [[ -e ${NUGET_PACKAGES} ]]; then exit 0; else exit 1; fi
+      - name: Verify dotnet
+        shell: pwsh
+        run: __tests__/verify-dotnet.ps1 -Patterns "^3.1"
+
+  test-setup-with-cache-dependency-path:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+    env:
+      NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+      - name: Setup .NET Core 3.1
+        id: setup-dotnet
+        uses: ./
+        with:
+          dotnet-version: 3.1
+          cache: true
+          cache-dependency-path: './__tests__/e2e-test-csproj/packages.lock.json'
+      - name: Verify Cache
+        if: steps.setup-dotnet.outputs.cache-hit == 'true'
+        shell: bash
+        run: if [[ -e ${NUGET_PACKAGES} ]]; then exit 0; else exit 1; fi
+      - name: Verify dotnet
+        shell: pwsh
+        run: __tests__/verify-dotnet.ps1 -Patterns "^3.1"
 
   test-dotnet-version-output-during-single-version-installation:
     runs-on: ${{ matrix.operating-system }}
@@ -366,3 +451,33 @@ jobs:
       - name: Verify dotnet
         shell: pwsh
         run: __tests__/verify-dotnet.ps1 -Patterns "^3.1.201$" -CheckNugetConfig
+
+  test-sequential-version-installation:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        lower-version: ['3.1.426']
+        higher-version: ['7.0.203']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+      # Install one version, use it for something, then switch to next version
+      - name: Setup dotnet (lower version)
+        uses: ./
+        with:
+          dotnet-version: ${{ matrix.lower-version }}
+      - name: Verify dotnet (lower version)
+        shell: pwsh
+        run: __tests__/verify-dotnet.ps1 -Patterns "^${{ matrix.lower-version }}$"
+      - name: Setup dotnet (higher version)
+        uses: ./
+        with:
+          dotnet-version: ${{ matrix.higher-version }}
+      - name: Verify dotnet (higher version)
+        shell: pwsh
+        run: __tests__/verify-dotnet.ps1 -Patterns "^${{ matrix.lower-version }}$", "^${{ matrix.higher-version }}$"

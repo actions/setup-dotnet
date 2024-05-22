@@ -1,5 +1,7 @@
 import each from 'jest-each';
 import semver from 'semver';
+import fs from 'fs';
+import fspromises from 'fs/promises';
 import * as exec from '@actions/exec';
 import * as core from '@actions/core';
 import * as io from '@actions/io';
@@ -21,14 +23,25 @@ describe('installer tests', () => {
     const warningSpy = jest.spyOn(core, 'warning');
     const whichSpy = jest.spyOn(io, 'which');
     const maxSatisfyingSpy = jest.spyOn(semver, 'maxSatisfying');
+    const chmodSyncSpy = jest.spyOn(fs, 'chmodSync');
+    const readdirSpy = jest.spyOn(fspromises, 'readdir');
 
     describe('installDotnet() tests', () => {
-      whichSpy.mockImplementation(() => Promise.resolve('PathToShell'));
+      beforeAll(() => {
+        whichSpy.mockImplementation(() => Promise.resolve('PathToShell'));
+        chmodSyncSpy.mockImplementation(() => {});
+        readdirSpy.mockImplementation(() => Promise.resolve([]));
+      });
+
+      afterAll(() => {
+        jest.resetAllMocks();
+      });
 
       it('should throw the error in case of non-zero exit code of the installation script. The error message should contain logs.', async () => {
         const inputVersion = '3.1.100';
         const inputQuality = '' as QualityOptions;
         const errorMessage = 'fictitious error message!';
+
         getExecOutputSpy.mockImplementation(() => {
           return Promise.resolve({
             exitCode: 1,
@@ -36,6 +49,7 @@ describe('installer tests', () => {
             stderr: errorMessage
           });
         });
+
         const dotnetInstaller = new installer.DotnetCoreInstaller(
           inputVersion,
           inputQuality
@@ -88,8 +102,15 @@ describe('installer tests', () => {
 
         await dotnetInstaller.installDotnet();
 
+        /**
+         * First time script would be called to
+         * install runtime, here we checking only the
+         * second one that installs actual SDK. i.e. 1
+         */
+        const callIndex = 1;
+
         const scriptArguments = (
-          getExecOutputSpy.mock.calls[0][1] as string[]
+          getExecOutputSpy.mock.calls[callIndex][1] as string[]
         ).join(' ');
         const expectedArgument = IS_WINDOWS
           ? `-Version ${inputVersion}`
@@ -171,8 +192,15 @@ describe('installer tests', () => {
 
           await dotnetInstaller.installDotnet();
 
+          /**
+           * First time script would be called to
+           * install runtime, here we checking only the
+           * second one that installs actual SDK. i.e. 1
+           */
+          const callIndex = 1;
+
           const scriptArguments = (
-            getExecOutputSpy.mock.calls[0][1] as string[]
+            getExecOutputSpy.mock.calls[callIndex][1] as string[]
           ).join(' ');
           const expectedArgument = IS_WINDOWS
             ? `-Quality ${inputQuality}`
@@ -204,8 +232,15 @@ describe('installer tests', () => {
 
           await dotnetInstaller.installDotnet();
 
+          /**
+           * First time script would be called to
+           * install runtime, here we checking only the
+           * second one that installs actual SDK. i.e. 1
+           */
+          const callIndex = 1;
+
           const scriptArguments = (
-            getExecOutputSpy.mock.calls[0][1] as string[]
+            getExecOutputSpy.mock.calls[callIndex][1] as string[]
           ).join(' ');
           const expectedArgument = IS_WINDOWS
             ? `-Channel 6.0`
@@ -238,8 +273,15 @@ describe('installer tests', () => {
 
           await dotnetInstaller.installDotnet();
 
+          /**
+           * First time script would be called to
+           * install runtime, here we checking only the
+           * second one that installs actual SDK. i.e. 1
+           */
+          const callIndex = 1;
+
           const scriptArguments = (
-            getExecOutputSpy.mock.calls[0][1] as string[]
+            getExecOutputSpy.mock.calls[callIndex][1] as string[]
           ).join(' ');
 
           expect(scriptArguments).toContain(
@@ -269,8 +311,15 @@ describe('installer tests', () => {
 
           await dotnetInstaller.installDotnet();
 
+          /**
+           * First time script would be called to
+           * install runtime, here we checking only the
+           * second one that installs actual SDK. i.e. 1
+           */
+          const callIndex = 1;
+
           const scriptArguments = (
-            getExecOutputSpy.mock.calls[0][1] as string[]
+            getExecOutputSpy.mock.calls[callIndex][1] as string[]
           ).join(' ');
 
           expect(scriptArguments).toContain(
@@ -283,14 +332,14 @@ describe('installer tests', () => {
     describe('addToPath() tests', () => {
       it(`should export DOTNET_ROOT env.var with value from DOTNET_INSTALL_DIR env.var`, async () => {
         process.env['DOTNET_INSTALL_DIR'] = 'fictitious/dotnet/install/dir';
-        installer.DotnetCoreInstaller.addToPath();
+        installer.DotnetInstallDir.addToPath();
         const dotnet_root = process.env['DOTNET_ROOT'];
         expect(dotnet_root).toBe(process.env['DOTNET_INSTALL_DIR']);
       });
 
       it(`should export value from DOTNET_INSTALL_DIR env.var to the PATH`, async () => {
         process.env['DOTNET_INSTALL_DIR'] = 'fictitious/dotnet/install/dir';
-        installer.DotnetCoreInstaller.addToPath();
+        installer.DotnetInstallDir.addToPath();
         const path = process.env['PATH'];
         expect(path).toContain(process.env['DOTNET_INSTALL_DIR']);
       });
@@ -298,7 +347,7 @@ describe('installer tests', () => {
   });
 
   describe('DotnetVersionResolver tests', () => {
-    describe('createDotNetVersion() tests', () => {
+    describe('createDotnetVersion() tests', () => {
       each([
         '3.1',
         '3.x',
@@ -315,7 +364,7 @@ describe('installer tests', () => {
             version
           );
           const versionObject =
-            await dotnetVersionResolver.createDotNetVersion();
+            await dotnetVersionResolver.createDotnetVersion();
 
           expect(!!versionObject.value).toBe(true);
         }
@@ -354,7 +403,7 @@ describe('installer tests', () => {
           );
 
           await expect(
-            async () => await dotnetVersionResolver.createDotNetVersion()
+            async () => await dotnetVersionResolver.createDotnetVersion()
           ).rejects.toThrow();
         }
       );
@@ -366,7 +415,7 @@ describe('installer tests', () => {
             version
           );
           const versionObject =
-            await dotnetVersionResolver.createDotNetVersion();
+            await dotnetVersionResolver.createDotnetVersion();
 
           expect(versionObject.type.toLowerCase().includes('channel')).toBe(
             true
@@ -381,7 +430,7 @@ describe('installer tests', () => {
             version
           );
           const versionObject =
-            await dotnetVersionResolver.createDotNetVersion();
+            await dotnetVersionResolver.createDotnetVersion();
 
           expect(versionObject.type.toLowerCase().includes('channel')).toBe(
             true
@@ -397,7 +446,7 @@ describe('installer tests', () => {
             version
           );
           const versionObject =
-            await dotnetVersionResolver.createDotNetVersion();
+            await dotnetVersionResolver.createDotnetVersion();
 
           expect(versionObject.type.toLowerCase().includes('version')).toBe(
             true
@@ -413,7 +462,7 @@ describe('installer tests', () => {
             version
           );
           const versionObject =
-            await dotnetVersionResolver.createDotNetVersion();
+            await dotnetVersionResolver.createDotnetVersion();
           const windowsRegEx = new RegExp(/^-(Version|Channel)/);
           const nonWindowsRegEx = new RegExp(/^--(version|channel)/);
 
@@ -433,7 +482,7 @@ describe('installer tests', () => {
           version
         );
         await expect(
-          async () => await dotnetVersionResolver.createDotNetVersion()
+          async () => await dotnetVersionResolver.createDotnetVersion()
         ).rejects.toThrow(
           `'dotnet-version' was supplied in invalid format: ${version}! The A.B.Cxx syntax is available since the .NET 5.0 release.`
         );

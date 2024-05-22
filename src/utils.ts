@@ -1,2 +1,6 @@
 export const IS_WINDOWS = process.platform === 'win32';
-export const IS_LINUX = process.platform === 'linux';
+export const PLATFORM = ((): 'windows' | 'linux' | 'mac' => {
+  if (process.platform === 'win32') return 'windows';
+  if (process.platform === 'linux') return 'linux';
+  return 'mac';
+})();
