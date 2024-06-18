@@ -251,6 +251,72 @@ describe('installer tests', () => {
         }
       );
 
+      it(`should supply 'verbose' argument to the installation script if verbose input is set to true`, async () => {
+        const inputVersion = '10.0.101';
+        const inputQuality = '' as QualityOptions;
+        const inputVerbose = true;
+        const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
+
+        getExecOutputSpy.mockImplementation(() => {
+          return Promise.resolve({
+            exitCode: 0,
+            stdout: `${stdout}`,
+            stderr: ''
+          });
+        });
+        maxSatisfyingSpy.mockImplementation(() => inputVersion);
+
+        const dotnetInstaller = new installer.DotnetCoreInstaller(
+          inputVersion,
+          inputQuality,
+          undefined,
+          inputVerbose
+        );
+
+        await dotnetInstaller.installDotnet();
+
+        const scriptArguments = getExecOutputSpy.mock.calls.map(call =>
+          (call[1] as string[]).join(' ')
+        );
+        const expectedArgument = IS_WINDOWS ? '-Verbose' : '--verbose';
+
+        expect(scriptArguments[0]).toContain(expectedArgument);
+        expect(scriptArguments[1]).toContain(expectedArgument);
+      });
+
+      it(`should not supply 'verbose' argument to the installation script if verbose input is set to false`, async () => {
+        const inputVersion = '10.0.101';
+        const inputQuality = '' as QualityOptions;
+        const inputVerbose = false;
+        const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
+
+        getExecOutputSpy.mockImplementation(() => {
+          return Promise.resolve({
+            exitCode: 0,
+            stdout: `${stdout}`,
+            stderr: ''
+          });
+        });
+        maxSatisfyingSpy.mockImplementation(() => inputVersion);
+
+        const dotnetInstaller = new installer.DotnetCoreInstaller(
+          inputVersion,
+          inputQuality,
+          undefined,
+          inputVerbose
+        );
+
+        await dotnetInstaller.installDotnet();
+
+        const scriptArguments = getExecOutputSpy.mock.calls.map(call =>
+          (call[1] as string[]).join(' ')
+        );
+        const expectedArgument = IS_WINDOWS ? '-Verbose' : '--verbose';
+
+        expect(scriptArguments[0]).not.toContain(expectedArgument);
+        expect(scriptArguments[1]).not.toContain(expectedArgument);
+      });
+
       if (IS_WINDOWS) {
         it(`should supply '-ProxyAddress' argument to the installation script if env.variable 'https_proxy' is set`, async () => {
           process.env['https_proxy'] = 'https://proxy.com';

@@ -77,6 +77,7 @@ export async function run() {
 
     if (versions.length) {
       const quality = core.getInput('dotnet-quality') as QualityOptions;
+      const verbose = core.getBooleanInput('verbose');
 
       if (quality && !qualityOptions.includes(quality)) {
         throw new Error(
@@ -90,7 +91,8 @@ export async function run() {
         dotnetInstaller = new DotnetCoreInstaller(
           version,
           quality,
-          architecture
+          architecture,
+          verbose
         );
         const installedVersion = await dotnetInstaller.installDotnet();
         installedDotnetVersions.push(installedVersion);
