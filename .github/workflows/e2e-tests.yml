@@ -391,9 +391,9 @@ jobs:
           if (-not ($version -eq '${{steps.step2.outputs.dotnet-version}}')) { throw "Unexpected output value" }
 
   test-proxy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     container:
-      image: ubuntu:latest
+      image: ubuntu:22.04
       options: --dns 127.0.0.1
     services:
       squid-proxy:
