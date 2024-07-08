@@ -17,10 +17,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-latest, windows-latest, macos-13]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
@@ -40,10 +40,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-latest, windows-latest, macos-13]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
@@ -69,10 +69,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-latest, windows-latest, macos-13]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
@@ -94,10 +94,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-latest, windows-latest, macos-13]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
@@ -114,10 +114,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-latest, windows-latest, macos-13]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
@@ -138,10 +138,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-latest, windows-latest, macos-13]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
@@ -159,10 +159,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-latest, windows-latest, macos-13]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
@@ -183,10 +183,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-latest, windows-latest, macos-13]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
@@ -209,10 +209,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-latest, windows-latest, macos-13]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
@@ -234,10 +234,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-latest, windows-latest, macos-13]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
@@ -259,10 +259,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-latest, windows-latest, macos-13]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
@@ -281,12 +281,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+        operating-system: [ubuntu-latest, windows-latest, macos-13]
     env:
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
@@ -312,12 +312,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+        operating-system: [ubuntu-latest, windows-latest, macos-13]
     env:
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
@@ -341,10 +341,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-latest, windows-latest, macos-13]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
@@ -367,10 +367,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-latest, windows-latest, macos-13]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
@@ -391,9 +391,9 @@ jobs:
           if (-not ($version -eq '${{steps.step2.outputs.dotnet-version}}')) { throw "Unexpected output value" }
 
   test-proxy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     container:
-      image: ubuntu:latest
+      image: ubuntu:22.04
       options: --dns 127.0.0.1
     services:
       squid-proxy:
@@ -405,7 +405,7 @@ jobs:
       http_proxy: http://squid-proxy:3128
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install Powershell
         run: |
           apt-get update
@@ -437,7 +437,7 @@ jobs:
       no_proxy: github.com,dotnetcli.blob.core.windows.net,download.visualstudio.microsoft.com,api.nuget.org,dotnetcli.azureedge.net
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
@@ -457,12 +457,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-latest, windows-latest, macos-13]
         lower-version: ['3.1.426']
         higher-version: ['7.0.203']
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
