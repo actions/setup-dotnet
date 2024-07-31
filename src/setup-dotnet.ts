@@ -1,9 +1,13 @@
 import * as core from '@actions/core';
-import {DotnetCoreInstaller} from './installer';
+import {DotnetCoreInstaller, DotnetInstallDir} from './installer';
 import * as fs from 'fs';
 import path from 'path';
 import semver from 'semver';
 import * as auth from './authutil';
+import {isCacheFeatureAvailable} from './cache-utils';
+import {restoreCache} from './cache-restore';
+import {Outputs} from './constants';
+import JSON5 from 'json5';
 
 const qualityOptions = [
   'daily',
@@ -69,7 +73,7 @@ export async function run() {
         const installedVersion = await dotnetInstaller.installDotnet();
         installedDotnetVersions.push(installedVersion);
       }
-      DotnetCoreInstaller.addToPath();
+      DotnetInstallDir.addToPath();
     }
 
     const sourceUrl: string = core.getInput('source-url');
@@ -80,7 +84,12 @@ export async function run() {
 
     outputInstalledVersion(installedDotnetVersions, globalJsonFileInput);
 
-    const matchersPath = path.join(__dirname, '..', '.github');
+    if (core.getBooleanInput('cache') && isCacheFeatureAvailable()) {
+      const cacheDependencyPath = core.getInput('cache-dependency-path');
+      await restoreCache(cacheDependencyPath);
+    }
+
+    const matchersPath = path.join(__dirname, '..', '..', '.github');
     core.info(`##[add-matcher]${path.join(matchersPath, 'csc.json')}`);
   } catch (error) {
     core.setFailed(error.message);
@@ -89,9 +98,14 @@ export async function run() {
 
 function getVersionFromGlobalJson(globalJsonPath: string): string {
   let version = '';
-  const globalJson = JSON.parse(
+  const globalJson = JSON5.parse(
     // .trim() is necessary to strip BOM https://github.com/nodejs/node/issues/20649
-    fs.readFileSync(globalJsonPath, {encoding: 'utf8'}).trim()
+    fs.readFileSync(globalJsonPath, {encoding: 'utf8'}).trim(),
+    // is necessary as JSON5 supports wider variety of options for numbers: https://www.npmjs.com/package/json5#numbers
+    (key, value) => {
+      if (key === 'version' || key === 'rollForward') return String(value);
+      return value;
+    }
   );
   if (globalJson.sdk && globalJson.sdk.version) {
     version = globalJson.sdk.version;
@@ -109,20 +123,20 @@ function outputInstalledVersion(
   globalJsonFileInput: string
 ): void {
   if (!installedVersions.length) {
-    core.info(`The 'dotnet-version' output will not be set.`);
+    core.info(`The '${Outputs.DotnetVersion}' output will not be set.`);
     return;
   }
 
   if (installedVersions.includes(null)) {
     core.warning(
-      `Failed to output the installed version of .NET. The 'dotnet-version' output will not be set.`
+      `Failed to output the installed version of .NET. The '${Outputs.DotnetVersion}' output will not be set.`
     );
     return;
   }
 
   if (globalJsonFileInput) {
     const versionToOutput = installedVersions.at(-1); // .NET SDK version parsed from the global.json file is installed last
-    core.setOutput('dotnet-version', versionToOutput);
+    core.setOutput(Outputs.DotnetVersion, versionToOutput);
     return;
   }
 
@@ -134,7 +148,7 @@ function outputInstalledVersion(
     }
   );
 
-  core.setOutput('dotnet-version', versionToOutput);
+  core.setOutput(Outputs.DotnetVersion, versionToOutput);
 }
 
 run();
