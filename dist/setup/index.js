@@ -93879,6 +93879,12 @@ class DotnetInstallScript {
         }
         return this;
     }
+    enableVerbose(verbose) {
+        if (verbose) {
+            this.useArguments(utils_1.IS_WINDOWS ? '-Verbose' : '--verbose');
+        }
+        return this;
+    }
     execute() {
         return __awaiter(this, void 0, void 0, function* () {
             const getExecOutputOptions = {
@@ -93917,9 +93923,10 @@ DotnetInstallDir.dirPath = process.env['DOTNET_INSTALL_DIR']
     ? DotnetInstallDir.convertInstallPathToAbsolute(process.env['DOTNET_INSTALL_DIR'])
     : DotnetInstallDir.default[utils_1.PLATFORM];
 class DotnetCoreInstaller {
-    constructor(version, quality) {
+    constructor(version, quality, verbose) {
         this.version = version;
         this.quality = quality;
+        this.verbose = verbose;
     }
     installDotnet() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -93936,6 +93943,8 @@ class DotnetCoreInstaller {
                 .useArguments(utils_1.IS_WINDOWS ? '-Runtime' : '--runtime', 'dotnet')
                 // Use latest stable version
                 .useArguments(utils_1.IS_WINDOWS ? '-Channel' : '--channel', 'LTS')
+                // Enable verbose output depending on user input
+                .enableVerbose(this.verbose)
                 .execute();
             if (runtimeInstallOutput.exitCode) {
                 /**
@@ -93953,6 +93962,8 @@ class DotnetCoreInstaller {
                 .useArguments(utils_1.IS_WINDOWS ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files')
                 // Use version provided by user
                 .useVersion(dotnetVersion, this.quality)
+                // Enable verbose output depending on user input
+                .enableVerbose(this.verbose)
                 .execute();
             if (dotnetInstallOutput.exitCode) {
                 throw new Error(`Failed to install dotnet, exit code: ${dotnetInstallOutput.exitCode}. ${dotnetInstallOutput.stderr}`);
@@ -94072,13 +94083,14 @@ function run() {
             }
             if (versions.length) {
                 const quality = core.getInput('dotnet-quality');
+                const verbose = core.getBooleanInput('verbose');
                 if (quality && !qualityOptions.includes(quality)) {
                     throw new Error(`Value '${quality}' is not supported for the 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`);
                 }
                 let dotnetInstaller;
                 const uniqueVersions = new Set(versions);
                 for (const version of uniqueVersions) {
-                    dotnetInstaller = new installer_1.DotnetCoreInstaller(version, quality);
+                    dotnetInstaller = new installer_1.DotnetCoreInstaller(version, quality, verbose);
                     const installedVersion = yield dotnetInstaller.installDotnet();
                     installedDotnetVersions.push(installedVersion);
                 }
