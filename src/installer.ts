@@ -182,6 +182,17 @@ export class DotnetInstallScript {
     return this;
   }
 
+  public useInstallPath(installPath: string) {
+    if (installPath == null) {
+      installPath = DotnetInstallDir.dirPath;
+    }
+    this.useArguments(
+      IS_WINDOWS ? '-Install-Dir' : '--install-dir',
+      installPath
+    );
+    return this;
+  }
+
   public useVersion(dotnetVersion: DotnetVersion, quality?: QualityOptions) {
     if (dotnetVersion.type) {
       this.useArguments(dotnetVersion.type, dotnetVersion.value);
@@ -222,11 +233,20 @@ export abstract class DotnetInstallDir {
     windows: path.join(process.env['PROGRAMFILES'] + '', 'dotnet')
   };
 
-  public static readonly dirPath = process.env['DOTNET_INSTALL_DIR']
-    ? DotnetInstallDir.convertInstallPathToAbsolute(
-        process.env['DOTNET_INSTALL_DIR']
-      )
-    : DotnetInstallDir.default[PLATFORM];
+  private static getInstallDirectory() {
+    if (process.env['DOTNET_INSTALL_DIR'] != null) {
+      return process.env['DOTNET_INSTALL_DIR'];
+    }
+    if (process.env['RUNNER_TOOL_CACHE'] != null) {
+      return path.join(process.env['RUNNER_TOOL_CACHE'], 'dotnet');
+    }
+    return DotnetInstallDir.default[PLATFORM];
+  }
+
+  public static readonly dirPath =
+    DotnetInstallDir.convertInstallPathToAbsolute(
+      DotnetInstallDir.getInstallDirectory()
+    );
 
   private static convertInstallPathToAbsolute(installDir: string): string {
     if (path.isAbsolute(installDir)) return path.normalize(installDir);
@@ -275,6 +295,8 @@ export class DotnetCoreInstaller {
       .useArguments(IS_WINDOWS ? '-Runtime' : '--runtime', 'dotnet')
       // Use latest stable version
       .useArguments(IS_WINDOWS ? '-Channel' : '--channel', 'LTS')
+      // Explicitly set the install path (see https://github.com/actions/setup-dotnet/issues/360)
+      .useInstallPath(DotnetInstallDir.dirPath)
       .execute();
 
     if (runtimeInstallOutput.exitCode) {
@@ -298,6 +320,8 @@ export class DotnetCoreInstaller {
       )
       // Use version provided by user
       .useVersion(dotnetVersion, this.quality)
+      // Explicitly set the install path (see https://github.com/actions/setup-dotnet/issues/360)
+      .useInstallPath(DotnetInstallDir.dirPath)
       .execute();
 
     if (dotnetInstallOutput.exitCode) {
