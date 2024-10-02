@@ -416,6 +416,13 @@ function GetHTTPResponse([Uri] $Uri, [bool]$HeaderOnly, [bool]$DisableRedirect, 
                     UseDefaultCredentials=$ProxyUseDefaultCredentials;
                     BypassList = $ProxyBypassList;
                 }
+                # If ProxyAddress is contained username and password, then set credentials
+                # e.g. http://(user):(pass)@...
+                if ($ProxyAddress -match '://(.*?):(.*?)@') {
+                    $proxyUsername = $matches[1]
+                    $proxyPassword = $matches[2]
+                    $HttpClientHandler.Proxy.Credentials = New-Object System.Net.NetworkCredential($proxyUsername, $proxyPassword)
+                }
             }       
             if ($DisableRedirect)
             {
