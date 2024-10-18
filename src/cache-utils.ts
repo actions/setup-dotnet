@@ -91,7 +91,7 @@ export function isCacheFeatureAvailable(): boolean {
 /**
  * Returns this action runs on GitHub Enterprise Server or not.
  */
-export function isGhes(): boolean {
+function isGhes(): boolean {
   const ghUrl = new URL(
     process.env['GITHUB_SERVER_URL'] || 'https://github.com'
   );
