@@ -81190,9 +81190,10 @@ function isGhes() {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Outputs = exports.State = exports.cliCommand = exports.lockFilePatterns = void 0;
+exports.Outputs = exports.State = exports.cliCommand = exports.foo = exports.lockFilePatterns = void 0;
 /** NuGet lock file patterns */
 exports.lockFilePatterns = ['packages.lock.json'];
+exports.foo = 'bar';
 /**
  * .NET CLI command to list local NuGet resources.
  * @see https://docs.microsoft.com/dotnet/core/tools/dotnet-nuget-locals
