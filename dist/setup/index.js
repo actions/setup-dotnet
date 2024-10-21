@@ -93500,7 +93500,8 @@ const restoreCache = (cacheDependencyPath) => __awaiter(void 0, void 0, void 0, 
         throw new Error('Some specified paths were not resolved, unable to cache dependencies.');
     }
     const platform = process.env.RUNNER_OS;
-    const primaryKey = `dotnet-cache-${platform}-${fileHash}`;
+    const arch = process.arch;
+    const primaryKey = `dotnet-cache-${platform}-${arch}-${fileHash}`;
     core.debug(`primary key is ${primaryKey}`);
     core.saveState(constants_1.State.CachePrimaryKey, primaryKey);
     const { 'global-packages': cachePath } = yield (0, cache_utils_1.getNuGetFolderPath)();
