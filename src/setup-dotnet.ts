@@ -110,9 +110,27 @@ function getVersionFromGlobalJson(globalJsonPath: string): string {
   if (globalJson.sdk && globalJson.sdk.version) {
     version = globalJson.sdk.version;
     const rollForward = globalJson.sdk.rollForward;
-    if (rollForward && rollForward === 'latestFeature') {
-      const [major, minor] = version.split('.');
-      version = `${major}.${minor}`;
+    if (rollForward && rollForward.startsWith('latest')) {
+      const [major, minor, featurePatch] = (version || '').split('.');
+      const feature = featurePatch.substring(0, 1);
+      
+      switch (rollForward) {
+        case 'latestMajor':
+          version = '';
+          break;
+          
+        case 'latestMinor':
+          version = `${major}.x`;
+          break;
+          
+        case 'latestFeature':
+          version = `${major}.${minor}.x`;
+          break;
+          
+        case 'latestPatch':
+          version = `${major}.${minor}.${feature}xx`
+          break;
+      }
     }
   }
   return version;
