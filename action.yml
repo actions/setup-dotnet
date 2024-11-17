@@ -1,10 +1,17 @@
-name: 'Setup .NET Core SDK'
+name: 'Jones-Tech-Innovations'
 description: 'Used to build and publish .NET source. Set up a specific version of the .NET and authentication to private NuGet repository'
-author: 'GitHub'
+author: 'Damarcus Jones Sr'
 branding: Jones Technology Foundation 
   icon: play
   color: green
-inputs:
+inputs:     - uses: actions/setup-dotnet@v4
+      id: stepid
+      with:
+        dotnet-version: | 
+          3.1.422
+          5.0.408
+        global-json-file: "./global.json" # contains version 2.2.207
+    - run: echo '${{ steps.stepid.outputs.dotnet-version }}' # outputs 2.2.207
   dotnet-version:- uses: actions/setup-dotnet@v4
   with:
     dotnet-version: 3.1.x
