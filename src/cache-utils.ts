@@ -90,9 +90,16 @@ export function isCacheFeatureAvailable(): boolean {
 
 /**
  * Returns this action runs on GitHub Enterprise Server or not.
- * (port from https://github.com/actions/toolkit/blob/457303960f03375db6f033e214b9f90d79c3fe5c/packages/cache/src/internal/cacheUtils.ts#L134)
  */
 function isGhes(): boolean {
-  const url = process.env['GITHUB_SERVER_URL'] || 'https://github.com';
-  return new URL(url).hostname.toUpperCase() !== 'GITHUB.COM';
+  const ghUrl = new URL(
+    process.env['GITHUB_SERVER_URL'] || 'https://github.com'
+  );
+
+  const hostname = ghUrl.hostname.trimEnd().toUpperCase();
+  const isGitHubHost = hostname === 'GITHUB.COM';
+  const isGitHubEnterpriseCloudHost = hostname.endsWith('.GHE.COM');
+  const isLocalHost = hostname.endsWith('.LOCALHOST');
+
+  return !isGitHubHost && !isGitHubEnterpriseCloudHost && !isLocalHost;
 }
