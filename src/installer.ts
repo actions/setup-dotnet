@@ -72,7 +72,12 @@ export class DotnetVersionResolver {
     } else if (this.isNumericTag(major) && this.isNumericTag(minor)) {
       this.resolvedArgument.value = `${major}.${minor}`;
     } else if (this.isNumericTag(major)) {
-      this.resolvedArgument.value = await this.getLatestByMajorTag(major);
+      // starting with .NET 5 the minor version is always zero, hardcode the earlier versions since they won't get new releases
+      this.resolvedArgument.value =
+        major == '1' ? '1.1' :
+        major == '2' ? '2.2' :
+        major == '3' ? '3.1' :
+        `${major}.0`;
     } else {
       // If "dotnet-version" is specified as *, x or X resolve latest version of .NET explicitly from LTS channel. The version argument will default to "latest" by install-dotnet script.
       this.resolvedArgument.value = 'LTS';
@@ -95,34 +100,6 @@ export class DotnetVersionResolver {
     }
     return this.resolvedArgument;
   }
-
-  private async getLatestByMajorTag(majorTag: string): Promise<string> {
-    const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
-      allowRetries: true,
-      maxRetries: 3
-    });
-    const response = await httpClient.getJson<any>(
-      DotnetVersionResolver.DotnetCoreIndexUrl
-    );
-    const result = response.result || {};
-    const releasesInfo: any[] = result['releases-index'];
-
-    const releaseInfo = releasesInfo.find(info => {
-      const sdkParts: string[] = info['channel-version'].split('.');
-      return sdkParts[0] === majorTag;
-    });
-
-    if (!releaseInfo) {
-      throw new Error(
-        `Could not find info for version with major tag: "${majorTag}" at ${DotnetVersionResolver.DotnetCoreIndexUrl}`
-      );
-    }
-
-    return releaseInfo['channel-version'];
-  }
-
-  static DotnetCoreIndexUrl =
-    'https://dotnetcli.azureedge.net/dotnet/release-metadata/releases-index.json';
 }
 
 export class DotnetInstallScript {
