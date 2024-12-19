@@ -957,6 +957,37 @@ get_absolute_path() {
 }
 
 # args:
+# override - $1 (boolean, true or false)
+get_cp_options() {
+    eval $invocation
+
+    local override="$1"
+    local override_switch=""
+
+    if [ "$override" = false ]; then
+        override_switch="-n"
+
+        # create temporary files to check if 'cp -u' is supported
+        tmp_dir="$(mktemp -d)"
+        tmp_file="$tmp_dir/testfile"
+        tmp_file2="$tmp_dir/testfile2"
+
+        touch "$tmp_file"
+
+        # use -u instead of -n if it's available
+        if cp -u "$tmp_file" "$tmp_file2" 2>/dev/null; then
+            override_switch="-u"
+        fi
+
+        # clean up
+        rm -f "$tmp_file" "$tmp_file2"
+        rm -rf "$tmp_dir"
+    fi
+
+    echo "$override_switch"
+}
+
+# args:
 # input_files - stdin
 # root_path - $1
 # out_path - $2
@@ -967,16 +998,7 @@ copy_files_or_dirs_from_list() {
     local root_path="$(remove_trailing_slash "$1")"
     local out_path="$(remove_trailing_slash "$2")"
     local override="$3"
-    local override_switch=""
-
-    if [ "$override" = false ]; then
-        override_switch="-n"
-
-        # use -u instead of -n when it's available
-        if cp -u --help >/dev/null 2>&1; then
-            override_switch="-u"
-        fi
-    fi
+    local override_switch="$(get_cp_options "$override")"
 
     cat | uniq | while read -r file_path; do
         local path="$(remove_beginning_slash "${file_path#$root_path}")"
