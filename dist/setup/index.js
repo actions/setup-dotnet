@@ -93821,7 +93821,7 @@ class DotnetVersionResolver {
     }
 }
 exports.DotnetVersionResolver = DotnetVersionResolver;
-DotnetVersionResolver.DotnetCoreIndexUrl = 'https://dotnetcli.azureedge.net/dotnet/release-metadata/releases-index.json';
+DotnetVersionResolver.DotnetCoreIndexUrl = 'https://builds.dotnet.microsoft.com/dotnet/release-metadata/releases-index.json';
 class DotnetInstallScript {
     constructor() {
         this.scriptName = utils_1.IS_WINDOWS ? 'install-dotnet.ps1' : 'install-dotnet.sh';
