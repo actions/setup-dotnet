@@ -122,7 +122,7 @@ export class DotnetVersionResolver {
   }
 
   static DotNetCoreIndexUrl =
-    'https://dotnetcli.azureedge.net/dotnet/release-metadata/releases-index.json';
+    'https://builds.dotnet.microsoft.com/dotnet/release-metadata/releases-index.json';
 }
 
 export class DotnetCoreInstaller {
