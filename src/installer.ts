@@ -135,7 +135,6 @@ export class DotnetVersionResolver {
 
   static DotnetCoreIndexFallbackUrl =
     'https://dotnetcli.azureedge.net/dotnet/release-metadata/releases-index.json';
-
 }
 
 export class DotnetCoreInstaller {
