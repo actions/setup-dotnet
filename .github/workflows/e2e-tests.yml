@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macOS-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -40,7 +40,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macos-13]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -69,7 +69,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macOS-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -94,7 +94,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macos-13]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -114,7 +114,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macOS-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -138,7 +138,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macOS-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -159,7 +159,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macOS-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -183,7 +183,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macOS-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -209,7 +209,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macOS-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -234,7 +234,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macOS-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -256,7 +256,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macos-latest]
     env:
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
     steps:
@@ -287,7 +287,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macos-latest]
     env:
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
     steps:
@@ -316,7 +316,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macOS-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -342,7 +342,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macOS-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -366,7 +366,7 @@ jobs:
           if (-not ($version -eq '${{steps.step2.outputs.dotnet-version}}')) { throw "Unexpected output value" }
 
   test-proxy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     container:
       image: ubuntu:latest
       options: --dns 127.0.0.1
@@ -406,7 +406,7 @@ jobs:
           __tests__/verify-dotnet.ps1 -Patterns "^6.0" -CheckNugetConfig
 
   test-bypass-proxy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       https_proxy: http://no-such-proxy:3128
       no_proxy: github.com,dotnetcli.blob.core.windows.net,download.visualstudio.microsoft.com,api.nuget.org,dotnetcli.azureedge.net
