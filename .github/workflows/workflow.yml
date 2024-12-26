@@ -39,7 +39,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macOS-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -62,7 +62,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macos-13]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -95,7 +95,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macOS-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -120,7 +120,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macOS-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -144,7 +144,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macOS-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -168,7 +168,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macOS-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -190,7 +190,7 @@ jobs:
         run: __tests__/verify-dotnet.ps1 2.2 3.1
 
   test-proxy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     container:
       image: mcr.microsoft.com/dotnet/core/runtime-deps:3.0-bionic
       options: --dns 127.0.0.1
@@ -222,7 +222,7 @@ jobs:
         run: __tests__/verify-dotnet.sh 3.1.201
 
   test-bypass-proxy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       https_proxy: http://no-such-proxy:3128
       no_proxy: github.com,dotnetcli.blob.core.windows.net,download.visualstudio.microsoft.com,api.nuget.org,dotnetcli.azureedge.net
