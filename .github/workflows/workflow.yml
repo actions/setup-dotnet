@@ -202,6 +202,8 @@ jobs:
     env:
       https_proxy: http://squid-proxy:3128
       http_proxy: http://squid-proxy:3128
+      DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: true
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -218,7 +220,6 @@ jobs:
           source-url: https://api.nuget.org/v3/index.json
         env:
           NUGET_AUTH_TOKEN: NOTATOKEN
-          DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: true
       - name: Verify dotnet
         run: __tests__/verify-dotnet.sh 3.1.201
 
