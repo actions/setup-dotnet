@@ -379,7 +379,13 @@ class DotnetCoreInstaller {
     }
     getReleasesJsonUrl(httpClient, versionParts) {
         return __awaiter(this, void 0, void 0, function* () {
-            const response = yield httpClient.getJson(DotNetCoreIndexUrl);
+            let response;
+            try {
+                response = yield httpClient.getJson(DotNetCoreIndexUrl);
+            }
+            catch (error) {
+                response = yield httpClient.getJson(DotnetCoreIndexFallbackUrl);
+            }
             const result = response.result || {};
             let releasesInfo = result['releases-index'];
             releasesInfo = releasesInfo.filter((info) => {
@@ -403,7 +409,8 @@ class DotnetCoreInstaller {
     }
 }
 exports.DotnetCoreInstaller = DotnetCoreInstaller;
-const DotNetCoreIndexUrl = 'https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/releases-index.json';
+const DotNetCoreIndexUrl = 'https://builds.dotnet.microsoft.com/dotnet/release-metadata/releases-index.json';
+const DotnetCoreIndexFallbackUrl = 'https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/releases-index.json';
 
 
 /***/ }),
