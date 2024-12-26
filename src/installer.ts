@@ -264,14 +264,8 @@ export class DotnetCoreInstaller {
   ): Promise<string> {
     let response;
     try {
-      core.info(
-        `${DotNetCoreIndexUrl} DotNetCoreIndexUrl`
-      );
       response = await httpClient.getJson<any>(DotNetCoreIndexUrl);
     } catch (error) {
-      core.info(
-        `${DotnetCoreIndexFallbackUrl} DotnetCoreIndexFallbackUrl`
-      );
       response = await httpClient.getJson<any>(DotnetCoreIndexFallbackUrl);
     }
     const result = response.result || {};
