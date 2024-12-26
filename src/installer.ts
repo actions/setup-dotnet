@@ -101,9 +101,18 @@ export class DotnetVersionResolver {
       allowRetries: true,
       maxRetries: 3
     });
-    const response = await httpClient.getJson<any>(
-      DotnetVersionResolver.DotnetCoreIndexUrl
-    );
+
+    let response;
+    try {
+      response = await httpClient.getJson<any>(
+        DotnetVersionResolver.DotnetCoreIndexUrl
+      );
+    } catch (error) {
+      response = await httpClient.getJson<any>(
+        DotnetVersionResolver.DotnetCoreIndexFallbackUrl
+      );
+    }
+
     const result = response.result || {};
     const releasesInfo: any[] = result['releases-index'];
 
@@ -122,6 +131,8 @@ export class DotnetVersionResolver {
   }
 
   static DotnetCoreIndexUrl =
+    'https://builds.dotnet.microsoft.com/dotnet/release-metadata/releases-index.json';
+  static DotnetCoreIndexFallbackUrl =
     'https://dotnetcli.azureedge.net/dotnet/release-metadata/releases-index.json';
 }
 

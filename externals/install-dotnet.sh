@@ -1272,6 +1272,61 @@ downloadwget() {
     return 0
 }
 
+extract_stem() {
+    local url="$1"
+    # extract the protocol
+    proto="$(echo $1 | grep :// | sed -e's,^\(.*://\).*,\1,g')"
+    # remove the protocol
+    url="${1/$proto/}"
+    # extract the path (if any) - since we know all of our feeds have a first path segment, we can skip the first one. otherwise we'd use -f2- to get the full path
+    full_path="$(echo $url | grep / | cut -d/ -f2-)"
+    path="$(echo $full_path | cut -d/ -f2-)"
+    echo $path
+}
+
+check_url_exists() {
+    eval $invocation
+    local url="$1"
+
+    local code=""
+    if machine_has "curl"
+    then
+        code=$(curl --head -o /dev/null -w "%{http_code}" -s --fail "$url");
+    elif machine_has "wget"
+    then
+        # get the http response, grab the status code
+        server_response=$(wget -qO- --method=HEAD --server-response "$url" 2>&1)
+        code=$(echo "$server_response" | grep "HTTP/" | awk '{print $2}')
+    fi
+    if [ $code = "200" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+sanitize_redirect_url() {
+    eval $invocation
+
+    local url_stem
+    url_stem=$(extract_stem "$1")
+    say_verbose "Checking configured feeds for the asset at ${yellow:-}$url_stem${normal:-}"
+
+    for feed in "${feeds[@]}"
+    do
+        local trial_url="$feed/$url_stem"
+        say_verbose "Checking ${yellow:-}$trial_url${normal:-}"
+        if check_url_exists "$trial_url"; then
+            say_verbose "Found a match at ${yellow:-}$trial_url${normal:-}"
+            echo "$trial_url"
+            return 0
+        else
+            say_verbose "No match at ${yellow:-}$trial_url${normal:-}"
+        fi
+    done
+    return 1
+}
+
 get_download_link_from_aka_ms() {
     eval $invocation
 
@@ -1324,6 +1379,11 @@ get_download_link_from_aka_ms() {
             return 1
         fi
 
+        sanitized_redirect_url=$(sanitize_redirect_url "$aka_ms_download_link")
+        if [[ -n "$sanitized_redirect_url" ]]; then
+            aka_ms_download_link="$sanitized_redirect_url"
+        fi
+
         say_verbose "The redirect location retrieved: '$aka_ms_download_link'."
         return 0
     else
@@ -1335,7 +1395,9 @@ get_download_link_from_aka_ms() {
 get_feeds_to_use()
 {
     feeds=(
+    "https://builds.dotnet.microsoft.com/dotnet"
     "https://dotnetcli.azureedge.net/dotnet"
+    "https://ci.dot.net/public"
     "https://dotnetbuilds.azureedge.net/public"
     )
 
