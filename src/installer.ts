@@ -261,7 +261,12 @@ export class DotnetCoreInstaller {
     httpClient: hc.HttpClient,
     versionParts: string[]
   ): Promise<string> {
-    const response = await httpClient.getJson<any>(DotNetCoreIndexUrl);
+    let response;
+    try {
+      response = await httpClient.getJson<any>(DotNetCoreIndexUrl);
+    } catch (error) {
+      response = await httpClient.getJson<any>(DotnetCoreIndexFallbackUrl);
+    }
     const result = response.result || {};
     let releasesInfo: any[] = result['releases-index'];
 
@@ -300,4 +305,7 @@ export class DotnetCoreInstaller {
 }
 
 const DotNetCoreIndexUrl: string =
+  'https://builds.dotnet.microsoft.com/dotnet/release-metadata/releases-index.json';
+
+const DotnetCoreIndexFallbackUrl: string =
   'https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/releases-index.json';
