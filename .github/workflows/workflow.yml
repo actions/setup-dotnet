@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macOS-latest]
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -38,7 +38,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macOS-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -61,7 +61,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macos-13]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -94,7 +94,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macOS-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -119,7 +119,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macOS-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -143,7 +143,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macOS-latest]
+        operating-system: [ubuntu-22.04, windows-latest, macOS-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -163,18 +163,20 @@ jobs:
         run: __tests__/verify-dotnet.ps1 3.1 2.2
 
   test-proxy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     container:
-      image: mcr.microsoft.com/dotnet/core/runtime-deps:3.0-bionic
+      image: ubuntu:latest
       options: --dns 127.0.0.1
     services:
       squid-proxy:
-        image: datadog/squid:latest
+        image: ubuntu/squid:latest
         ports:
           - 3128:3128
     env:
       https_proxy: http://squid-proxy:3128
       http_proxy: http://squid-proxy:3128
+      DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: true
+
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -183,7 +185,7 @@ jobs:
       - name: Install curl
         run: |
           apt update
-          apt -y install curl
+          apt -y install curl libssl-dev
       - name: Setup dotnet 3.1.201
         uses: ./
         with:
@@ -195,7 +197,7 @@ jobs:
         run: __tests__/verify-dotnet.sh 3.1.201
 
   test-bypass-proxy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       https_proxy: http://no-such-proxy:3128
       no_proxy: github.com,dotnetcli.blob.core.windows.net,download.visualstudio.microsoft.com,api.nuget.org,dotnetcli.azureedge.net
