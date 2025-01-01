@@ -71286,7 +71286,6 @@ class DotnetVersionResolver {
 }
 exports.DotnetVersionResolver = DotnetVersionResolver;
 DotnetVersionResolver.DotNetCoreIndexUrl = 'https://builds.dotnet.microsoft.com/dotnet/release-metadata/releases-index.json';
-DotnetVersionResolver.DotnetCoreIndexFallbackUrl = 'https://dotnetcli.azureedge.net/dotnet/release-metadata/releases-index.json';
 class DotnetCoreInstaller {
     constructor(version, quality) {
         this.version = version;
