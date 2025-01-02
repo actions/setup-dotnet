@@ -380,7 +380,6 @@ class DotnetCoreInstaller {
     getReleasesJsonUrl(httpClient, versionParts) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield httpClient.getJson(DotNetCoreIndexUrl);
-
             const result = response.result || {};
             let releasesInfo = result['releases-index'];
             releasesInfo = releasesInfo.filter((info) => {

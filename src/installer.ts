@@ -263,7 +263,6 @@ export class DotnetCoreInstaller {
     versionParts: string[]
   ): Promise<string> {
     const response = await httpClient.getJson<any>(DotNetCoreIndexUrl);
-
     const result = response.result || {};
     let releasesInfo: any[] = result['releases-index'];
 
