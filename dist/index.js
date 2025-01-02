@@ -410,7 +410,6 @@ class DotnetCoreInstaller {
 }
 exports.DotnetCoreInstaller = DotnetCoreInstaller;
 const DotNetCoreIndexUrl = 'https://builds.dotnet.microsoft.com/dotnet/release-metadata/releases-index.json';
-const DotnetCoreIndexFallbackUrl = 'https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/releases-index.json';
 
 
 /***/ }),
