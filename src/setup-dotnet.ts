@@ -38,9 +38,8 @@ export async function run() {
     }
 
     if (versions.length) {
-      const includePrerelease: boolean = core.getBooleanInput(
-        'include-prerelease'
-      );
+      const includePrerelease: boolean =
+        core.getBooleanInput('include-prerelease');
       let dotnetInstaller!: installer.DotnetCoreInstaller;
       for (const version of new Set<string>(versions)) {
         dotnetInstaller = new installer.DotnetCoreInstaller(
