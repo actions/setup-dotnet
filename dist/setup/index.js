@@ -71264,7 +71264,6 @@ class DotnetVersionResolver {
                 allowRetries: true,
                 maxRetries: 3
             });
-
             const response = yield httpClient.getJson(DotnetVersionResolver.DotNetCoreIndexUrl);
             const result = response.result || {};
             const releasesInfo = result['releases-index'];
