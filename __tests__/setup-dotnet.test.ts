@@ -77,6 +77,12 @@ describe('setup-dotnet tests', () => {
       expect(debugSpy).toHaveBeenCalledWith(expectedDebugMessage);
       expect(existsSyncSpy).toHaveBeenCalled();
       expect(infoSpy).toHaveBeenCalledWith(expectedInfoMessage);
+      expect(infoSpy).toHaveBeenCalledWith(
+        expect.stringMatching(/^##\[add-matcher\](.+)csc\.json$/)
+      );
+      expect(infoSpy).toHaveBeenCalledWith(
+        expect.stringMatching(/^##\[add-matcher\](.+)dotnet-format\.json$/)
+      );
     });
 
     it('should fail the action if quality is supplied but its value is not supported', async () => {
