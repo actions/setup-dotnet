@@ -4,7 +4,7 @@
             "owner": "dotnet-format",
             "pattern": [
                 {
-                    "regexp": "^\\s*(.*)\\((\\d+),(\\d+)\\):\\s+(error|warning|info)\\s+:\\s+(.*)\\s+\\[(.+)\\]$",
+                    "regexp": "^\\s*(.*)\\((\\d+),(\\d+)\\):\\s+(error|warning)\\s+(.+):\\s+(.*)\\s+\\[(.+)\\]$",
                     "file": 1,
                     "line": 2,
                     "column": 3,
