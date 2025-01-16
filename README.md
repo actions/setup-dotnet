@@ -308,6 +308,15 @@ build:
         cache: true
 ```
 
+## Recommended permissions
+
+When using the `setup-dotnet` action in your GitHub Actions workflow, it is recommended to set the following permissions to ensure proper functionality:
+
+```yaml
+permissions:
+  contents: read # access to check out code and install dependencies
+```
+
 ## License
 
 The scripts and documentation in this project are released under the [MIT License](LICENSE)
