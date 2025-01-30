@@ -409,7 +409,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       https_proxy: http://no-such-proxy:3128
-      no_proxy: github.com,dotnetcli.blob.core.windows.net,download.visualstudio.microsoft.com,api.nuget.org,dotnetcli.azureedge.net,builds.dotnet.microsoft.com,ci.dot.net
+      no_proxy: github.com,download.visualstudio.microsoft.com,api.nuget.org,builds.dotnet.microsoft.com,ci.dot.net
     steps:
       - name: Checkout
         uses: actions/checkout@v3
