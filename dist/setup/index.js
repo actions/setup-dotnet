@@ -71264,13 +71264,7 @@ class DotnetVersionResolver {
                 allowRetries: true,
                 maxRetries: 3
             });
-            let response;
-            try {
-                response = yield httpClient.getJson(DotnetVersionResolver.DotNetCoreIndexUrl);
-            }
-            catch (error) {
-                response = yield httpClient.getJson(DotnetVersionResolver.DotnetCoreIndexFallbackUrl);
-            }
+            const response = yield httpClient.getJson(DotnetVersionResolver.DotNetCoreIndexUrl);
             const result = response.result || {};
             const releasesInfo = result['releases-index'];
             const releaseInfo = releasesInfo.find(info => {
@@ -71286,7 +71280,6 @@ class DotnetVersionResolver {
 }
 exports.DotnetVersionResolver = DotnetVersionResolver;
 DotnetVersionResolver.DotNetCoreIndexUrl = 'https://builds.dotnet.microsoft.com/dotnet/release-metadata/releases-index.json';
-DotnetVersionResolver.DotnetCoreIndexFallbackUrl = 'https://dotnetcli.azureedge.net/dotnet/release-metadata/releases-index.json';
 class DotnetCoreInstaller {
     constructor(version, quality) {
         this.version = version;
