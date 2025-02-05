@@ -212,6 +212,14 @@ export class DotnetInstallScript {
     return this;
   }
 
+  public enableVerbose(verbose: boolean) {
+    if (verbose) {
+      this.useArguments(IS_WINDOWS ? '-Verbose' : '--verbose');
+    }
+
+    return this;
+  }
+
   public async execute() {
     const getExecOutputOptions = {
       ignoreReturnCode: true,
@@ -266,7 +274,8 @@ export class DotnetCoreInstaller {
 
   constructor(
     private version: string,
-    private quality: QualityOptions
+    private quality: QualityOptions,
+    private verbose: boolean
   ) {}
 
   public async installDotnet(): Promise<string | null> {
@@ -286,6 +295,8 @@ export class DotnetCoreInstaller {
       .useArguments(IS_WINDOWS ? '-Runtime' : '--runtime', 'dotnet')
       // Use latest stable version
       .useArguments(IS_WINDOWS ? '-Channel' : '--channel', 'LTS')
+      // Enable verbose output depending on user input
+      .enableVerbose(this.verbose)
       .execute();
 
     if (runtimeInstallOutput.exitCode) {
@@ -309,6 +320,8 @@ export class DotnetCoreInstaller {
       )
       // Use version provided by user
       .useVersion(dotnetVersion, this.quality)
+      // Enable verbose output depending on user input
+      .enableVerbose(this.verbose)
       .execute();
 
     if (dotnetInstallOutput.exitCode) {
