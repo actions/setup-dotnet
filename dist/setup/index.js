@@ -102230,13 +102230,7 @@ class DotnetVersionResolver {
                 allowRetries: true,
                 maxRetries: 3
             });
-            let response;
-            try {
-                response = yield httpClient.getJson(DotnetVersionResolver.DotnetCoreIndexUrl);
-            }
-            catch (error) {
-                response = yield httpClient.getJson(DotnetVersionResolver.DotnetCoreIndexFallbackUrl);
-            }
+            const response = yield httpClient.getJson(DotnetVersionResolver.DotnetCoreIndexUrl);
             const result = response.result || {};
             const releasesInfo = result['releases-index'];
             const releaseInfo = releasesInfo.find(info => {
@@ -102252,7 +102246,6 @@ class DotnetVersionResolver {
 }
 exports.DotnetVersionResolver = DotnetVersionResolver;
 DotnetVersionResolver.DotnetCoreIndexUrl = 'https://builds.dotnet.microsoft.com/dotnet/release-metadata/releases-index.json';
-DotnetVersionResolver.DotnetCoreIndexFallbackUrl = 'https://dotnetcli.azureedge.net/dotnet/release-metadata/releases-index.json';
 class DotnetInstallScript {
     constructor() {
         this.scriptName = utils_1.IS_WINDOWS ? 'install-dotnet.ps1' : 'install-dotnet.sh';
