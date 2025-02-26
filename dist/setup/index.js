@@ -102523,6 +102523,7 @@ function run() {
             }
             const matchersPath = path_1.default.join(__dirname, '..', '..', '.github');
             core.info(`##[add-matcher]${path_1.default.join(matchersPath, 'csc.json')}`);
+            core.info(`##[add-matcher]${path_1.default.join(matchersPath, 'msbuild.json')}`);
         }
         catch (error) {
             core.setFailed(error.message);
