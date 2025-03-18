@@ -99434,6 +99434,13 @@ class DotnetInstallScript {
         this.scriptArguments.push(...args);
         return this;
     }
+    useInstallPath(installPath) {
+        if (installPath == null) {
+            installPath = DotnetInstallDir.dirPath;
+        }
+        this.useArguments(utils_1.IS_WINDOWS ? '-Install-Dir' : '--install-dir', installPath);
+        return this;
+    }
     useVersion(dotnetVersion, quality) {
         if (dotnetVersion.type) {
             this.useArguments(dotnetVersion.type, dotnetVersion.value);
@@ -99459,6 +99466,15 @@ class DotnetInstallScript {
 }
 exports.DotnetInstallScript = DotnetInstallScript;
 class DotnetInstallDir {
+    static getInstallDirectory() {
+        if (process.env['DOTNET_INSTALL_DIR'] != null) {
+            return process.env['DOTNET_INSTALL_DIR'];
+        }
+        if (process.env['RUNNER_TOOL_CACHE'] != null) {
+            return path_1.default.join(process.env['RUNNER_TOOL_CACHE'], 'dotnet');
+        }
+        return DotnetInstallDir.default[utils_1.PLATFORM];
+    }
     static convertInstallPathToAbsolute(installDir) {
         if (path_1.default.isAbsolute(installDir))
             return path_1.default.normalize(installDir);
@@ -99481,9 +99497,7 @@ DotnetInstallDir.default = {
     mac: path_1.default.join(process.env['HOME'] + '', '.dotnet'),
     windows: path_1.default.join(process.env['PROGRAMFILES'] + '', 'dotnet')
 };
-DotnetInstallDir.dirPath = process.env['DOTNET_INSTALL_DIR']
-    ? DotnetInstallDir.convertInstallPathToAbsolute(process.env['DOTNET_INSTALL_DIR'])
-    : DotnetInstallDir.default[utils_1.PLATFORM];
+DotnetInstallDir.dirPath = DotnetInstallDir.convertInstallPathToAbsolute(DotnetInstallDir.getInstallDirectory());
 class DotnetCoreInstaller {
     constructor(version, quality) {
         this.version = version;
@@ -99504,6 +99518,8 @@ class DotnetCoreInstaller {
                 .useArguments(utils_1.IS_WINDOWS ? '-Runtime' : '--runtime', 'dotnet')
                 // Use latest stable version
                 .useArguments(utils_1.IS_WINDOWS ? '-Channel' : '--channel', 'LTS')
+                // Explicitly set the install path (see https://github.com/actions/setup-dotnet/issues/360)
+                .useInstallPath(DotnetInstallDir.dirPath)
                 .execute();
             if (runtimeInstallOutput.exitCode) {
                 /**
@@ -99521,6 +99537,8 @@ class DotnetCoreInstaller {
                 .useArguments(utils_1.IS_WINDOWS ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files')
                 // Use version provided by user
                 .useVersion(dotnetVersion, this.quality)
+                // Explicitly set the install path (see https://github.com/actions/setup-dotnet/issues/360)
+                .useInstallPath(DotnetInstallDir.dirPath)
                 .execute();
             if (dotnetInstallOutput.exitCode) {
                 throw new Error(`Failed to install dotnet, exit code: ${dotnetInstallOutput.exitCode}. ${dotnetInstallOutput.stderr}`);
