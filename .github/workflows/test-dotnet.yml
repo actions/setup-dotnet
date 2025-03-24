@@ -17,8 +17,30 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macos-13]
+        operating-system:
+          [ubuntu-latest, ubuntu-22.04, windows-latest, macos-13, macos-latest]
         dotnet-version: ['2.1', '2.2', '3.0', '3.1', '5.0', '6.0', '7.0', '8.0']
+        exclude:
+          - dotnet-version: '2.1'
+            operating-system: ubuntu-latest
+          - dotnet-version: '2.2'
+            operating-system: ubuntu-latest
+          - dotnet-version: '3.0'
+            operating-system: ubuntu-latest
+          - dotnet-version: '3.1'
+            operating-system: ubuntu-latest
+          - dotnet-version: '5.0'
+            operating-system: ubuntu-latest
+          - dotnet-version: '2.1'
+            operating-system: macos-latest
+          - dotnet-version: '2.2'
+            operating-system: macos-latest
+          - dotnet-version: '3.0'
+            operating-system: macos-latest
+          - dotnet-version: '3.1'
+            operating-system: macos-latest
+          - dotnet-version: '5.0'
+            operating-system: macos-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
