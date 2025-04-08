@@ -54,7 +54,7 @@
     "jest-each": "^29.7.0",
     "prettier": "^3.2.5",
     "ts-jest": "^29.1.2",
-    "typescript": "^5.4.2",
+    "typescript": "^5.8.3",
     "wget-improved": "^3.2.1"
   },
   "jest": {
