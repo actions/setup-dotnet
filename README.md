@@ -25,7 +25,7 @@ steps:
 - uses: actions/checkout@v4
 - uses: actions/setup-dotnet@v4
   with:
-    dotnet-version: '3.1.x'
+    dotnet-version: '8.0.x'
 - run: dotnet build <my project>
 ```
 > **Warning**: Unless a concrete version is specified in the [`global.json`](https://learn.microsoft.com/en-us/dotnet/core/tools/global-json) file, **_the latest .NET version installed on the runner (including preinstalled versions) will be used [by default](https://learn.microsoft.com/en-us/dotnet/core/versions/selection#the-sdk-uses-the-latest-installed-version)_**. Please refer to the [documentation](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#supported-software) for the currently preinstalled .NET SDK versions.
@@ -38,8 +38,8 @@ steps:
   uses: actions/setup-dotnet@v4
   with:
     dotnet-version: | 
-      3.1.x
-      5.0.x
+      8.0.x
+      9.0.x
 - run: dotnet build <my project>
 ```
 ## Supported version syntax
@@ -47,9 +47,9 @@ steps:
 The `dotnet-version` input supports following syntax:
 
 - **A.B.C** (e.g 6.0.400, 7.0.100-preview.7.22377.5) - installs exact version of .NET SDK
-- **A.B** or **A.B.x** (e.g. 3.1, 3.1.x) - installs the latest patch version of .NET SDK on the channel `3.1`, including prerelease versions (preview, rc)
-- **A** or **A.x** (e.g. 3, 3.x) - installs the latest minor version of the specified major tag, including prerelease versions (preview, rc)
-- **A.B.Cxx** (e.g. 6.0.4xx) - available since `.NET 5.0` release. Installs the latest version of the specific SDK release, including prerelease versions (preview, rc). 
+- **A.B** or **A.B.x** (e.g. 8.0, 8.0.x) - installs the latest patch version of .NET SDK on the channel `8.0`, including prerelease versions (preview, rc)
+- **A** or **A.x** (e.g. 8, 8.x) - installs the latest minor version of the specified major tag, including prerelease versions (preview, rc)
+- **A.B.Cxx** (e.g. 8.0.4xx) - available since `.NET 5.0` release. Installs the latest version of the specific SDK release, including prerelease versions (preview, rc). 
 
 
 ## Using the `dotnet-quality` input
@@ -62,7 +62,7 @@ steps:
 - uses: actions/checkout@v4
 - uses: actions/setup-dotnet@v4
   with:
-    dotnet-version: '6.0.x'
+    dotnet-version: '8.0.x'
     dotnet-quality: 'preview'
 - run: dotnet build <my project>
 ```
@@ -94,7 +94,7 @@ steps:
 - uses: actions/checkout@v4
 - uses: actions/setup-dotnet@v4
   with:
-    dotnet-version: 6.x
+    dotnet-version: 8.x
     cache: true
 - run: dotnet restore --locked-mode
 ```
@@ -119,7 +119,7 @@ steps:
 - uses: actions/checkout@v4
 - uses: actions/setup-dotnet@v4
   with:
-    dotnet-version: 6.x
+    dotnet-version: 8.x
     cache: true
 - run: dotnet restore --locked-mode
 ```
@@ -133,7 +133,7 @@ steps:
 - uses: actions/checkout@v4
 - uses: actions/setup-dotnet@v4
   with:
-    dotnet-version: 6.x
+    dotnet-version: 8.x
     cache: true
     cache-dependency-path: subdir/packages.lock.json
 - run: dotnet restore --locked-mode
@@ -147,7 +147,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dotnet: [ '2.1.x', '3.1.x', '5.0.x' ]
+        dotnet: [ '7.0.x', '8.0.x', '9.0.x' ]
     name: Dotnet ${{ matrix.dotnet }} sample
     steps:
       - uses: actions/checkout@v4
@@ -167,7 +167,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dotnet: [ '2.1.x', '3.1.x', '5.0.x' ]
+        dotnet: [ '7.0.x', '8.0.x', '9.0.x' ]
     name: Dotnet ${{ matrix.dotnet }} sample
     steps:
       - uses: actions/checkout@v4
@@ -189,7 +189,7 @@ steps:
 - uses: actions/checkout@v4
 - uses: actions/setup-dotnet@v4
   with:
-    dotnet-version: '3.1.x'
+    dotnet-version: '8.0.x'
     source-url: https://nuget.pkg.github.com/<owner>/index.json
   env:
     NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
@@ -215,7 +215,7 @@ steps:
 ```yml
 - uses: actions/setup-dotnet@v4
   with:
-    dotnet-version: 3.1.x
+    dotnet-version: 8.0.x
 - name: Publish the package to nuget.org
   run: dotnet nuget push */bin/Release/*.nupkg -k $NUGET_AUTH_TOKEN -s https://api.nuget.org/v3/index.json
   env:
@@ -239,8 +239,8 @@ In case of a single version installation, the `dotnet-version` output contains t
     - uses: actions/setup-dotnet@v4
       id: stepid
       with:
-        dotnet-version: 3.1.422
-    - run: echo '${{ steps.stepid.outputs.dotnet-version }}' # outputs 3.1.422
+        dotnet-version: 8.0.402
+    - run: echo '${{ steps.stepid.outputs.dotnet-version }}' # outputs 8.0.402
 ```
 
 **Multiple version installation**
@@ -252,9 +252,9 @@ In case of a multiple version installation, the `dotnet-version` output contains
       id: stepid
       with:
         dotnet-version: | 
-          3.1.422
-          5.0.408
-    - run: echo '${{ steps.stepid.outputs.dotnet-version }}' # outputs 5.0.408
+          8.0.402
+          9.0.301
+    - run: echo '${{ steps.stepid.outputs.dotnet-version }}' # outputs 9.0.301
 ```
 **Installation from global.json**
 
@@ -265,10 +265,10 @@ When the `dotnet-version` input is used along with the `global-json-file` input,
       id: stepid
       with:
         dotnet-version: | 
-          3.1.422
-          5.0.408
-        global-json-file: "./global.json" # contains version 2.2.207
-    - run: echo '${{ steps.stepid.outputs.dotnet-version }}' # outputs 2.2.207
+          8.0.402
+          9.0.301
+        global-json-file: "./global.json" # contains version 7.0.410
+    - run: echo '${{ steps.stepid.outputs.dotnet-version }}' # outputs 7.0.410
 ```
 
 ### `cache-hit`
@@ -304,7 +304,7 @@ build:
     - uses: actions/checkout@main
     - uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '3.1.x'
+        dotnet-version: '8.0.x'
         cache: true
 ```
 
