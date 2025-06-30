@@ -40,6 +40,7 @@ describe('installer tests', () => {
       it('should throw the error in case of non-zero exit code of the installation script. The error message should contain logs.', async () => {
         const inputVersion = '3.1.100';
         const inputQuality = '' as QualityOptions;
+        const inputVerbose = false;
         const errorMessage = 'fictitious error message!';
 
         getExecOutputSpy.mockImplementation(() => {
@@ -52,7 +53,8 @@ describe('installer tests', () => {
 
         const dotnetInstaller = new installer.DotnetCoreInstaller(
           inputVersion,
-          inputQuality
+          inputQuality,
+          inputVerbose
         );
         await expect(dotnetInstaller.installDotnet()).rejects.toThrow(
           `Failed to install dotnet, exit code: 1. ${errorMessage}`
@@ -62,6 +64,7 @@ describe('installer tests', () => {
       it('should return version of .NET SDK after installation complete', async () => {
         const inputVersion = '3.1.100';
         const inputQuality = '' as QualityOptions;
+        const inputVerbose = false;
         const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
         getExecOutputSpy.mockImplementation(() => {
           return Promise.resolve({
@@ -74,7 +77,8 @@ describe('installer tests', () => {
 
         const dotnetInstaller = new installer.DotnetCoreInstaller(
           inputVersion,
-          inputQuality
+          inputQuality,
+          inputVerbose
         );
         const installedVersion = await dotnetInstaller.installDotnet();
 
@@ -84,6 +88,7 @@ describe('installer tests', () => {
       it(`should supply 'version' argument to the installation script if supplied version is in A.B.C syntax`, async () => {
         const inputVersion = '6.0.300';
         const inputQuality = '' as QualityOptions;
+        const inputVerbose = false;
         const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
 
         getExecOutputSpy.mockImplementation(() => {
@@ -97,7 +102,8 @@ describe('installer tests', () => {
 
         const dotnetInstaller = new installer.DotnetCoreInstaller(
           inputVersion,
-          inputQuality
+          inputQuality,
+          inputVerbose
         );
 
         await dotnetInstaller.installDotnet();
@@ -122,6 +128,7 @@ describe('installer tests', () => {
       it(`should warn if the 'quality' input is set and the supplied version is in A.B.C syntax`, async () => {
         const inputVersion = '6.0.300';
         const inputQuality = 'ga' as QualityOptions;
+        const inputVerbose = false;
         const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
         getExecOutputSpy.mockImplementation(() => {
           return Promise.resolve({
@@ -134,7 +141,8 @@ describe('installer tests', () => {
 
         const dotnetInstaller = new installer.DotnetCoreInstaller(
           inputVersion,
-          inputQuality
+          inputQuality,
+          inputVerbose
         );
 
         await dotnetInstaller.installDotnet();
@@ -147,6 +155,7 @@ describe('installer tests', () => {
       it(`should warn if the 'quality' input is set and version isn't in A.B.C syntax but major tag is lower then 6`, async () => {
         const inputVersion = '3.1';
         const inputQuality = 'ga' as QualityOptions;
+        const inputVerbose = false;
         const stdout = `Fictitious dotnet version 3.1.100 is installed`;
 
         getExecOutputSpy.mockImplementation(() => {
@@ -160,7 +169,8 @@ describe('installer tests', () => {
 
         const dotnetInstaller = new installer.DotnetCoreInstaller(
           inputVersion,
-          inputQuality
+          inputQuality,
+          inputVerbose
         );
 
         await dotnetInstaller.installDotnet();
@@ -174,6 +184,7 @@ describe('installer tests', () => {
         `should supply 'quality' argument to the installation script if quality input is set and version (%s) is not in A.B.C syntax`,
         async inputVersion => {
           const inputQuality = 'ga' as QualityOptions;
+          const inputVerbose = false;
           const exitCode = 0;
           const stdout = `Fictitious dotnet version 6.0.0 is installed`;
           getExecOutputSpy.mockImplementation(() => {
@@ -187,7 +198,8 @@ describe('installer tests', () => {
 
           const dotnetInstaller = new installer.DotnetCoreInstaller(
             inputVersion,
-            inputQuality
+            inputQuality,
+            inputVerbose
           );
 
           await dotnetInstaller.installDotnet();
@@ -214,6 +226,7 @@ describe('installer tests', () => {
         `should supply 'channel' argument to the installation script if version (%s) isn't in A.B.C syntax`,
         async inputVersion => {
           const inputQuality = '' as QualityOptions;
+          const inputVerbose = false;
           const exitCode = 0;
           const stdout = `Fictitious dotnet version 6.0.0 is installed`;
           getExecOutputSpy.mockImplementation(() => {
@@ -227,7 +240,8 @@ describe('installer tests', () => {
 
           const dotnetInstaller = new installer.DotnetCoreInstaller(
             inputVersion,
-            inputQuality
+            inputQuality,
+            inputVerbose
           );
 
           await dotnetInstaller.installDotnet();
@@ -250,11 +264,44 @@ describe('installer tests', () => {
         }
       );
 
+      it(`should supply 'verbose' argument to the installation script if verbose input is set`, async () => {
+        const inputVersion = '6.0.300';
+        const inputQuality = '' as QualityOptions;
+        const inputVerbose = true;
+        const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
+
+        getExecOutputSpy.mockImplementation(() => {
+          return Promise.resolve({
+            exitCode: 0,
+            stdout: `${stdout}`,
+            stderr: ''
+          });
+        });
+        maxSatisfyingSpy.mockImplementation(() => inputVersion);
+
+        const dotnetInstaller = new installer.DotnetCoreInstaller(
+          inputVersion,
+          inputQuality,
+          inputVerbose
+        );
+
+        await dotnetInstaller.installDotnet();
+
+        const scriptArguments = getExecOutputSpy.mock.calls.map(call =>
+          (call[1] as string[]).join(' ')
+        );
+        const expectedArgument = IS_WINDOWS ? '-Verbose' : '--verbose';
+
+        expect(scriptArguments[0]).toContain(expectedArgument);
+        expect(scriptArguments[1]).toContain(expectedArgument);
+      });
+
       if (IS_WINDOWS) {
         it(`should supply '-ProxyAddress' argument to the installation script if env.variable 'https_proxy' is set`, async () => {
           process.env['https_proxy'] = 'https://proxy.com';
           const inputVersion = '6.0.100';
           const inputQuality = '' as QualityOptions;
+          const inputVerbose = false;
           const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
 
           getExecOutputSpy.mockImplementation(() => {
@@ -268,7 +315,8 @@ describe('installer tests', () => {
 
           const dotnetInstaller = new installer.DotnetCoreInstaller(
             inputVersion,
-            inputQuality
+            inputQuality,
+            inputVerbose
           );
 
           await dotnetInstaller.installDotnet();
@@ -293,6 +341,7 @@ describe('installer tests', () => {
           process.env['no_proxy'] = 'first.url,second.url';
           const inputVersion = '6.0.100';
           const inputQuality = '' as QualityOptions;
+          const inputVerbose = false;
           const stdout = `Fictitious dotnet version 6.0.0 is installed`;
 
           getExecOutputSpy.mockImplementation(() => {
@@ -306,7 +355,8 @@ describe('installer tests', () => {
 
           const dotnetInstaller = new installer.DotnetCoreInstaller(
             inputVersion,
-            inputQuality
+            inputQuality,
+            inputVerbose
           );
 
           await dotnetInstaller.installDotnet();
