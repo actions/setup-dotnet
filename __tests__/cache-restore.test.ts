@@ -50,7 +50,7 @@ describe('cache-restore tests', () => {
 
       await restoreCache(lockFilePattern);
 
-      const expectedKey = `dotnet-cache-${process.env.RUNNER_OS}-hash`;
+      const expectedKey = `dotnet-cache-${process.env.RUNNER_OS}-${process.arch}-hash`;
       expect(jest.mocked(core.saveState)).toHaveBeenCalledWith(
         'CACHE_KEY',
         expectedKey
@@ -66,7 +66,7 @@ describe('cache-restore tests', () => {
     });
 
     it('calls core.saveState("CACHE_RESULT") when cache.restoreCache() returns key', async () => {
-      const expectedKey = `dotnet-cache-${process.env.RUNNER_OS}-hash`;
+      const expectedKey = `dotnet-cache-${process.env.RUNNER_OS}-${process.arch}-hash`;
       jest.mocked(glob.hashFiles).mockResolvedValue('hash');
       jest.mocked(cache.restoreCache).mockResolvedValue(expectedKey);
 
