@@ -98959,15 +98959,25 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.configAuthentication = void 0;
+exports.configAuthentication = configAuthentication;
 const fs = __importStar(__nccwpck_require__(7147));
 const path = __importStar(__nccwpck_require__(1017));
 const core = __importStar(__nccwpck_require__(2186));
@@ -98980,7 +98990,6 @@ function configAuthentication(feedUrl, existingFileLocation = '', processRoot = 
     const tempNuGetConfig = path.resolve(processRoot, '../', 'nuget.config');
     writeFeedToFile(feedUrl, existingNuGetConfig, tempNuGetConfig);
 }
-exports.configAuthentication = configAuthentication;
 function isValidKey(key) {
     return /^[\w\-.]+$/i.test(key);
 }
@@ -98995,7 +99004,6 @@ function getExistingNugetConfig(processRoot) {
     return defaultConfigName;
 }
 function writeFeedToFile(feedUrl, existingFileLocation, tempFileLocation) {
-    var _a, _b;
     core.info(`dotnet-auth: Finding any source references in ${existingFileLocation}, writing a new temporary configuration file with credentials to ${tempFileLocation}`);
     const sourceKeys = [];
     let owner = core.getInput('owner');
@@ -99017,7 +99025,7 @@ function writeFeedToFile(feedUrl, existingFileLocation, tempFileLocation) {
         if (typeof json.configuration === 'undefined') {
             throw new Error(`The provided NuGet.config seems invalid.`);
         }
-        if ((_b = (_a = json.configuration) === null || _a === void 0 ? void 0 : _a.packageSources) === null || _b === void 0 ? void 0 : _b.add) {
+        if (json.configuration?.packageSources?.add) {
             const packageSources = json.configuration.packageSources.add;
             if (Array.isArray(packageSources)) {
                 packageSources.forEach(source => {
@@ -99147,22 +99155,23 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.restoreCache = void 0;
 const promises_1 = __nccwpck_require__(3977);
@@ -99172,9 +99181,9 @@ const core = __importStar(__nccwpck_require__(2186));
 const glob = __importStar(__nccwpck_require__(8090));
 const cache_utils_1 = __nccwpck_require__(1678);
 const constants_1 = __nccwpck_require__(9042);
-const restoreCache = (cacheDependencyPath) => __awaiter(void 0, void 0, void 0, function* () {
-    const lockFilePath = cacheDependencyPath || (yield findLockFile());
-    const fileHash = yield glob.hashFiles(lockFilePath);
+const restoreCache = async (cacheDependencyPath) => {
+    const lockFilePath = cacheDependencyPath || (await findLockFile());
+    const fileHash = await glob.hashFiles(lockFilePath);
     if (!fileHash) {
         throw new Error('Some specified paths were not resolved, unable to cache dependencies.');
     }
@@ -99182,8 +99191,8 @@ const restoreCache = (cacheDependencyPath) => __awaiter(void 0, void 0, void 0, 
     const primaryKey = `dotnet-cache-${platform}-${fileHash}`;
     core.debug(`primary key is ${primaryKey}`);
     core.saveState(constants_1.State.CachePrimaryKey, primaryKey);
-    const { 'global-packages': cachePath } = yield (0, cache_utils_1.getNuGetFolderPath)();
-    const cacheKey = yield cache.restoreCache([cachePath], primaryKey);
+    const { 'global-packages': cachePath } = await (0, cache_utils_1.getNuGetFolderPath)();
+    const cacheKey = await cache.restoreCache([cachePath], primaryKey);
     core.setOutput(constants_1.Outputs.CacheHit, Boolean(cacheKey));
     if (!cacheKey) {
         core.info('Dotnet cache is not found');
@@ -99191,17 +99200,17 @@ const restoreCache = (cacheDependencyPath) => __awaiter(void 0, void 0, void 0, 
     }
     core.saveState(constants_1.State.CacheMatchedKey, cacheKey);
     core.info(`Cache restored from key: ${cacheKey}`);
-});
+};
 exports.restoreCache = restoreCache;
-const findLockFile = () => __awaiter(void 0, void 0, void 0, function* () {
+const findLockFile = async () => {
     const workspace = process.env.GITHUB_WORKSPACE;
-    const rootContent = yield (0, promises_1.readdir)(workspace);
+    const rootContent = await (0, promises_1.readdir)(workspace);
     const lockFile = constants_1.lockFilePatterns.find(item => rootContent.includes(item));
     if (!lockFile) {
         throw new Error(`Dependencies lock file is not found in ${workspace}. Supported file patterns: ${constants_1.lockFilePatterns.toString()}`);
     }
     return (0, node_path_1.join)(workspace, lockFile);
-});
+};
 
 
 /***/ }),
@@ -99227,24 +99236,26 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isCacheFeatureAvailable = exports.getNuGetFolderPath = void 0;
+exports.getNuGetFolderPath = void 0;
+exports.isCacheFeatureAvailable = isCacheFeatureAvailable;
 const cache = __importStar(__nccwpck_require__(7799));
 const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
@@ -99274,8 +99285,8 @@ const constants_1 = __nccwpck_require__(9042);
  * }
  * ```
  */
-const getNuGetFolderPath = () => __awaiter(void 0, void 0, void 0, function* () {
-    const { stdout, stderr, exitCode } = yield exec.getExecOutput(constants_1.cliCommand, undefined, { ignoreReturnCode: true, silent: true });
+const getNuGetFolderPath = async () => {
+    const { stdout, stderr, exitCode } = await exec.getExecOutput(constants_1.cliCommand, undefined, { ignoreReturnCode: true, silent: true });
     if (exitCode) {
         throw new Error(!stderr.trim()
             ? `The '${constants_1.cliCommand}' command failed with exit code: ${exitCode}`
@@ -99296,7 +99307,7 @@ const getNuGetFolderPath = () => __awaiter(void 0, void 0, void 0, function* () 
         }
     }
     return result;
-});
+};
 exports.getNuGetFolderPath = getNuGetFolderPath;
 function isCacheFeatureAvailable() {
     if (cache.isFeatureAvailable()) {
@@ -99309,7 +99320,6 @@ function isCacheFeatureAvailable() {
     core.warning('The runner was not able to contact the cache service. Caching will be skipped');
     return false;
 }
-exports.isCacheFeatureAvailable = isCacheFeatureAvailable;
 /**
  * Returns this action runs on GitHub Enterprise Server or not.
  */
@@ -99374,22 +99384,23 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -99412,25 +99423,22 @@ class DotnetVersionResolver {
         this.inputVersion = version.trim();
         this.resolvedArgument = { type: '', value: '', qualityFlag: false };
     }
-    resolveVersionInput() {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (!semver_1.default.validRange(this.inputVersion) && !this.isLatestPatchSyntax()) {
-                throw new Error(`The 'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B, A.B.x, A, A.x, A.B.Cxx`);
-            }
-            if (semver_1.default.valid(this.inputVersion)) {
-                this.createVersionArgument();
-            }
-            else {
-                yield this.createChannelArgument();
-            }
-        });
+    async resolveVersionInput() {
+        if (!semver_1.default.validRange(this.inputVersion) && !this.isLatestPatchSyntax()) {
+            throw new Error(`The 'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B, A.B.x, A, A.x, A.B.Cxx`);
+        }
+        if (semver_1.default.valid(this.inputVersion)) {
+            this.createVersionArgument();
+        }
+        else {
+            await this.createChannelArgument();
+        }
     }
     isNumericTag(versionTag) {
         return /^\d+$/.test(versionTag);
     }
     isLatestPatchSyntax() {
-        var _a, _b;
-        const majorTag = (_b = (_a = this.inputVersion.match(/^(?<majorTag>\d+)\.\d+\.\d{1}x{2}$/)) === null || _a === void 0 ? void 0 : _a.groups) === null || _b === void 0 ? void 0 : _b.majorTag;
+        const majorTag = this.inputVersion.match(/^(?<majorTag>\d+)\.\d+\.\d{1}x{2}$/)?.groups?.majorTag;
         if (majorTag &&
             parseInt(majorTag) < LATEST_PATCH_SYNTAX_MINIMAL_MAJOR_TAG) {
             throw new Error(`The 'dotnet-version' was supplied in invalid format: ${this.inputVersion}! The A.B.Cxx syntax is available since the .NET 5.0 release.`);
@@ -99441,62 +99449,56 @@ class DotnetVersionResolver {
         this.resolvedArgument.type = 'version';
         this.resolvedArgument.value = this.inputVersion;
     }
-    createChannelArgument() {
-        return __awaiter(this, void 0, void 0, function* () {
-            this.resolvedArgument.type = 'channel';
-            const [major, minor] = this.inputVersion.split('.');
-            if (this.isLatestPatchSyntax()) {
-                this.resolvedArgument.value = this.inputVersion;
-            }
-            else if (this.isNumericTag(major) && this.isNumericTag(minor)) {
-                this.resolvedArgument.value = `${major}.${minor}`;
-            }
-            else if (this.isNumericTag(major)) {
-                this.resolvedArgument.value = yield this.getLatestByMajorTag(major);
-            }
-            else {
-                // If "dotnet-version" is specified as *, x or X resolve latest version of .NET explicitly from LTS channel. The version argument will default to "latest" by install-dotnet script.
-                this.resolvedArgument.value = 'LTS';
-            }
-            this.resolvedArgument.qualityFlag =
-                parseInt(major) >= QUALITY_INPUT_MINIMAL_MAJOR_TAG ? true : false;
-        });
+    async createChannelArgument() {
+        this.resolvedArgument.type = 'channel';
+        const [major, minor] = this.inputVersion.split('.');
+        if (this.isLatestPatchSyntax()) {
+            this.resolvedArgument.value = this.inputVersion;
+        }
+        else if (this.isNumericTag(major) && this.isNumericTag(minor)) {
+            this.resolvedArgument.value = `${major}.${minor}`;
+        }
+        else if (this.isNumericTag(major)) {
+            this.resolvedArgument.value = await this.getLatestByMajorTag(major);
+        }
+        else {
+            // If "dotnet-version" is specified as *, x or X resolve latest version of .NET explicitly from LTS channel. The version argument will default to "latest" by install-dotnet script.
+            this.resolvedArgument.value = 'LTS';
+        }
+        this.resolvedArgument.qualityFlag =
+            parseInt(major) >= QUALITY_INPUT_MINIMAL_MAJOR_TAG ? true : false;
     }
-    createDotnetVersion() {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.resolveVersionInput();
-            if (!this.resolvedArgument.type) {
-                return this.resolvedArgument;
-            }
-            if (utils_1.IS_WINDOWS) {
-                this.resolvedArgument.type =
-                    this.resolvedArgument.type === 'channel' ? '-Channel' : '-Version';
-            }
-            else {
-                this.resolvedArgument.type =
-                    this.resolvedArgument.type === 'channel' ? '--channel' : '--version';
-            }
+    async createDotnetVersion() {
+        await this.resolveVersionInput();
+        if (!this.resolvedArgument.type) {
             return this.resolvedArgument;
-        });
+        }
+        if (utils_1.IS_WINDOWS) {
+            this.resolvedArgument.type =
+                this.resolvedArgument.type === 'channel' ? '-Channel' : '-Version';
+        }
+        else {
+            this.resolvedArgument.type =
+                this.resolvedArgument.type === 'channel' ? '--channel' : '--version';
+        }
+        return this.resolvedArgument;
     }
-    getLatestByMajorTag(majorTag) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
-                allowRetries: true,
-                maxRetries: 3
-            });
-            const response = yield httpClient.getJson(DotnetVersionResolver.DotnetCoreIndexUrl);
-            const result = response.result || {};
-            const releasesInfo = result['releases-index'];
-            const releaseInfo = releasesInfo.find(info => {
-                const sdkParts = info['channel-version'].split('.');
-                return sdkParts[0] === majorTag;
-            });
-            if (!releaseInfo) {
-                throw new Error(`Could not find info for version with major tag: "${majorTag}" at ${DotnetVersionResolver.DotnetCoreIndexUrl}`);
-            }
-            return releaseInfo['channel-version'];
+    async getLatestByMajorTag(majorTag) {
+        const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
+            allowRetries: true,
+            maxRetries: 3
         });
+        const response = await httpClient.getJson(DotnetVersionResolver.DotnetCoreIndexUrl);
+        const result = response.result || {};
+        const releasesInfo = result['releases-index'];
+        const releaseInfo = releasesInfo.find(info => {
+            const sdkParts = info['channel-version'].split('.');
+            return sdkParts[0] === majorTag;
+        });
+        if (!releaseInfo) {
+            throw new Error(`Could not find info for version with major tag: "${majorTag}" at ${DotnetVersionResolver.DotnetCoreIndexUrl}`);
+        }
+        return releaseInfo['channel-version'];
     }
 }
 exports.DotnetVersionResolver = DotnetVersionResolver;
@@ -99536,13 +99538,11 @@ class DotnetInstallScript {
     setupScriptBash() {
         (0, fs_1.chmodSync)(this.escapedScript, '777');
     }
-    getScriptPath() {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (utils_1.IS_WINDOWS) {
-                return (yield io.which('pwsh', false)) || io.which('powershell', true);
-            }
-            return io.which(this.escapedScript, true);
-        });
+    async getScriptPath() {
+        if (utils_1.IS_WINDOWS) {
+            return (await io.which('pwsh', false)) || io.which('powershell', true);
+        }
+        return io.which(this.escapedScript, true);
     }
     useArguments(...args) {
         this.scriptArguments.push(...args);
@@ -99561,14 +99561,12 @@ class DotnetInstallScript {
         }
         return this;
     }
-    execute() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const getExecOutputOptions = {
-                ignoreReturnCode: true,
-                env: process.env
-            };
-            return exec.getExecOutput(`"${yield this.getScriptPath()}"`, this.scriptArguments, getExecOutputOptions);
-        });
+    async execute() {
+        const getExecOutputOptions = {
+            ignoreReturnCode: true,
+            env: process.env
+        };
+        return exec.getExecOutput(`"${await this.getScriptPath()}"`, this.scriptArguments, getExecOutputOptions);
     }
 }
 exports.DotnetInstallScript = DotnetInstallScript;
@@ -99603,44 +99601,42 @@ class DotnetCoreInstaller {
         this.version = version;
         this.quality = quality;
     }
-    installDotnet() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const versionResolver = new DotnetVersionResolver(this.version);
-            const dotnetVersion = yield versionResolver.createDotnetVersion();
+    async installDotnet() {
+        const versionResolver = new DotnetVersionResolver(this.version);
+        const dotnetVersion = await versionResolver.createDotnetVersion();
+        /**
+         * Install dotnet runitme first in order to get
+         * the latest stable version of dotnet CLI
+         */
+        const runtimeInstallOutput = await new DotnetInstallScript()
+            // If dotnet CLI is already installed - avoid overwriting it
+            .useArguments(utils_1.IS_WINDOWS ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files')
+            // Install only runtime + CLI
+            .useArguments(utils_1.IS_WINDOWS ? '-Runtime' : '--runtime', 'dotnet')
+            // Use latest stable version
+            .useArguments(utils_1.IS_WINDOWS ? '-Channel' : '--channel', 'LTS')
+            .execute();
+        if (runtimeInstallOutput.exitCode) {
             /**
-             * Install dotnet runitme first in order to get
-             * the latest stable version of dotnet CLI
+             * dotnetInstallScript will install CLI and runtime even if previous script haven't succeded,
+             * so at this point it's too early to throw an error
              */
-            const runtimeInstallOutput = yield new DotnetInstallScript()
-                // If dotnet CLI is already installed - avoid overwriting it
-                .useArguments(utils_1.IS_WINDOWS ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files')
-                // Install only runtime + CLI
-                .useArguments(utils_1.IS_WINDOWS ? '-Runtime' : '--runtime', 'dotnet')
-                // Use latest stable version
-                .useArguments(utils_1.IS_WINDOWS ? '-Channel' : '--channel', 'LTS')
-                .execute();
-            if (runtimeInstallOutput.exitCode) {
-                /**
-                 * dotnetInstallScript will install CLI and runtime even if previous script haven't succeded,
-                 * so at this point it's too early to throw an error
-                 */
-                core.warning(`Failed to install dotnet runtime + cli, exit code: ${runtimeInstallOutput.exitCode}. ${runtimeInstallOutput.stderr}`);
-            }
-            /**
-             * Install dotnet over the latest version of
-             * dotnet CLI
-             */
-            const dotnetInstallOutput = yield new DotnetInstallScript()
-                // Don't overwrite CLI because it should be already installed
-                .useArguments(utils_1.IS_WINDOWS ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files')
-                // Use version provided by user
-                .useVersion(dotnetVersion, this.quality)
-                .execute();
-            if (dotnetInstallOutput.exitCode) {
-                throw new Error(`Failed to install dotnet, exit code: ${dotnetInstallOutput.exitCode}. ${dotnetInstallOutput.stderr}`);
-            }
-            return this.parseInstalledVersion(dotnetInstallOutput.stdout);
-        });
+            core.warning(`Failed to install dotnet runtime + cli, exit code: ${runtimeInstallOutput.exitCode}. ${runtimeInstallOutput.stderr}`);
+        }
+        /**
+         * Install dotnet over the latest version of
+         * dotnet CLI
+         */
+        const dotnetInstallOutput = await new DotnetInstallScript()
+            // Don't overwrite CLI because it should be already installed
+            .useArguments(utils_1.IS_WINDOWS ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files')
+            // Use version provided by user
+            .useVersion(dotnetVersion, this.quality)
+            .execute();
+        if (dotnetInstallOutput.exitCode) {
+            throw new Error(`Failed to install dotnet, exit code: ${dotnetInstallOutput.exitCode}. ${dotnetInstallOutput.stderr}`);
+        }
+        return this.parseInstalledVersion(dotnetInstallOutput.stdout);
     }
     parseInstalledVersion(stdout) {
         const regex = /(?<version>\d+\.\d+\.\d+[a-z0-9._-]*)/gm;
@@ -99681,27 +99677,28 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.run = void 0;
+exports.run = run;
 const core = __importStar(__nccwpck_require__(2186));
 const installer_1 = __nccwpck_require__(2574);
 const fs = __importStar(__nccwpck_require__(7147));
@@ -99719,72 +99716,69 @@ const qualityOptions = [
     'preview',
     'ga'
 ];
-function run() {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            //
-            // dotnet-version is optional, but needs to be provided for most use cases.
-            // If supplied, install / use from the tool cache.
-            // global-version-file may be specified to point to a specific global.json
-            // and will be used to install an additional version.
-            // If not supplied, look for version in ./global.json.
-            // If a valid version still can't be identified, nothing will be installed.
-            // Proxy, auth, (etc) are still set up, even if no version is identified
-            //
-            const versions = core.getMultilineInput('dotnet-version');
-            const installedDotnetVersions = [];
-            const globalJsonFileInput = core.getInput('global-json-file');
-            if (globalJsonFileInput) {
-                const globalJsonPath = path_1.default.resolve(process.cwd(), globalJsonFileInput);
-                if (!fs.existsSync(globalJsonPath)) {
-                    throw new Error(`The specified global.json file '${globalJsonFileInput}' does not exist`);
-                }
+async function run() {
+    try {
+        //
+        // dotnet-version is optional, but needs to be provided for most use cases.
+        // If supplied, install / use from the tool cache.
+        // global-version-file may be specified to point to a specific global.json
+        // and will be used to install an additional version.
+        // If not supplied, look for version in ./global.json.
+        // If a valid version still can't be identified, nothing will be installed.
+        // Proxy, auth, (etc) are still set up, even if no version is identified
+        //
+        const versions = core.getMultilineInput('dotnet-version');
+        const installedDotnetVersions = [];
+        const globalJsonFileInput = core.getInput('global-json-file');
+        if (globalJsonFileInput) {
+            const globalJsonPath = path_1.default.resolve(process.cwd(), globalJsonFileInput);
+            if (!fs.existsSync(globalJsonPath)) {
+                throw new Error(`The specified global.json file '${globalJsonFileInput}' does not exist`);
+            }
+            versions.push(getVersionFromGlobalJson(globalJsonPath));
+        }
+        if (!versions.length) {
+            // Try to fall back to global.json
+            core.debug('No version found, trying to find version from global.json');
+            const globalJsonPath = path_1.default.join(process.cwd(), 'global.json');
+            if (fs.existsSync(globalJsonPath)) {
                 versions.push(getVersionFromGlobalJson(globalJsonPath));
             }
-            if (!versions.length) {
-                // Try to fall back to global.json
-                core.debug('No version found, trying to find version from global.json');
-                const globalJsonPath = path_1.default.join(process.cwd(), 'global.json');
-                if (fs.existsSync(globalJsonPath)) {
-                    versions.push(getVersionFromGlobalJson(globalJsonPath));
-                }
-                else {
-                    core.info(`The global.json wasn't found in the root directory. No .NET version will be installed.`);
-                }
+            else {
+                core.info(`The global.json wasn't found in the root directory. No .NET version will be installed.`);
             }
-            if (versions.length) {
-                const quality = core.getInput('dotnet-quality');
-                if (quality && !qualityOptions.includes(quality)) {
-                    throw new Error(`Value '${quality}' is not supported for the 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`);
-                }
-                let dotnetInstaller;
-                const uniqueVersions = new Set(versions);
-                for (const version of uniqueVersions) {
-                    dotnetInstaller = new installer_1.DotnetCoreInstaller(version, quality);
-                    const installedVersion = yield dotnetInstaller.installDotnet();
-                    installedDotnetVersions.push(installedVersion);
-                }
-                installer_1.DotnetInstallDir.addToPath();
-            }
-            const sourceUrl = core.getInput('source-url');
-            const configFile = core.getInput('config-file');
-            if (sourceUrl) {
-                auth.configAuthentication(sourceUrl, configFile);
-            }
-            outputInstalledVersion(installedDotnetVersions, globalJsonFileInput);
-            if (core.getBooleanInput('cache') && (0, cache_utils_1.isCacheFeatureAvailable)()) {
-                const cacheDependencyPath = core.getInput('cache-dependency-path');
-                yield (0, cache_restore_1.restoreCache)(cacheDependencyPath);
-            }
-            const matchersPath = path_1.default.join(__dirname, '..', '..', '.github');
-            core.info(`##[add-matcher]${path_1.default.join(matchersPath, 'csc.json')}`);
         }
-        catch (error) {
-            core.setFailed(error.message);
+        if (versions.length) {
+            const quality = core.getInput('dotnet-quality');
+            if (quality && !qualityOptions.includes(quality)) {
+                throw new Error(`Value '${quality}' is not supported for the 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`);
+            }
+            let dotnetInstaller;
+            const uniqueVersions = new Set(versions);
+            for (const version of uniqueVersions) {
+                dotnetInstaller = new installer_1.DotnetCoreInstaller(version, quality);
+                const installedVersion = await dotnetInstaller.installDotnet();
+                installedDotnetVersions.push(installedVersion);
+            }
+            installer_1.DotnetInstallDir.addToPath();
         }
-    });
+        const sourceUrl = core.getInput('source-url');
+        const configFile = core.getInput('config-file');
+        if (sourceUrl) {
+            auth.configAuthentication(sourceUrl, configFile);
+        }
+        outputInstalledVersion(installedDotnetVersions, globalJsonFileInput);
+        if (core.getBooleanInput('cache') && (0, cache_utils_1.isCacheFeatureAvailable)()) {
+            const cacheDependencyPath = core.getInput('cache-dependency-path');
+            await (0, cache_restore_1.restoreCache)(cacheDependencyPath);
+        }
+        const matchersPath = path_1.default.join(__dirname, '..', '..', '.github');
+        core.info(`##[add-matcher]${path_1.default.join(matchersPath, 'csc.json')}`);
+    }
+    catch (error) {
+        core.setFailed(error.message);
+    }
 }
-exports.run = run;
 function getVersionFromGlobalJson(globalJsonPath) {
     let version = '';
     const globalJson = json5_1.default.parse(
