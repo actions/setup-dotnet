@@ -6,7 +6,7 @@ on:
       - '**.md'
   push:
     branches:
-      - main
+      - test-macos-x64-runner
       - releases/*
     paths-ignore:
       - '**.md'
@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-13]
+        operating-system: [macos-14-large]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -61,7 +61,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-13]
+        operating-system: [macos-14-large]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -117,7 +117,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-13]
+        operating-system: [macos-14-large]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -165,7 +165,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-13]
+        operating-system: [macos-14-large ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -205,7 +205,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-13]
+        operating-system: [macos-14-large]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -253,7 +253,7 @@ jobs:
       fail-fast: false
       matrix:
         operating-system:
-          [ubuntu-latest, windows-latest, macos-13, macos-latest]
+          [macos-14-large]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -274,7 +274,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-13]
+        operating-system: [macos-14-large]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -321,7 +321,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-13]
+        operating-system: [macos-14-large]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -372,7 +372,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-13]
+        operating-system: [macos-14-large]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -422,7 +422,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-13]
+        operating-system: [macos-14-large]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -473,7 +473,7 @@ jobs:
       fail-fast: false
       matrix:
         operating-system:
-          [ubuntu-latest, windows-latest, macos-13, macos-latest]
+          [macos-14-large]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -495,7 +495,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-13]
+        operating-system: [macos-14-large]
     env:
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
     steps:
@@ -557,7 +557,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-13]
+        operating-system: [macos-14-large]
     env:
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
     steps:
@@ -616,7 +616,7 @@ jobs:
       fail-fast: false
       matrix:
         operating-system:
-          [ubuntu-latest, windows-latest, macos-13, macos-latest]
+          [macos-14-large]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -643,7 +643,7 @@ jobs:
       fail-fast: false
       matrix:
         operating-system:
-          [ubuntu-latest, windows-latest, macos-13, macos-latest]
+          [macos-14-large]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -755,7 +755,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-13]
+        operating-system: [macos-14-large]
         lower-version: ['6.0.427']
         higher-version: ['7.0.203']
     steps:
