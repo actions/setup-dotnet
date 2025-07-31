@@ -87721,15 +87721,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -87747,27 +87738,25 @@ process.on('uncaughtException', e => {
     const warningPrefix = '[warning]';
     core.info(`${warningPrefix}${e.message}`);
 });
-function run() {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            if (core.getBooleanInput('cache')) {
-                yield cachePackages();
-            }
+async function run() {
+    try {
+        if (core.getBooleanInput('cache')) {
+            await cachePackages();
         }
-        catch (error) {
-            core.setFailed(error.message);
-        }
-    });
+    }
+    catch (error) {
+        core.setFailed(error.message);
+    }
 }
 exports.run = run;
-const cachePackages = () => __awaiter(void 0, void 0, void 0, function* () {
+const cachePackages = async () => {
     const state = core.getState(constants_1.State.CacheMatchedKey);
     const primaryKey = core.getState(constants_1.State.CachePrimaryKey);
     if (!primaryKey) {
         core.info('Primary key was not generated, not saving cache.');
         return;
     }
-    const { 'global-packages': cachePath } = yield (0, cache_utils_1.getNuGetFolderPath)();
+    const { 'global-packages': cachePath } = await (0, cache_utils_1.getNuGetFolderPath)();
     if (!node_fs_1.default.existsSync(cachePath)) {
         throw new Error(`Cache folder path is retrieved for .NET CLI but doesn't exist on disk: ${cachePath}`);
     }
@@ -87775,12 +87764,12 @@ const cachePackages = () => __awaiter(void 0, void 0, void 0, function* () {
         core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
         return;
     }
-    const cacheId = yield cache.saveCache([cachePath], primaryKey);
+    const cacheId = await cache.saveCache([cachePath], primaryKey);
     if (cacheId == -1) {
         return;
     }
     core.info(`Cache saved with the key: ${primaryKey}`);
-});
+};
 run();
 
 
@@ -87814,15 +87803,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.isCacheFeatureAvailable = exports.getNuGetFolderPath = void 0;
 const cache = __importStar(__nccwpck_require__(7799));
@@ -87854,8 +87834,8 @@ const constants_1 = __nccwpck_require__(9042);
  * }
  * ```
  */
-const getNuGetFolderPath = () => __awaiter(void 0, void 0, void 0, function* () {
-    const { stdout, stderr, exitCode } = yield exec.getExecOutput(constants_1.cliCommand, undefined, { ignoreReturnCode: true, silent: true });
+const getNuGetFolderPath = async () => {
+    const { stdout, stderr, exitCode } = await exec.getExecOutput(constants_1.cliCommand, undefined, { ignoreReturnCode: true, silent: true });
     if (exitCode) {
         throw new Error(!stderr.trim()
             ? `The '${constants_1.cliCommand}' command failed with exit code: ${exitCode}`
@@ -87876,7 +87856,7 @@ const getNuGetFolderPath = () => __awaiter(void 0, void 0, void 0, function* () 
         }
     }
     return result;
-});
+};
 exports.getNuGetFolderPath = getNuGetFolderPath;
 function isCacheFeatureAvailable() {
     if (cache.isFeatureAvailable()) {
