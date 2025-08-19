@@ -1,11 +1,11 @@
 {
   "name": "setup-dotnet",
-  "version": "4.0.0",
+  "version": "5.0.0",
   "private": true,
   "description": "setup dotnet action",
   "main": "dist/setup/index.js",
   "engines": {
-    "node": ">=24"
+    "node": ">=24.0.0"
   },
   "scripts": {
     "build": "ncc build -o dist/setup src/setup-dotnet.ts && ncc build -o dist/cache-save src/cache-save.ts",
