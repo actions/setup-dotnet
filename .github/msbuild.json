@@ -1,0 +1,17 @@
+{
+    "problemMatcher": [
+        {
+            "owner": "msbuild",
+            "pattern": [
+                {
+                    "regexp": "^([^\\s].*)\\s+:\\s+(error|warning)\\s+([a-zA-Z]+(?<!MSB)\\d+):\\s*(.*?)\\s+\\[(.*?)\\]$",
+                    "file": 1,
+                    "severity": 2,
+                    "code": 3,
+                    "message": 4,
+                    "fromPath": 5
+                }
+            ]
+        }
+    ]
+}

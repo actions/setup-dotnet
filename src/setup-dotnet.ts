@@ -91,6 +91,7 @@ export async function run() {
 
     const matchersPath = path.join(__dirname, '..', '..', '.github');
     core.info(`##[add-matcher]${path.join(matchersPath, 'csc.json')}`);
+    core.info(`##[add-matcher]${path.join(matchersPath, 'msbuild.json')}`);
   } catch (error) {
     core.setFailed(error.message);
   }
