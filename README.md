@@ -110,7 +110,7 @@ steps:
 
 ### Reduce caching size
 
-> **Note**: Use [`NUGET_PACKAGES`](https://learn.microsoft.com/nuget/reference/cli-reference/cli-ref-environment-variables) environment variable if available. Some action runners already has huge libraries. (ex. Xamarin)
+> **Note**: Use [`NUGET_PACKAGES`](https://learn.microsoft.com/nuget/reference/cli-reference/cli-ref-environment-variables) environment variable if available. Some action runners already have large libraries (e.g., Xamarin).
 
 ```yaml
 env:
