@@ -21,7 +21,7 @@ for .NET SDK versions that are currently available.
 
 Make sure your runner is updated to this version or newer to use this release. v2.327.1 [Release Notes](https://github.com/actions/runner/releases/tag/v2.327.1)
 
-For more detailed release notes with documntation updates, bug fixes and dependency upgrades, please track [release notes](https://github.com/actions/setup-dotnet/releases/edit/v5.0.0)
+For more detailed release notes, please track [release notes](https://github.com/actions/setup-dotnet/releases/edit/v5.0.0)
 
 ## Usage
 
