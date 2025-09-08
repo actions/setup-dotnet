@@ -17,11 +17,10 @@ for .NET SDK versions that are currently available.
 
 ## Breaking changes in V5
 
-- Upgrade to Node.js 24 and modernize async usage in [#654](https://github.com/actions/setup-dotnet/pull/654)
+- Upgrade from node20 to node24
+  > Make sure your runner is updated to this version or newer to use this release. v2.327.1 [Release Notes](https://github.com/actions/runner/releases/tag/v2.327.1)
 
-Make sure your runner is updated to this version or newer to use this release. v2.327.1 [Release Notes](https://github.com/actions/runner/releases/tag/v2.327.1)
-
-For more detailed release notes, please track [release notes](https://github.com/actions/setup-dotnet/releases/edit/v5.0.0)
+For more detailed release notes, please track [release notes](https://github.com/actions/setup-dotnet/releases/tag/v5.0.0)
 
 ## Usage
 
