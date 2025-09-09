@@ -38,12 +38,12 @@
     "@actions/io": "^1.0.2",
     "fast-xml-parser": "^4.4.1",
     "json5": "^2.2.3",
-    "semver": "^7.6.0"
+    "semver": "^7.7.2"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "@types/node": "^24.1.0",
-    "@types/semver": "^7.5.8",
+    "@types/semver": "^7.7.0",
     "@typescript-eslint/eslint-plugin": "^7.3.0",
     "@typescript-eslint/parser": "^7.3.0",
     "@vercel/ncc": "^0.38.1",
