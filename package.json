@@ -56,7 +56,7 @@
     "jest-circus": "^29.7.0",
     "jest-each": "^29.7.0",
     "prettier": "^3.2.5",
-    "ts-jest": "^29.1.2",
+    "ts-jest": "^29.4.5",
     "typescript": "^5.9.2",
     "wget-improved": "^3.2.1"
   },
