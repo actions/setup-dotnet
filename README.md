@@ -50,9 +50,9 @@ steps:
 - run: dotnet build <my project>
 ```
 
-## Installing Runtimes for Multi-Targeting
+## Installing additional runtimes
 
-The `dotnet-runtime` input allows you to install .NET runtimes separately from SDKs. This is useful for multi-targeting scenarios where you need one SDK version but multiple runtime versions for testing.
+The `dotnet-runtime` input allows you to install .NET runtimes separately from SDKs. This is useful for multi-targeting scenarios where you need one SDK version but multiple runtime versions.
 
 When `dotnet-runtime` is specified, both the .NET Runtime (Microsoft.NETCore.App) and the ASP.NET Core Runtime (Microsoft.AspNetCore.App) are installed for each specified version.
 
