@@ -311,6 +311,34 @@ export class DotnetCoreInstaller {
     return this.parseInstalledVersion(dotnetInstallOutput.stdout);
   }
 
+  public async installRuntime(): Promise<string | null> {
+    const versionResolver = new DotnetVersionResolver(this.version);
+    const dotnetVersion = await versionResolver.createDotnetVersion();
+
+    /**
+     * Install dotnet runtime only (without SDK)
+     * Skip non-versioned files to avoid overwriting CLI
+     */
+    const runtimeInstallOutput = await new DotnetInstallScript()
+      // If dotnet CLI is already installed - avoid overwriting it
+      .useArguments(
+        IS_WINDOWS ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files'
+      )
+      // Install only runtime (Microsoft.NETCore.App)
+      .useArguments(IS_WINDOWS ? '-Runtime' : '--runtime', 'dotnet')
+      // Use version provided by user
+      .useVersion(dotnetVersion, this.quality)
+      .execute();
+
+    if (runtimeInstallOutput.exitCode) {
+      throw new Error(
+        `Failed to install dotnet runtime, exit code: ${runtimeInstallOutput.exitCode}. ${runtimeInstallOutput.stderr}`
+      );
+    }
+
+    return this.parseInstalledVersion(runtimeInstallOutput.stdout);
+  }
+
   private parseInstalledVersion(stdout: string): string | null {
     const regex = /(?<version>\d+\.\d+\.\d+[a-z0-9._-]*)/gm;
     const matchedResult = regex.exec(stdout);

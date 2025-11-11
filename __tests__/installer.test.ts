@@ -344,6 +344,172 @@ describe('installer tests', () => {
         expect(path).toContain(process.env['DOTNET_INSTALL_DIR']);
       });
     });
+
+    describe('installRuntime() tests', () => {
+      it('should throw the error in case of non-zero exit code of the runtime installation script. The error message should contain logs.', async () => {
+        const inputVersion = '8.0.402';
+        const inputQuality = '' as QualityOptions;
+        const errorMessage = 'fictitious error message!';
+
+        getExecOutputSpy.mockImplementation(() => {
+          return Promise.resolve({
+            exitCode: 1,
+            stdout: '',
+            stderr: errorMessage
+          });
+        });
+
+        const dotnetInstaller = new installer.DotnetCoreInstaller(
+          inputVersion,
+          inputQuality
+        );
+        await expect(dotnetInstaller.installRuntime()).rejects.toThrow(
+          `Failed to install dotnet runtime, exit code: 1. ${errorMessage}`
+        );
+      });
+
+      it('should return version of .NET runtime after installation complete', async () => {
+        const inputVersion = '8.0.402';
+        const inputQuality = '' as QualityOptions;
+        const stdout = `Fictitious dotnet runtime version ${inputVersion} is installed`;
+        getExecOutputSpy.mockImplementation(() => {
+          return Promise.resolve({
+            exitCode: 0,
+            stdout: `${stdout}`,
+            stderr: ''
+          });
+        });
+        maxSatisfyingSpy.mockImplementation(() => inputVersion);
+
+        const dotnetInstaller = new installer.DotnetCoreInstaller(
+          inputVersion,
+          inputQuality
+        );
+        const installedVersion = await dotnetInstaller.installRuntime();
+
+        expect(installedVersion).toBe(inputVersion);
+      });
+
+      it(`should supply '--runtime dotnet' argument to the installation script`, async () => {
+        const inputVersion = '8.0.402';
+        const inputQuality = '' as QualityOptions;
+        const stdout = `Fictitious dotnet runtime version ${inputVersion} is installed`;
+
+        getExecOutputSpy.mockImplementation(() => {
+          return Promise.resolve({
+            exitCode: 0,
+            stdout: `${stdout}`,
+            stderr: ''
+          });
+        });
+        maxSatisfyingSpy.mockImplementation(() => inputVersion);
+
+        const dotnetInstaller = new installer.DotnetCoreInstaller(
+          inputVersion,
+          inputQuality
+        );
+
+        await dotnetInstaller.installRuntime();
+
+        const scriptArguments = (
+          getExecOutputSpy.mock.calls[0][1] as string[]
+        ).join(' ');
+        const expectedArgument = IS_WINDOWS
+          ? `-Runtime dotnet`
+          : `--runtime dotnet`;
+
+        expect(scriptArguments).toContain(expectedArgument);
+      });
+
+      it(`should supply 'version' argument to the installation script if supplied version is in A.B.C syntax`, async () => {
+        const inputVersion = '8.0.402';
+        const inputQuality = '' as QualityOptions;
+        const stdout = `Fictitious dotnet runtime version ${inputVersion} is installed`;
+
+        getExecOutputSpy.mockImplementation(() => {
+          return Promise.resolve({
+            exitCode: 0,
+            stdout: `${stdout}`,
+            stderr: ''
+          });
+        });
+        maxSatisfyingSpy.mockImplementation(() => inputVersion);
+
+        const dotnetInstaller = new installer.DotnetCoreInstaller(
+          inputVersion,
+          inputQuality
+        );
+
+        await dotnetInstaller.installRuntime();
+
+        const scriptArguments = (
+          getExecOutputSpy.mock.calls[0][1] as string[]
+        ).join(' ');
+        const expectedArgument = IS_WINDOWS
+          ? `-Version ${inputVersion}`
+          : `--version ${inputVersion}`;
+
+        expect(scriptArguments).toContain(expectedArgument);
+      });
+
+      it(`should warn if the 'quality' input is set and the supplied version is in A.B.C syntax`, async () => {
+        const inputVersion = '8.0.402';
+        const inputQuality = 'ga' as QualityOptions;
+        const stdout = `Fictitious dotnet runtime version ${inputVersion} is installed`;
+        getExecOutputSpy.mockImplementation(() => {
+          return Promise.resolve({
+            exitCode: 0,
+            stdout: `${stdout}`,
+            stderr: ''
+          });
+        });
+        maxSatisfyingSpy.mockImplementation(() => inputVersion);
+
+        const dotnetInstaller = new installer.DotnetCoreInstaller(
+          inputVersion,
+          inputQuality
+        );
+
+        await dotnetInstaller.installRuntime();
+
+        expect(warningSpy).toHaveBeenCalledWith(
+          `The 'dotnet-quality' input can be used only with .NET SDK version in A.B, A.B.x, A, A.x and A.B.Cxx formats where the major tag is higher than 5. You specified: ${inputVersion}. 'dotnet-quality' input is ignored.`
+        );
+      });
+
+      each(['8', '8.0', '8.0.x', '8.0.*', '8.0.X']).test(
+        `should supply 'quality' argument to the installation script if quality input is set and version (%s) is not in A.B.C syntax`,
+        async inputVersion => {
+          const inputQuality = 'ga' as QualityOptions;
+          const exitCode = 0;
+          const stdout = `Fictitious dotnet runtime version 8.0.0 is installed`;
+          getExecOutputSpy.mockImplementation(() => {
+            return Promise.resolve({
+              exitCode: exitCode,
+              stdout: `${stdout}`,
+              stderr: ''
+            });
+          });
+          maxSatisfyingSpy.mockImplementation(() => inputVersion);
+
+          const dotnetInstaller = new installer.DotnetCoreInstaller(
+            inputVersion,
+            inputQuality
+          );
+
+          await dotnetInstaller.installRuntime();
+
+          const scriptArguments = (
+            getExecOutputSpy.mock.calls[0][1] as string[]
+          ).join(' ');
+          const expectedArgument = IS_WINDOWS
+            ? `-Quality ${inputQuality}`
+            : `--quality ${inputQuality}`;
+
+          expect(scriptArguments).toContain(expectedArgument);
+        }
+      );
+    });
   });
 
   describe('DotnetVersionResolver tests', () => {

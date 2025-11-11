@@ -100716,6 +100716,26 @@ class DotnetCoreInstaller {
         }
         return this.parseInstalledVersion(dotnetInstallOutput.stdout);
     }
+    async installRuntime() {
+        const versionResolver = new DotnetVersionResolver(this.version);
+        const dotnetVersion = await versionResolver.createDotnetVersion();
+        /**
+         * Install dotnet runtime only (without SDK)
+         * Skip non-versioned files to avoid overwriting CLI
+         */
+        const runtimeInstallOutput = await new DotnetInstallScript()
+            // If dotnet CLI is already installed - avoid overwriting it
+            .useArguments(utils_1.IS_WINDOWS ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files')
+            // Install only runtime (Microsoft.NETCore.App)
+            .useArguments(utils_1.IS_WINDOWS ? '-Runtime' : '--runtime', 'dotnet')
+            // Use version provided by user
+            .useVersion(dotnetVersion, this.quality)
+            .execute();
+        if (runtimeInstallOutput.exitCode) {
+            throw new Error(`Failed to install dotnet runtime, exit code: ${runtimeInstallOutput.exitCode}. ${runtimeInstallOutput.stderr}`);
+        }
+        return this.parseInstalledVersion(runtimeInstallOutput.stdout);
+    }
     parseInstalledVersion(stdout) {
         const regex = /(?<version>\d+\.\d+\.\d+[a-z0-9._-]*)/gm;
         const matchedResult = regex.exec(stdout);
@@ -100796,6 +100816,7 @@ async function run() {
         //
         // dotnet-version is optional, but needs to be provided for most use cases.
         // If supplied, install / use from the tool cache.
+        // dotnet-runtime is optional and allows installing runtime-only versions.
         // global-version-file may be specified to point to a specific global.json
         // and will be used to install an additional version.
         // If not supplied, look for version in ./global.json.
@@ -100803,7 +100824,9 @@ async function run() {
         // Proxy, auth, (etc) are still set up, even if no version is identified
         //
         const versions = core.getMultilineInput('dotnet-version');
+        const runtimeVersions = core.getMultilineInput('dotnet-runtime');
         const installedDotnetVersions = [];
+        const installedRuntimeVersions = [];
         const globalJsonFileInput = core.getInput('global-json-file');
         if (globalJsonFileInput) {
             const globalJsonPath = path_1.default.resolve(process.cwd(), globalJsonFileInput);
@@ -100823,11 +100846,11 @@ async function run() {
                 core.info(`The global.json wasn't found in the root directory. No .NET version will be installed.`);
             }
         }
+        const quality = core.getInput('dotnet-quality');
+        if (quality && !qualityOptions.includes(quality)) {
+            throw new Error(`Value '${quality}' is not supported for the 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`);
+        }
         if (versions.length) {
-            const quality = core.getInput('dotnet-quality');
-            if (quality && !qualityOptions.includes(quality)) {
-                throw new Error(`Value '${quality}' is not supported for the 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`);
-            }
             let dotnetInstaller;
             const uniqueVersions = new Set(versions);
             for (const version of uniqueVersions) {
@@ -100836,6 +100859,19 @@ async function run() {
                 installedDotnetVersions.push(installedVersion);
             }
             installer_1.DotnetInstallDir.addToPath();
+        }
+        if (runtimeVersions.length) {
+            let dotnetInstaller;
+            const uniqueRuntimeVersions = new Set(runtimeVersions);
+            for (const runtimeVersion of uniqueRuntimeVersions) {
+                dotnetInstaller = new installer_1.DotnetCoreInstaller(runtimeVersion, quality);
+                const installedRuntimeVersion = await dotnetInstaller.installRuntime();
+                installedRuntimeVersions.push(installedRuntimeVersion);
+            }
+            // Ensure PATH is set (may have been set already by SDK installation)
+            if (!versions.length) {
+                installer_1.DotnetInstallDir.addToPath();
+            }
         }
         const sourceUrl = core.getInput('source-url');
         const configFile = core.getInput('config-file');

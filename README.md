@@ -49,20 +49,42 @@ steps:
       9.0.x
 - run: dotnet build <my project>
 ```
+
+## Installing Runtimes for Multi-Targeting
+
+The `dotnet-runtime` input allows you to install .NET runtimes separately from SDKs. This is useful for multi-targeting scenarios where you need one SDK version but multiple runtime versions for testing.
+
+**Example: Install SDK 10 with runtimes 8 and 9**:
+```yml
+steps:
+- uses: actions/checkout@v5
+- name: Setup dotnet
+  uses: actions/setup-dotnet@v5
+  with:
+    dotnet-version: '10.0.x'
+    dotnet-runtime: |
+      8.0.x
+      9.0.x
+- run: dotnet build <my project>
+- run: dotnet test <my project>
+```
+
+> **Note**: The `dotnet-runtime` input supports the same version syntax as `dotnet-version`. The `dotnet-quality` input applies to both SDK and runtime installations.
+
 ## Supported version syntax
 
-The `dotnet-version` input supports following syntax:
+The `dotnet-version` and `dotnet-runtime` inputs support following syntax:
 
-- **A.B.C** (e.g 6.0.400, 7.0.100-preview.7.22377.5) - installs exact version of .NET SDK
-- **A.B** or **A.B.x** (e.g. 8.0, 8.0.x) - installs the latest patch version of .NET SDK on the channel `8.0`, including prerelease versions (preview, rc)
+- **A.B.C** (e.g 6.0.400, 7.0.100-preview.7.22377.5) - installs exact version of .NET SDK or runtime
+- **A.B** or **A.B.x** (e.g. 8.0, 8.0.x) - installs the latest patch version on the channel `8.0`, including prerelease versions (preview, rc)
 - **A** or **A.x** (e.g. 8, 8.x) - installs the latest minor version of the specified major tag, including prerelease versions (preview, rc)
-- **A.B.Cxx** (e.g. 8.0.4xx) - available since `.NET 5.0` release. Installs the latest version of the specific SDK release, including prerelease versions (preview, rc). 
+- **A.B.Cxx** (e.g. 8.0.4xx) - available since `.NET 5.0` release. Installs the latest version of the specific release, including prerelease versions (preview, rc). 
 
 
 ## Using the `dotnet-quality` input
 This input sets up the action to install the latest build of the specified quality in the channel. The possible values of `dotnet-quality` are: **daily**, **signed**, **validated**, **preview**, **ga**.
 
-> **Note**: `dotnet-quality` input can be used only with .NET SDK version in 'A.B', 'A.B.x', 'A', 'A.x' and 'A.B.Cxx' formats where the major version is higher than 5. In other cases, `dotnet-quality` input will be ignored.
+> **Note**: `dotnet-quality` input can be used only with .NET SDK or runtime version in 'A.B', 'A.B.x', 'A', 'A.x' and 'A.B.Cxx' formats where the major version is higher than 5. In other cases, `dotnet-quality` input will be ignored. The quality setting applies to both SDK and runtime installations.
 
 ```yml
 steps:
