@@ -346,7 +346,17 @@ describe('installer tests', () => {
     });
 
     describe('installRuntime() tests', () => {
-      it('should throw the error in case of non-zero exit code of the runtime installation script. The error message should contain logs.', async () => {
+      beforeAll(() => {
+        whichSpy.mockImplementation(() => Promise.resolve('PathToShell'));
+        chmodSyncSpy.mockImplementation(() => {});
+        readdirSpy.mockImplementation(() => Promise.resolve([]));
+      });
+
+      afterAll(() => {
+        jest.resetAllMocks();
+      });
+
+      it('should throw the error in case of non-zero exit code of the .NET runtime installation script. The error message should contain logs.', async () => {
         const inputVersion = '8.0.402';
         const inputQuality = '' as QualityOptions;
         const errorMessage = 'fictitious error message!';
@@ -365,6 +375,36 @@ describe('installer tests', () => {
         );
         await expect(dotnetInstaller.installRuntime()).rejects.toThrow(
           `Failed to install dotnet runtime, exit code: 1. ${errorMessage}`
+        );
+      });
+
+      it('should throw the error in case of non-zero exit code of the ASP.NET Core runtime installation script. The error message should contain logs.', async () => {
+        const inputVersion = '8.0.402';
+        const inputQuality = '' as QualityOptions;
+        const errorMessage = 'fictitious aspnetcore error message!';
+
+        getExecOutputSpy
+          .mockImplementationOnce(() => {
+            return Promise.resolve({
+              exitCode: 0,
+              stdout: `Fictitious dotnet runtime version ${inputVersion} is installed`,
+              stderr: ''
+            });
+          })
+          .mockImplementationOnce(() => {
+            return Promise.resolve({
+              exitCode: 1,
+              stdout: '',
+              stderr: errorMessage
+            });
+          });
+
+        const dotnetInstaller = new installer.DotnetCoreInstaller(
+          inputVersion,
+          inputQuality
+        );
+        await expect(dotnetInstaller.installRuntime()).rejects.toThrow(
+          `Failed to install aspnetcore runtime, exit code: 1. ${errorMessage}`
         );
       });
 
@@ -390,7 +430,7 @@ describe('installer tests', () => {
         expect(installedVersion).toBe(inputVersion);
       });
 
-      it(`should supply '--runtime dotnet' argument to the installation script`, async () => {
+      it(`should supply '--runtime dotnet' and '--runtime aspnetcore' arguments to the installation script`, async () => {
         const inputVersion = '8.0.402';
         const inputQuality = '' as QualityOptions;
         const stdout = `Fictitious dotnet runtime version ${inputVersion} is installed`;
@@ -411,17 +451,28 @@ describe('installer tests', () => {
 
         await dotnetInstaller.installRuntime();
 
-        const scriptArguments = (
+        // Check first call installs .NET runtime
+        const dotnetScriptArguments = (
           getExecOutputSpy.mock.calls[0][1] as string[]
         ).join(' ');
-        const expectedArgument = IS_WINDOWS
+        const expectedDotnetArgument = IS_WINDOWS
           ? `-Runtime dotnet`
           : `--runtime dotnet`;
 
-        expect(scriptArguments).toContain(expectedArgument);
+        expect(dotnetScriptArguments).toContain(expectedDotnetArgument);
+
+        // Check second call installs ASP.NET Core runtime
+        const aspnetcoreScriptArguments = (
+          getExecOutputSpy.mock.calls[1][1] as string[]
+        ).join(' ');
+        const expectedAspnetcoreArgument = IS_WINDOWS
+          ? `-Runtime aspnetcore`
+          : `--runtime aspnetcore`;
+
+        expect(aspnetcoreScriptArguments).toContain(expectedAspnetcoreArgument);
       });
 
-      it(`should supply 'version' argument to the installation script if supplied version is in A.B.C syntax`, async () => {
+      it(`should supply 'version' argument to both runtime installation scripts if supplied version is in A.B.C syntax`, async () => {
         const inputVersion = '8.0.402';
         const inputQuality = '' as QualityOptions;
         const stdout = `Fictitious dotnet runtime version ${inputVersion} is installed`;
@@ -442,14 +493,20 @@ describe('installer tests', () => {
 
         await dotnetInstaller.installRuntime();
 
-        const scriptArguments = (
-          getExecOutputSpy.mock.calls[0][1] as string[]
-        ).join(' ');
         const expectedArgument = IS_WINDOWS
           ? `-Version ${inputVersion}`
           : `--version ${inputVersion}`;
 
-        expect(scriptArguments).toContain(expectedArgument);
+        // Check both calls contain version argument
+        const dotnetScriptArguments = (
+          getExecOutputSpy.mock.calls[0][1] as string[]
+        ).join(' ');
+        expect(dotnetScriptArguments).toContain(expectedArgument);
+
+        const aspnetcoreScriptArguments = (
+          getExecOutputSpy.mock.calls[1][1] as string[]
+        ).join(' ');
+        expect(aspnetcoreScriptArguments).toContain(expectedArgument);
       });
 
       it(`should warn if the 'quality' input is set and the supplied version is in A.B.C syntax`, async () => {
@@ -478,7 +535,7 @@ describe('installer tests', () => {
       });
 
       each(['8', '8.0', '8.0.x', '8.0.*', '8.0.X']).test(
-        `should supply 'quality' argument to the installation script if quality input is set and version (%s) is not in A.B.C syntax`,
+        `should supply 'quality' argument to both runtime installation scripts if quality input is set and version (%s) is not in A.B.C syntax`,
         async inputVersion => {
           const inputQuality = 'ga' as QualityOptions;
           const exitCode = 0;
@@ -499,14 +556,20 @@ describe('installer tests', () => {
 
           await dotnetInstaller.installRuntime();
 
-          const scriptArguments = (
-            getExecOutputSpy.mock.calls[0][1] as string[]
-          ).join(' ');
           const expectedArgument = IS_WINDOWS
             ? `-Quality ${inputQuality}`
             : `--quality ${inputQuality}`;
 
-          expect(scriptArguments).toContain(expectedArgument);
+          // Check both calls contain quality argument
+          const dotnetScriptArguments = (
+            getExecOutputSpy.mock.calls[0][1] as string[]
+          ).join(' ');
+          expect(dotnetScriptArguments).toContain(expectedArgument);
+
+          const aspnetcoreScriptArguments = (
+            getExecOutputSpy.mock.calls[1][1] as string[]
+          ).join(' ');
+          expect(aspnetcoreScriptArguments).toContain(expectedArgument);
         }
       );
     });

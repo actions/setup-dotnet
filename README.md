@@ -54,6 +54,8 @@ steps:
 
 The `dotnet-runtime` input allows you to install .NET runtimes separately from SDKs. This is useful for multi-targeting scenarios where you need one SDK version but multiple runtime versions for testing.
 
+When `dotnet-runtime` is specified, both the .NET Runtime (Microsoft.NETCore.App) and the ASP.NET Core Runtime (Microsoft.AspNetCore.App) are installed for each specified version.
+
 **Example: Install SDK 10 with runtimes 8 and 9**:
 ```yml
 steps:
@@ -68,8 +70,6 @@ steps:
 - run: dotnet build <my project>
 - run: dotnet test <my project>
 ```
-
-> **Note**: The `dotnet-runtime` input supports the same version syntax as `dotnet-version`. The `dotnet-quality` input applies to both SDK and runtime installations.
 
 ## Supported version syntax
 
