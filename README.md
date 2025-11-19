@@ -15,6 +15,13 @@ documentation:
 [Software installed on github hosted runners](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#supported-software)
 for .NET SDK versions that are currently available.
 
+## Breaking changes in V5
+
+- Upgraded action from node20 to node24
+  > Make sure your runner is on version v2.327.1 or later to ensure compatibility with this release. see [Release Notes](https://github.com/actions/runner/releases/tag/v2.327.1)
+
+For more details, see the full release notes on the [release page](https://github.com/actions/setup-dotnet/releases/tag/v5.0.0)
+
 ## Usage
 
 See [action.yml](action.yml)
