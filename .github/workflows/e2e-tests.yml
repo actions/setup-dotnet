@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-13]
+        operating-system: [ubuntu-22.04, windows-latest, macos-15-intel]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -61,7 +61,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-13]
+        operating-system: [ubuntu-22.04, windows-latest, macos-15-intel]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -117,7 +117,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-13]
+        operating-system: [ubuntu-22.04, windows-latest, macos-15-intel]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -165,7 +165,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-13]
+        operating-system: [ubuntu-22.04, windows-latest, macos-15-intel]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -205,7 +205,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-13]
+        operating-system: [ubuntu-22.04, windows-latest, macos-15-intel]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -253,7 +253,7 @@ jobs:
       fail-fast: false
       matrix:
         operating-system:
-          [ubuntu-latest, windows-latest, macos-13, macos-latest]
+          [ubuntu-latest, windows-latest, macos-15-intel, macos-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -274,7 +274,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-13]
+        operating-system: [ubuntu-22.04, windows-latest, macos-15-intel]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -321,7 +321,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-13]
+        operating-system: [ubuntu-22.04, windows-latest, macos-15-intel]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -372,7 +372,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-13]
+        operating-system: [ubuntu-22.04, windows-latest, macos-15-intel]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -422,7 +422,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-13]
+        operating-system: [ubuntu-22.04, windows-latest, macos-15-intel]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -473,7 +473,7 @@ jobs:
       fail-fast: false
       matrix:
         operating-system:
-          [ubuntu-latest, windows-latest, macos-13, macos-latest]
+          [ubuntu-latest, windows-latest, macos-15-intel, macos-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -495,7 +495,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-13]
+        operating-system: [ubuntu-22.04, windows-latest, macos-15-intel]
     env:
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
     steps:
@@ -557,7 +557,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-13]
+        operating-system: [ubuntu-22.04, windows-latest, macos-15-intel]
     env:
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
     steps:
@@ -616,7 +616,7 @@ jobs:
       fail-fast: false
       matrix:
         operating-system:
-          [ubuntu-latest, windows-latest, macos-13, macos-latest]
+          [ubuntu-latest, windows-latest, macos-15-intel, macos-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -643,7 +643,7 @@ jobs:
       fail-fast: false
       matrix:
         operating-system:
-          [ubuntu-latest, windows-latest, macos-13, macos-latest]
+          [ubuntu-latest, windows-latest, macos-15-intel, macos-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -755,7 +755,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-13]
+        operating-system: [ubuntu-22.04, windows-latest, macos-15-intel]
         lower-version: ['6.0.427']
         higher-version: ['7.0.203']
     steps:
