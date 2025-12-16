@@ -314,6 +314,13 @@ build:
         dotnet-version: '8.0.x'
         cache: true
 ```
+You can also set `DOTNET_INSTALL_DIR` to a value based on runtime variables, such as `$HOME/.dotnet` or `${{ runner.temp }}/.dotnet` before the `setup-dotnet` step:
+
+```yml
+  - name: Set DOTNET_INSTALL_DIR
+    run: echo "DOTNET_INSTALL_DIR=$HOME/.dotnet" >> $GITHUB_ENV
+```
+> **Note**: On some self-hosted or large Linux runners, installing .NET under the default `/usr/share/dotnet` location may fail due to insufficient permissions. To ensure successful installation, set `DOTNET_INSTALL_DIR` to a user-writable path.
 
 ## Recommended permissions
 
