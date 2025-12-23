@@ -17,235 +17,153 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-15-intel]
+        operating-system:
+          [
+            ubuntu-22.04,
+            ubuntu-latest,
+            windows-latest,
+            macos-latest,
+            macos-15-intel
+          ]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Setup dotnet 6.0.427, 7.0.410 and 7.0.x
+      - name: Setup dotnet 8.0.416, 9.0.308, 10.0.101 and 8.0.x
         uses: ./
         with:
           dotnet-version: |
-            6.0.427
-            7.0.410
-            7.0.x
-      - name: Verify dotnet
-        shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^6.0.427$", "^7.0.410$", "^7.0"
-  test-setup-multiple-versions-extended:
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      fail-fast: false
-      matrix:
-        operating-system: [ubuntu-latest, macos-latest]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-      - name: Clear toolcache
-        shell: pwsh
-        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Setup dotnet 8.0.403, 9.0.301 and 8.0.x
-        uses: ./
-        with:
-          dotnet-version: |
-            8.0.403
-            9.0.301
+            8.0.416
+            9.0.308
+            10.0.101
             8.0.x
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^8.0.403$", "^9.0.301$", "^8.0"
+        run: __tests__/verify-dotnet.ps1 -Patterns "^8.0.416$", "^9.0.308$", "^10.0.101$", "^8.0"
   test-setup-full-version:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-15-intel]
+        operating-system:
+          [
+            ubuntu-22.04,
+            ubuntu-latest,
+            windows-latest,
+            macos-latest,
+            macos-15-intel
+          ]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      # Side-by-side install of 6.0 and 7.0 used for the test project
-      - name: Setup dotnet 6.0.427
+      # Side-by-side install of 9.0 and 10.0 used for the test project
+      - name: Setup dotnet 9.0.308
         uses: ./
         with:
-          dotnet-version: 6.0.427
-      - name: Setup dotnet 7.0.410
+          dotnet-version: 9.0.308
+      - name: Setup dotnet 10.0.101
         uses: ./
         with:
-          dotnet-version: 7.0.410
+          dotnet-version: 10.0.101
           # We are including this variable to force the generation of the nuget config file to verify that it is created in the correct place
           source-url: https://api.nuget.org/v3/index.json
         env:
           NUGET_AUTH_TOKEN: NOTATOKEN
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^7.0.410$", "^6.0.427$" -CheckNugetConfig
-  test-setup-full-version-extended:
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      fail-fast: false
-      matrix:
-        operating-system: [ubuntu-latest, macos-latest]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-      - name: Clear toolcache
-        shell: pwsh
-        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      # Side-by-side install of 8.0 and 9.0 used for the test project
-      - name: Setup dotnet 8.0.402
-        uses: ./
-        with:
-          dotnet-version: 8.0.402
-      - name: Setup dotnet 9.0.301
-        uses: ./
-        with:
-          dotnet-version: 9.0.301
-          # We are including this variable to force the generation of the nuget config file to verify that it is created in the correct place
-          source-url: https://api.nuget.org/v3/index.json
-        env:
-          NUGET_AUTH_TOKEN: NOTATOKEN
-      - name: Verify dotnet
-        shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^9.0.301$", "^8.0.402$" -CheckNugetConfig
+        run: __tests__/verify-dotnet.ps1 -Patterns "^10.0.101$", "^9.0.308$" -CheckNugetConfig
   test-setup-without-patch-version:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-15-intel]
+        operating-system:
+          [
+            ubuntu-22.04,
+            ubuntu-latest,
+            windows-latest,
+            macos-latest,
+            macos-15-intel
+          ]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      # 6.0, 7.0 needs to be in single quotes to interpret as a string instead of as an integer
-      - name: Setup dotnet '6.0'
-        uses: ./
-        with:
-          dotnet-version: '6.0'
-      - name: Setup dotnet '7.0'
-        uses: ./
-        with:
-          dotnet-version: '7.0'
-      - name: Verify dotnet
-        shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^6.0", "^7.0"
-  test-setup-without-patch-version-extended:
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      fail-fast: false
-      matrix:
-        operating-system: [ubuntu-latest, macos-latest]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-      - name: Clear toolcache
-        shell: pwsh
-        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      # 8.0, 9.0 needs to be in single quotes to interpret as a string instead of as an integer
-      - name: Setup dotnet '8.0'
-        uses: ./
-        with:
-          dotnet-version: '8.0'
+      # 9.0, 10.0 needs to be in single quotes to interpret as a string instead of as an integer
       - name: Setup dotnet '9.0'
         uses: ./
         with:
           dotnet-version: '9.0'
+      - name: Setup dotnet '10.0'
+        uses: ./
+        with:
+          dotnet-version: '10.0'
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^8.0", "^9.0"
+        run: __tests__/verify-dotnet.ps1 -Patterns "^9.0", "^10.0"
   test-setup-prerelease-version:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-15-intel]
+        operating-system:
+          [
+            ubuntu-22.04,
+            ubuntu-latest,
+            windows-latest,
+            macos-latest,
+            macos-15-intel
+          ]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Setup dotnet '6.0.100-preview.7.21379.14'
+      - name: Setup dotnet '10.0.100-preview.1.25120.13'
         uses: ./
         with:
-          dotnet-version: '6.0.100-preview.7.21379.14'
+          dotnet-version: '10.0.100-preview.1.25120.13'
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "6.0.100-preview.7.21379.14"
-
-  test-setup-prerelease-version-extended:
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      fail-fast: false
-      matrix:
-        operating-system: [ubuntu-latest, macos-latest]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-      - name: Clear toolcache
-        shell: pwsh
-        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Setup dotnet '8.0.100-preview.1.23115.2'
-        uses: ./
-        with:
-          dotnet-version: '8.0.100-preview.1.23115.2'
-      - name: Verify dotnet
-        shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "8.0.100-preview.1.23115.2"
-
+        run: __tests__/verify-dotnet.ps1 -Patterns "10.0.100-preview.1.25120.13"
   test-setup-latest-patch-version:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-15-intel]
+        operating-system:
+          [
+            ubuntu-22.04,
+            ubuntu-latest,
+            windows-latest,
+            macos-latest,
+            macos-15-intel
+          ]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Setup dotnet 6.0.x
+      - name: Setup dotnet 9.0.x
         uses: ./
         with:
-          dotnet-version: 6.0.x
-      - name: Setup dotnet 7.0.X
+          dotnet-version: 9.0.x
+      - name: Setup dotnet 10.0.X
         uses: ./
         with:
-          dotnet-version: 7.0.X
+          dotnet-version: 10.0.X
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^6.0", "^7.0"
-  test-setup-latest-patch-version-extended:
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      fail-fast: false
-      matrix:
-        operating-system: [ubuntu-latest, macos-latest]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-      - name: Clear toolcache
-        shell: pwsh
-        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Setup dotnet 8.0.x
-        uses: ./
-        with:
-          dotnet-version: 8.0.x
-      - name: Setup dotnet 9.0.X
-        uses: ./
-        with:
-          dotnet-version: 9.0.X
-      - name: Verify dotnet
-        shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^8.0", "^9.0"
+        run: __tests__/verify-dotnet.ps1 -Patterns "^9.0", "^10.0"
 
   test-ABCxx-syntax:
     runs-on: ${{ matrix.operating-system }}
@@ -253,7 +171,13 @@ jobs:
       fail-fast: false
       matrix:
         operating-system:
-          [ubuntu-latest, windows-latest, macos-15-intel, macos-latest]
+          [
+            ubuntu-22.04,
+            ubuntu-latest,
+            windows-latest,
+            macos-latest,
+            macos-15-intel
+          ]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -261,67 +185,58 @@ jobs:
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
 
-      - name: Setup dotnet 6.0.4xx
+      - name: Setup dotnet 10.0.1xx
         uses: ./
         with:
-          dotnet-version: '6.0.4xx'
+          dotnet-version: '10.0.1xx'
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^6\.0\.4\d{2}"
+        run: __tests__/verify-dotnet.ps1 -Patterns "^10\.0\.1\d{2}"
 
   test-setup-with-wildcard:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-15-intel]
+        operating-system:
+          [
+            ubuntu-22.04,
+            ubuntu-latest,
+            windows-latest,
+            macos-latest,
+            macos-15-intel
+          ]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Setup dotnet 6.0.*
-        uses: ./
-        with:
-          dotnet-version: 6.0.*
-      - name: Setup dotnet 7.0.*
-        uses: ./
-        with:
-          dotnet-version: 7.0.*
-      - name: Verify dotnet
-        shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^6.0", "^7.0"
-  test-setup-with-wildcard-extended:
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      fail-fast: false
-      matrix:
-        operating-system: [ubuntu-latest, macos-latest]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-      - name: Clear toolcache
-        shell: pwsh
-        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Setup dotnet 8.0.*
-        uses: ./
-        with:
-          dotnet-version: 8.0.*
       - name: Setup dotnet 9.0.*
         uses: ./
         with:
           dotnet-version: 9.0.*
+      - name: Setup dotnet 10.0.*
+        uses: ./
+        with:
+          dotnet-version: 10.0.*
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^8.0", "^9.0"
+        run: __tests__/verify-dotnet.ps1 -Patterns "^9.0", "^10.0"
 
   test-setup-global-json-specified-and-version:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-15-intel]
+        operating-system:
+          [
+            ubuntu-22.04,
+            ubuntu-latest,
+            windows-latest,
+            macos-latest,
+            macos-15-intel
+          ]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -332,47 +247,29 @@ jobs:
         shell: bash
         run: |
           mkdir subdirectory
-          echo '{"sdk":{"version": "6.0.424","rollForward": "latestFeature"}}' > ./subdirectory/global.json
+          echo '{"sdk":{"version": "9.0.308","rollForward": "latestFeature"}}' > ./subdirectory/global.json
       - name: Setup dotnet
         uses: ./
         with:
-          dotnet-version: 7.0
+          dotnet-version: '10.0'
           global-json-file: ./subdirectory/global.json
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^6.0", "^7.0"
-  test-setup-global-json-specified-and-version-extended:
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      fail-fast: false
-      matrix:
-        operating-system: [ubuntu-latest, macos-latest]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-      - name: Clear toolcache
-        shell: pwsh
-        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Write global.json
-        shell: bash
-        run: |
-          mkdir subdirectory
-          echo '{"sdk":{"version": "8.0.402","rollForward": "latestFeature"}}' > ./subdirectory/global.json
-      - name: Setup dotnet
-        uses: ./
-        with:
-          dotnet-version: '9.0'
-          global-json-file: ./subdirectory/global.json
-      - name: Verify dotnet
-        shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^8.0", "^9.0"
+        run: __tests__/verify-dotnet.ps1 -Patterns "^9.0", "^10.0"
 
   test-setup-global-json-only:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-15-intel]
+        operating-system:
+          [
+            ubuntu-22.04,
+            ubuntu-latest,
+            windows-latest,
+            macos-latest,
+            macos-15-intel
+          ]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -383,46 +280,28 @@ jobs:
         shell: bash
         run: |
           mkdir subdirectory
-          echo '{"sdk":{"version": "6.0.424","rollForward": "latestFeature"}}' > ./subdirectory/global.json
+          echo '{"sdk":{"version": "10.0.101","rollForward": "latestFeature"}}' > ./subdirectory/global.json
       - name: Setup dotnet
         uses: ./
         with:
           global-json-file: ./subdirectory/global.json
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^6.0"
-
-  test-setup-global-json-only-extended:
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      fail-fast: false
-      matrix:
-        operating-system: [ubuntu-latest, macos-latest]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-      - name: Clear toolcache
-        shell: pwsh
-        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Write global.json
-        shell: bash
-        run: |
-          mkdir subdirectory
-          echo '{"sdk":{"version": "6.0.424","rollForward": "latestFeature"}}' > ./subdirectory/global.json
-      - name: Setup dotnet
-        uses: ./
-        with:
-          global-json-file: ./subdirectory/global.json
-      - name: Verify dotnet
-        shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^6.0"
+        run: __tests__/verify-dotnet.ps1 -Patterns "^10.0"
 
   test-global-json-with-comments:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-15-intel]
+        operating-system:
+          [
+            ubuntu-22.04,
+            ubuntu-latest,
+            windows-latest,
+            macos-latest,
+            macos-15-intel
+          ]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -433,39 +312,14 @@ jobs:
         shell: bash
         run: |
           mkdir subdirectory
-          echo '/* should support comments */ {"sdk":{"version": "6.0.424","rollForward": "latestFeature"}} // should support comments' > ./subdirectory/global.json
+          echo '/* should support comments */ {"sdk":{"version": "10.0.101","rollForward": "latestFeature"}} // should support comments' > ./subdirectory/global.json
       - name: Setup dotnet
         uses: ./
         with:
           global-json-file: ./subdirectory/global.json
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^6.0"
-
-  test-global-json-with-comments-extended:
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      fail-fast: false
-      matrix:
-        operating-system: [ubuntu-latest, macos-latest]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-      - name: Clear toolcache
-        shell: pwsh
-        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Write global.json
-        shell: bash
-        run: |
-          mkdir subdirectory
-          echo '/* should support comments */ {"sdk":{"version": "8.0.402","rollForward": "latestFeature"}} // should support comments' > ./subdirectory/global.json
-      - name: Setup dotnet
-        uses: ./
-        with:
-          global-json-file: ./subdirectory/global.json
-      - name: Verify dotnet
-        shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^8.0"
+        run: __tests__/verify-dotnet.ps1 -Patterns "^10.0"
 
   test-setup-with-dotnet-quality:
     runs-on: ${{ matrix.operating-system }}
@@ -473,7 +327,13 @@ jobs:
       fail-fast: false
       matrix:
         operating-system:
-          [ubuntu-latest, windows-latest, macos-15-intel, macos-latest]
+          [
+            ubuntu-22.04,
+            ubuntu-latest,
+            windows-latest,
+            macos-latest,
+            macos-15-intel
+          ]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -481,21 +341,28 @@ jobs:
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
 
-      - name: Setup dotnet 7.0 with preview quality
+      - name: Setup dotnet 10.0 with preview quality
         uses: ./
         with:
-          dotnet-version: '7.0'
+          dotnet-version: '10.0'
           dotnet-quality: 'preview'
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^7\.0\.\d+-"
+        run: __tests__/verify-dotnet.ps1 -Patterns "^10\.0\.\d+-"
 
   test-setup-with-cache:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-15-intel]
+        operating-system:
+          [
+            ubuntu-22.04,
+            ubuntu-latest,
+            windows-latest,
+            macos-latest,
+            macos-15-intel
+          ]
     env:
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
     steps:
@@ -507,11 +374,11 @@ jobs:
       - name: Copy NuGet lock file to root
         shell: bash
         run: cp ./__tests__/e2e-test-csproj/packages.lock.json ./packages.lock.json
-      - name: Setup .NET Core 6.0
+      - name: Setup .NET Core 10.0
         id: setup-dotnet
         uses: ./
         with:
-          dotnet-version: 6.0
+          dotnet-version: '10.0'
           cache: true
       - name: Verify Cache
         if: steps.setup-dotnet.outputs.cache-hit == 'true'
@@ -519,45 +386,21 @@ jobs:
         run: if [[ -e ${NUGET_PACKAGES} ]]; then exit 0; else exit 1; fi
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^6.0"
-
-  test-setup-with-cache-extended:
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      fail-fast: false
-      matrix:
-        operating-system: [ubuntu-latest, macos-latest]
-    env:
-      NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-      - name: Clear toolcache
-        shell: pwsh
-        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Copy NuGet lock file to root
-        shell: bash
-        run: cp ./__tests__/e2e-test-csproj/packages.lock.json ./packages.lock.json
-      - name: Setup .NET Core 8.0
-        id: setup-dotnet
-        uses: ./
-        with:
-          dotnet-version: '8.0'
-          cache: true
-      - name: Verify Cache
-        if: steps.setup-dotnet.outputs.cache-hit == 'true'
-        shell: bash
-        run: if [[ -e ${NUGET_PACKAGES} ]]; then exit 0; else exit 1; fi
-      - name: Verify dotnet
-        shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^8.0"
+        run: __tests__/verify-dotnet.ps1 -Patterns "^10.0"
 
   test-setup-with-cache-dependency-path:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-15-intel]
+        operating-system:
+          [
+            ubuntu-22.04,
+            ubuntu-latest,
+            windows-latest,
+            macos-latest,
+            macos-15-intel
+          ]
     env:
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
     steps:
@@ -566,11 +409,11 @@ jobs:
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Setup .NET Core 6.0
+      - name: Setup .NET Core 10.0
         id: setup-dotnet
         uses: ./
         with:
-          dotnet-version: 6.0
+          dotnet-version: '10.0'
           cache: true
           cache-dependency-path: './__tests__/e2e-test-csproj/packages.lock.json'
       - name: Verify Cache
@@ -579,36 +422,7 @@ jobs:
         run: if [[ -e ${NUGET_PACKAGES} ]]; then exit 0; else exit 1; fi
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^6.0"
-
-  test-setup-with-cache-dependency-path-extended:
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      fail-fast: false
-      matrix:
-        operating-system: [ubuntu-latest, macos-latest]
-    env:
-      NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-      - name: Clear toolcache
-        shell: pwsh
-        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Setup .NET Core 8.0
-        id: setup-dotnet
-        uses: ./
-        with:
-          dotnet-version: '8.0'
-          cache: true
-          cache-dependency-path: './__tests__/e2e-test-csproj/packages.lock.json'
-      - name: Verify Cache
-        if: steps.setup-dotnet.outputs.cache-hit == 'true'
-        shell: bash
-        run: if [[ -e ${NUGET_PACKAGES} ]]; then exit 0; else exit 1; fi
-      - name: Verify dotnet
-        shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^8.0"
+        run: __tests__/verify-dotnet.ps1 -Patterns "^10.0"
 
   test-dotnet-version-output-during-single-version-installation:
     runs-on: ${{ matrix.operating-system }}
@@ -616,7 +430,13 @@ jobs:
       fail-fast: false
       matrix:
         operating-system:
-          [ubuntu-latest, windows-latest, macos-15-intel, macos-latest]
+          [
+            ubuntu-22.04,
+            ubuntu-latest,
+            windows-latest,
+            macos-latest,
+            macos-15-intel
+          ]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -624,11 +444,11 @@ jobs:
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
 
-      - name: Setup dotnet 8.0.402
+      - name: Setup dotnet 10.0.101
         uses: ./
         id: step1
         with:
-          dotnet-version: '8.0.402'
+          dotnet-version: '10.0.101'
 
       - name: Verify value of the dotnet-version output
         shell: pwsh
@@ -643,7 +463,13 @@ jobs:
       fail-fast: false
       matrix:
         operating-system:
-          [ubuntu-latest, windows-latest, macos-15-intel, macos-latest]
+          [
+            ubuntu-22.04,
+            ubuntu-latest,
+            windows-latest,
+            macos-latest,
+            macos-15-intel
+          ]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -651,19 +477,19 @@ jobs:
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
 
-      - name: Setup dotnet 8.0.402, 6.0.401, 7.0.100-rc.1.22431.12
+      - name: Setup dotnet 8.0.402, 9.0.308, 10.0.101
         uses: ./
         id: step2
         with:
           dotnet-version: |
+            10.0.101
+            9.0.308
             8.0.402
-            6.0.401
-            7.0.100-rc.1.22431.12
 
       - name: Verify value of the dotnet-version output
         shell: pwsh
         run: |
-          $version = "8.0.402"
+          $version = "10.0.101"
           if (-not ($version -eq '${{steps.step2.outputs.dotnet-version}}')) { throw "Unexpected output value" }
 
   test-proxy:
@@ -694,41 +520,19 @@ jobs:
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Setup dotnet 8.0
+      - name: Setup dotnet 10.0
         uses: ./
         with:
-          dotnet-version: 8.0
+          dotnet-version: 10.0
           source-url: https://api.nuget.org/v3/index.json
         env:
           NUGET_AUTH_TOKEN: NOTATOKEN
       - name: Verify dotnet
         shell: pwsh
         run: |
-          __tests__/verify-dotnet.ps1 -Patterns "^8.0" -CheckNugetConfig
+          __tests__/verify-dotnet.ps1 -Patterns "^10.0" -CheckNugetConfig
 
   test-bypass-proxy:
-    runs-on: ubuntu-22.04
-    env:
-      https_proxy: http://no-such-proxy:3128
-      no_proxy: github.com,download.visualstudio.microsoft.com,api.nuget.org,builds.dotnet.microsoft.com,ci.dot.net
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-      - name: Clear toolcache
-        shell: pwsh
-        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Setup dotnet 7.0.410
-        uses: ./
-        with:
-          dotnet-version: 7.0.410
-          source-url: https://api.nuget.org/v3/index.json
-        env:
-          NUGET_AUTH_TOKEN: NOTATOKEN
-      - name: Verify dotnet
-        shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^7.0.410$" -CheckNugetConfig
-
-  test-bypass-proxy-extended:
     runs-on: ubuntu-latest
     env:
       https_proxy: http://no-such-proxy:3128
@@ -739,54 +543,32 @@ jobs:
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Setup dotnet 8.0.402
+      - name: Setup dotnet 10.0.101
         uses: ./
         with:
-          dotnet-version: 8.0.402
+          dotnet-version: 10.0.101
           source-url: https://api.nuget.org/v3/index.json
         env:
           NUGET_AUTH_TOKEN: NOTATOKEN
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^8.0.402$" -CheckNugetConfig
+        run: __tests__/verify-dotnet.ps1 -Patterns "^10.0.101$" -CheckNugetConfig
 
   test-sequential-version-installation:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-22.04, windows-latest, macos-15-intel]
-        lower-version: ['6.0.427']
-        higher-version: ['7.0.203']
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-      - name: Clear toolcache
-        shell: pwsh
-        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      # Install one version, use it for something, then switch to next version
-      - name: Setup dotnet (lower version)
-        uses: ./
-        with:
-          dotnet-version: ${{ matrix.lower-version }}
-      - name: Verify dotnet (lower version)
-        shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^${{ matrix.lower-version }}$"
-      - name: Setup dotnet (higher version)
-        uses: ./
-        with:
-          dotnet-version: ${{ matrix.higher-version }}
-      - name: Verify dotnet (higher version)
-        shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^${{ matrix.lower-version }}$", "^${{ matrix.higher-version }}$"
-  test-sequential-version-installation-extended:
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      fail-fast: false
-      matrix:
-        operating-system: [ubuntu-latest, macos-latest]
-        lower-version: ['8.0.403']
-        higher-version: ['9.0.301']
+        operating-system:
+          [
+            ubuntu-22.04,
+            ubuntu-latest,
+            windows-latest,
+            macos-latest,
+            macos-15-intel
+          ]
+        lower-version: ['9.0.308']
+        higher-version: ['10.0.101']
     steps:
       - name: Checkout
         uses: actions/checkout@v5

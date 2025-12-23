@@ -81,7 +81,7 @@ describe('setup-dotnet tests', () => {
 
     it('should fail the action if quality is supplied but its value is not supported', async () => {
       inputs['global-json-file'] = '';
-      inputs['dotnet-version'] = ['6.0'];
+      inputs['dotnet-version'] = ['10.0'];
       inputs['dotnet-quality'] = 'fictitiousQuality';
 
       const expectedErrorMessage = `Value '${inputs['dotnet-quality']}' is not supported for the 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`;
@@ -92,7 +92,7 @@ describe('setup-dotnet tests', () => {
 
     it('should call installDotnet() multiple times if dotnet-version multiline input is provided', async () => {
       inputs['global-json-file'] = '';
-      inputs['dotnet-version'] = ['6.0', '7.0'];
+      inputs['dotnet-version'] = ['9.0', '10.0'];
       inputs['dotnet-quality'] = '';
 
       installDotnetSpy.mockImplementation(() => Promise.resolve(''));
@@ -103,7 +103,7 @@ describe('setup-dotnet tests', () => {
 
     it('should call addToPath() after installation complete', async () => {
       inputs['global-json-file'] = '';
-      inputs['dotnet-version'] = ['6.0', '7.0'];
+      inputs['dotnet-version'] = ['9.0', '10.0'];
       inputs['dotnet-quality'] = '';
 
       installDotnetSpy.mockImplementation(() => Promise.resolve(''));
@@ -145,7 +145,7 @@ describe('setup-dotnet tests', () => {
     });
 
     it('should call setOutput() after installation complete successfully', async () => {
-      inputs['dotnet-version'] = ['6.0.300'];
+      inputs['dotnet-version'] = ['10.0.101'];
 
       installDotnetSpy.mockImplementation(() =>
         Promise.resolve(`${inputs['dotnet-version']}`)
@@ -156,7 +156,7 @@ describe('setup-dotnet tests', () => {
     });
 
     it(`shouldn't call setOutput() if parsing dotnet-installer logs failed`, async () => {
-      inputs['dotnet-version'] = ['6.0.300'];
+      inputs['dotnet-version'] = ['10.0.101'];
       const warningMessage = `Failed to output the installed version of .NET. The 'dotnet-version' output will not be set.`;
 
       installDotnetSpy.mockImplementation(() => Promise.resolve(null));
@@ -177,7 +177,7 @@ describe('setup-dotnet tests', () => {
     });
 
     it(`should get 'cache-dependency-path' and call restoreCache() if input cache is set to true and cache feature is available`, async () => {
-      inputs['dotnet-version'] = ['6.0.300'];
+      inputs['dotnet-version'] = ['10.0.101'];
       inputs['dotnet-quality'] = '';
       inputs['cache'] = true;
       inputs['cache-dependency-path'] = 'fictitious.package.lock.json';
@@ -195,7 +195,7 @@ describe('setup-dotnet tests', () => {
     });
 
     it(`shouldn't call restoreCache() if input cache isn't set to true`, async () => {
-      inputs['dotnet-version'] = ['6.0.300'];
+      inputs['dotnet-version'] = ['10.0.101'];
       inputs['dotnet-quality'] = '';
       inputs['cache'] = false;
 
@@ -209,7 +209,7 @@ describe('setup-dotnet tests', () => {
     });
 
     it(`shouldn't call restoreCache() if cache feature isn't available`, async () => {
-      inputs['dotnet-version'] = ['6.0.300'];
+      inputs['dotnet-version'] = ['10.0.101'];
       inputs['dotnet-quality'] = '';
       inputs['cache'] = true;
 

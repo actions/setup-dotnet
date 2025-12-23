@@ -29,7 +29,7 @@ See [action.yml](action.yml)
 **Basic**:
 ```yaml
 steps:
-- uses: actions/checkout@v5
+- uses: actions/checkout@v6
 - uses: actions/setup-dotnet@v5
   with:
     dotnet-version: '8.0.x'
@@ -40,7 +40,7 @@ steps:
 **Multiple version installation**:
 ```yml
 steps:
-- uses: actions/checkout@v5
+- uses: actions/checkout@v6
 - name: Setup dotnet
   uses: actions/setup-dotnet@v5
   with:
@@ -53,7 +53,7 @@ steps:
 
 The `dotnet-version` input supports following syntax:
 
-- **A.B.C** (e.g 6.0.400, 7.0.100-preview.7.22377.5) - installs exact version of .NET SDK
+- **A.B.C** (e.g 9.0.308, 10.0.100-preview.1.25120.13) - installs exact version of .NET SDK
 - **A.B** or **A.B.x** (e.g. 8.0, 8.0.x) - installs the latest patch version of .NET SDK on the channel `8.0`, including prerelease versions (preview, rc)
 - **A** or **A.x** (e.g. 8, 8.x) - installs the latest minor version of the specified major tag, including prerelease versions (preview, rc)
 - **A.B.Cxx** (e.g. 8.0.4xx) - available since `.NET 5.0` release. Installs the latest version of the specific SDK release, including prerelease versions (preview, rc). 
@@ -66,7 +66,7 @@ This input sets up the action to install the latest build of the specified quali
 
 ```yml
 steps:
-- uses: actions/checkout@v5
+- uses: actions/checkout@v6
 - uses: actions/setup-dotnet@v5
   with:
     dotnet-version: '8.0.x'
@@ -81,7 +81,7 @@ steps:
 
 ```yml
 steps:
-- uses: actions/checkout@v5
+- uses: actions/checkout@v6
 - uses: actions/setup-dotnet@v5
   with:
     global-json-file: csharp/global.json
@@ -98,7 +98,7 @@ The action searches for [NuGet Lock files](https://learn.microsoft.com/nuget/con
 
 ```yaml
 steps:
-- uses: actions/checkout@v5
+- uses: actions/checkout@v6
 - uses: actions/setup-dotnet@v5
   with:
     dotnet-version: 8.x
@@ -123,7 +123,7 @@ steps:
 env:
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
 steps:
-- uses: actions/checkout@v5
+- uses: actions/checkout@v6
 - uses: actions/setup-dotnet@v5
   with:
     dotnet-version: 8.x
@@ -137,7 +137,7 @@ steps:
 env:
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
 steps:
-- uses: actions/checkout@v5
+- uses: actions/checkout@v6
 - uses: actions/setup-dotnet@v5
   with:
     dotnet-version: 8.x
@@ -154,10 +154,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dotnet: [ '7.0.x', '8.0.x', '9.0.x' ]
+        dotnet: [ '8.0.x', '9.0.x', '10.0.x' ]
     name: Dotnet ${{ matrix.dotnet }} sample
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup dotnet
         uses: actions/setup-dotnet@v5
         with:
@@ -174,10 +174,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dotnet: [ '7.0.x', '8.0.x', '9.0.x' ]
+        dotnet: [ '8.0.x', '9.0.x', '10.0.x' ]
     name: Dotnet ${{ matrix.dotnet }} sample
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup dotnet
         uses: actions/setup-dotnet@v5
         id: stepid
@@ -188,12 +188,13 @@ jobs:
       - name: Execute dotnet
         run: dotnet build <my project>
 ```
+>**Note**: When generating a temporary `global.json` within your workflow on windows, ensure the command is executed using a shell such as PowerShell Core (`pwsh`) or `bash` (where supported) to avoid formatting inconsistencies that could cause .NET commands to fail.
 ## Setting up authentication for nuget feeds
 
 ### Github Package Registry (GPR)
 ```yml
 steps:
-- uses: actions/checkout@v5
+- uses: actions/checkout@v6
 - uses: actions/setup-dotnet@v5
   with:
     dotnet-version: '8.0.x'
@@ -246,8 +247,8 @@ In case of a single version installation, the `dotnet-version` output contains t
     - uses: actions/setup-dotnet@v5
       id: stepid
       with:
-        dotnet-version: 8.0.402
-    - run: echo '${{ steps.stepid.outputs.dotnet-version }}' # outputs 8.0.402
+        dotnet-version: 8.0.416
+    - run: echo '${{ steps.stepid.outputs.dotnet-version }}' # outputs 8.0.416
 ```
 
 **Multiple version installation**
@@ -259,9 +260,9 @@ In case of a multiple version installation, the `dotnet-version` output contains
       id: stepid
       with:
         dotnet-version: | 
-          8.0.402
-          9.0.301
-    - run: echo '${{ steps.stepid.outputs.dotnet-version }}' # outputs 9.0.301
+          8.0.416
+          9.0.308
+    - run: echo '${{ steps.stepid.outputs.dotnet-version }}' # outputs 9.0.308
 ```
 **Installation from global.json**
 
@@ -272,10 +273,10 @@ When the `dotnet-version` input is used along with the `global-json-file` input,
       id: stepid
       with:
         dotnet-version: | 
-          8.0.402
-          9.0.301
-        global-json-file: "./global.json" # contains version 7.0.410
-    - run: echo '${{ steps.stepid.outputs.dotnet-version }}' # outputs 7.0.410
+          9.0.308
+          10.0.101
+        global-json-file: "./global.json" # contains version 8.0.416
+    - run: echo '${{ steps.stepid.outputs.dotnet-version }}' # outputs 8.0.416
 ```
 
 ### `cache-hit`
@@ -308,7 +309,7 @@ build:
     DOTNET_INSTALL_DIR: "path/to/directory"
     NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
   steps:
-    - uses: actions/checkout@main
+    - uses: actions/checkout@v6
     - uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '8.0.x'
