@@ -147,7 +147,7 @@ describe('installer tests', () => {
       it(`should warn if the 'quality' input is set and version isn't in A.B.C syntax but major tag is lower then 6`, async () => {
         const inputVersion = '3.1';
         const inputQuality = 'ga' as QualityOptions;
-        const stdout = `Fictitious dotnet version 3.1.100 is installed`;
+        const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
 
         getExecOutputSpy.mockImplementation(() => {
           return Promise.resolve({
@@ -175,7 +175,7 @@ describe('installer tests', () => {
         async inputVersion => {
           const inputQuality = 'ga' as QualityOptions;
           const exitCode = 0;
-          const stdout = `Fictitious dotnet version 10.0.0 is installed`;
+          const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
           getExecOutputSpy.mockImplementation(() => {
             return Promise.resolve({
               exitCode: exitCode,
@@ -215,7 +215,7 @@ describe('installer tests', () => {
         async inputVersion => {
           const inputQuality = '' as QualityOptions;
           const exitCode = 0;
-          const stdout = `Fictitious dotnet version 10.0.0 is installed`;
+          const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
           getExecOutputSpy.mockImplementation(() => {
             return Promise.resolve({
               exitCode: exitCode,
@@ -293,7 +293,7 @@ describe('installer tests', () => {
           process.env['no_proxy'] = 'first.url,second.url';
           const inputVersion = '10.0.101';
           const inputQuality = '' as QualityOptions;
-          const stdout = `Fictitious dotnet version 6.0.0 is installed`;
+          const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
 
           getExecOutputSpy.mockImplementation(() => {
             return Promise.resolve({
@@ -355,7 +355,7 @@ describe('installer tests', () => {
         '10.0.*',
         '10.0.X',
         '10.0.0',
-        '10.0.0-preview1',
+        '10.0.0-preview7',
         '10.0.1xx'
       ]).test(
         'if valid version is supplied (%s), it should return version object with some value',
@@ -439,7 +439,7 @@ describe('installer tests', () => {
         }
       );
 
-      each(['10.0.0', '10.0.0-preview1']).test(
+      each(['10.0.0', '10.0.0-preview7']).test(
         "if version that can be resolved to 'version' option is supplied (%s), it should set quality flag to 'false' and type to 'version' in version object",
         async version => {
           const dotnetVersionResolver = new installer.DotnetVersionResolver(

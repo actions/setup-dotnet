@@ -31,14 +31,14 @@ jobs:
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Setup dotnet 8.0.416, 9.0.308, 10.0.101 and 8.0.x
+      - name: Setup dotnet 8.0.416, 8.0.x, 9.0.308 and 10.0.101
         uses: ./
         with:
           dotnet-version: |
             8.0.416
+            8.0.x
             9.0.308
             10.0.101
-            8.0.x
       - name: Verify dotnet
         shell: pwsh
         run: __tests__/verify-dotnet.ps1 -Patterns "^8.0.416$", "^9.0.308$", "^10.0.101$", "^8.0"
@@ -127,13 +127,13 @@ jobs:
       - name: Clear toolcache
         shell: pwsh
         run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Setup dotnet '10.0.100-preview.1.25120.13'
+      - name: Setup dotnet '10.0.100-preview.7.25380.108'
         uses: ./
         with:
-          dotnet-version: '10.0.100-preview.1.25120.13'
+          dotnet-version: '10.0.100-preview.7.25380.108'
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "10.0.100-preview.1.25120.13"
+        run: __tests__/verify-dotnet.ps1 -Patterns "10.0.100-preview.7.25380.108"
   test-setup-latest-patch-version:
     runs-on: ${{ matrix.operating-system }}
     strategy:
