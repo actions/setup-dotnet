@@ -230,7 +230,7 @@ steps:
 ```
 > **Note**: It's the only way to push a package to nuget.org feed for macOS/Linux machines due to API key config store limitations.
 
-## Using the `workloads` inputs
+## Using the `workloads` input
 The `workloads` input allows you to install .NET workloads as part of the SDK setup. Workloads provide additional platform tools and dependencies for frameworks. This action automatically runs `dotnet workload update` before installing the specified workloads to ensure manifests are refreshed and existing workloads are updated to their latest compatible versions.
 
 ```yaml
