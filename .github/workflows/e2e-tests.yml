@@ -808,3 +808,36 @@ jobs:
       - name: Verify dotnet (higher version)
         shell: pwsh
         run: __tests__/verify-dotnet.ps1 -Patterns "^${{ matrix.lower-version }}$", "^${{ matrix.higher-version }}$"
+
+  test-setup-with-workloads-input:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system:
+          [ubuntu-latest, windows-latest, macos-15-intel, macos-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+
+      - name: Setup dotnet 9.0 with workloads
+        uses: ./
+        id: setup-dotnet
+        with:
+          dotnet-version: '9.0'
+          workloads: wasm-tools
+      - name: Verify workload
+        shell: pwsh
+        run: |
+          $output = dotnet workload list | Out-String
+          Write-Host "Workload list output:"
+          Write-Host $output
+          if ($output -notmatch "wasm-tools") {
+            throw "Expected workload 'wasm-tools' not found"
+          }
+      - name: Verify dotnet
+        shell: pwsh
+        run: __tests__/verify-dotnet.ps1 -Patterns "^9\.0"
