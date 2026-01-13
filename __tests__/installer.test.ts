@@ -38,7 +38,7 @@ describe('installer tests', () => {
       });
 
       it('should throw the error in case of non-zero exit code of the installation script. The error message should contain logs.', async () => {
-        const inputVersion = '3.1.100';
+        const inputVersion = '10.0.101';
         const inputQuality = '' as QualityOptions;
         const errorMessage = 'fictitious error message!';
 
@@ -60,7 +60,7 @@ describe('installer tests', () => {
       });
 
       it('should return version of .NET SDK after installation complete', async () => {
-        const inputVersion = '3.1.100';
+        const inputVersion = '10.0.101';
         const inputQuality = '' as QualityOptions;
         const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
         getExecOutputSpy.mockImplementation(() => {
@@ -82,7 +82,7 @@ describe('installer tests', () => {
       });
 
       it(`should supply 'version' argument to the installation script if supplied version is in A.B.C syntax`, async () => {
-        const inputVersion = '6.0.300';
+        const inputVersion = '10.0.101';
         const inputQuality = '' as QualityOptions;
         const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
 
@@ -120,7 +120,7 @@ describe('installer tests', () => {
       });
 
       it(`should warn if the 'quality' input is set and the supplied version is in A.B.C syntax`, async () => {
-        const inputVersion = '6.0.300';
+        const inputVersion = '10.0.101';
         const inputQuality = 'ga' as QualityOptions;
         const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
         getExecOutputSpy.mockImplementation(() => {
@@ -147,7 +147,7 @@ describe('installer tests', () => {
       it(`should warn if the 'quality' input is set and version isn't in A.B.C syntax but major tag is lower then 6`, async () => {
         const inputVersion = '3.1';
         const inputQuality = 'ga' as QualityOptions;
-        const stdout = `Fictitious dotnet version 3.1.100 is installed`;
+        const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
 
         getExecOutputSpy.mockImplementation(() => {
           return Promise.resolve({
@@ -170,12 +170,12 @@ describe('installer tests', () => {
         );
       });
 
-      each(['6', '6.0', '6.0.x', '6.0.*', '6.0.X']).test(
+      each(['10', '10.0', '10.0.x', '10.0.*', '10.0.X']).test(
         `should supply 'quality' argument to the installation script if quality input is set and version (%s) is not in A.B.C syntax`,
         async inputVersion => {
           const inputQuality = 'ga' as QualityOptions;
           const exitCode = 0;
-          const stdout = `Fictitious dotnet version 6.0.0 is installed`;
+          const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
           getExecOutputSpy.mockImplementation(() => {
             return Promise.resolve({
               exitCode: exitCode,
@@ -210,12 +210,12 @@ describe('installer tests', () => {
         }
       );
 
-      each(['6', '6.0', '6.0.x', '6.0.*', '6.0.X']).test(
+      each(['10', '10.0', '10.0.x', '10.0.*', '10.0.X']).test(
         `should supply 'channel' argument to the installation script if version (%s) isn't in A.B.C syntax`,
         async inputVersion => {
           const inputQuality = '' as QualityOptions;
           const exitCode = 0;
-          const stdout = `Fictitious dotnet version 6.0.0 is installed`;
+          const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
           getExecOutputSpy.mockImplementation(() => {
             return Promise.resolve({
               exitCode: exitCode,
@@ -243,8 +243,8 @@ describe('installer tests', () => {
             getExecOutputSpy.mock.calls[callIndex][1] as string[]
           ).join(' ');
           const expectedArgument = IS_WINDOWS
-            ? `-Channel 6.0`
-            : `--channel 6.0`;
+            ? `-Channel 10.0`
+            : `--channel 10.0`;
 
           expect(scriptArguments).toContain(expectedArgument);
         }
@@ -253,7 +253,7 @@ describe('installer tests', () => {
       if (IS_WINDOWS) {
         it(`should supply '-ProxyAddress' argument to the installation script if env.variable 'https_proxy' is set`, async () => {
           process.env['https_proxy'] = 'https://proxy.com';
-          const inputVersion = '6.0.100';
+          const inputVersion = '10.0.101';
           const inputQuality = '' as QualityOptions;
           const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
 
@@ -291,9 +291,9 @@ describe('installer tests', () => {
 
         it(`should supply '-ProxyBypassList' argument to the installation script if env.variable 'no_proxy' is set`, async () => {
           process.env['no_proxy'] = 'first.url,second.url';
-          const inputVersion = '6.0.100';
+          const inputVersion = '10.0.101';
           const inputQuality = '' as QualityOptions;
-          const stdout = `Fictitious dotnet version 6.0.0 is installed`;
+          const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
 
           getExecOutputSpy.mockImplementation(() => {
             return Promise.resolve({
@@ -349,14 +349,14 @@ describe('installer tests', () => {
   describe('DotnetVersionResolver tests', () => {
     describe('createDotnetVersion() tests', () => {
       each([
-        '3.1',
-        '3.x',
-        '3.1.x',
-        '3.1.*',
-        '3.1.X',
-        '3.1.2',
-        '3.1.0-preview1',
-        '6.0.2xx'
+        '10.0',
+        '10.x',
+        '10.0.x',
+        '10.0.*',
+        '10.0.X',
+        '10.0.0',
+        '10.0.0-preview7',
+        '10.0.1xx'
       ]).test(
         'if valid version is supplied (%s), it should return version object with some value',
         async version => {
@@ -408,7 +408,7 @@ describe('installer tests', () => {
         }
       );
 
-      each(['3', '3.1', '3.1.x', '3.1.*', '3.1.X', '6.0.2xx']).test(
+      each(['10', '10.0', '10.0.x', '10.0.*', '10.0.X', '10.0.1xx']).test(
         "if version that can be resolved to 'channel' option is supplied (%s), it should set type to 'channel' in version object",
         async version => {
           const dotnetVersionResolver = new installer.DotnetVersionResolver(
@@ -423,7 +423,7 @@ describe('installer tests', () => {
         }
       );
 
-      each(['6.0', '6.0.x', '6.0.*', '6.0.X', '6.0.2xx']).test(
+      each(['10.0', '10.0.x', '10.0.*', '10.0.X', '10.0.1xx']).test(
         "if version that can be resolved to 'channel' option is supplied and its major tag is >= 6 (%s), it should set type to 'channel' and qualityFlag to 'true' in version object",
         async version => {
           const dotnetVersionResolver = new installer.DotnetVersionResolver(
@@ -439,7 +439,7 @@ describe('installer tests', () => {
         }
       );
 
-      each(['3.1.2', '3.1.0-preview1']).test(
+      each(['10.0.0', '10.0.0-preview7']).test(
         "if version that can be resolved to 'version' option is supplied (%s), it should set quality flag to 'false' and type to 'version' in version object",
         async version => {
           const dotnetVersionResolver = new installer.DotnetVersionResolver(
@@ -455,7 +455,7 @@ describe('installer tests', () => {
         }
       );
 
-      each(['3.1.2', '3.1']).test(
+      each(['10.0.0', '10.0']).test(
         'it should create proper line arguments for powershell/bash installation scripts',
         async version => {
           const dotnetVersionResolver = new installer.DotnetVersionResolver(
