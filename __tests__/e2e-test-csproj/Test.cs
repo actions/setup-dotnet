@@ -12,7 +12,7 @@ namespace test_csproj
             Console.WriteLine("TestMethod");
             int calculatedResult = 1000 / 25;
             int expectedResult = 40;
-            Assert.AreEqual(calculatedResult, expectedResult);
+            Assert.AreEqual(expectedResult, calculatedResult);
         }
     }
 }
