@@ -241,7 +241,7 @@ steps:
   uses: actions/setup-dotnet@v5
   with:
     dotnet-version: '9.0.x'
-    workloads: workload1, workload2
+    workloads: workload1, workload2  # Specify the workloads required for the project, such as wasm-tools, maui, etc.
 - run: dotnet build <my project>
 ```
 

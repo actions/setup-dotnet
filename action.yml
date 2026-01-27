@@ -25,7 +25,7 @@ inputs:
     description: 'Used to specify the path to a dependency file: packages.lock.json. Supports wildcards or a list of file names for caching multiple dependencies.'
     required: false
   workloads:
-    description: 'Optional SDK workloads to install for additional platform support.'
+    description: 'Optional SDK workloads to install for additional platform support. Examples: wasm-tools, maui, aspire.'
     required: false
 outputs:
   cache-hit:
