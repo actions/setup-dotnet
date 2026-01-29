@@ -57162,6 +57162,11 @@ const qualityOptions = [
     'preview',
     'ga'
 ];
+/**
+ * The problem matcher files to be registered with the runner.
+ * https://github.com/actions/toolkit/blob/main/docs/problem-matchers.md
+ */
+const problemMatchers = ['csc.json', 'dotnet-format.json'];
 async function run() {
     try {
         //
@@ -57236,8 +57241,9 @@ async function run() {
             const cacheDependencyPath = core.getInput('cache-dependency-path');
             await (0, cache_restore_1.restoreCache)(cacheDependencyPath);
         }
-        const matchersPath = path_1.default.join(__dirname, '..', '..', '.github');
-        core.info(`##[add-matcher]${path_1.default.join(matchersPath, 'csc.json')}`);
+        for (const file of problemMatchers) {
+            core.info(`##[add-matcher]${path_1.default.join(__dirname, '..', '..', '.github', file)}`);
+        }
     }
     catch (error) {
         core.setFailed(error.message);

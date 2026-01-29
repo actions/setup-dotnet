@@ -20,6 +20,12 @@ const qualityOptions = [
 
 export type QualityOptions = (typeof qualityOptions)[number];
 
+/**
+ * The problem matcher files to be registered with the runner.
+ * https://github.com/actions/toolkit/blob/main/docs/problem-matchers.md
+ */
+const problemMatchers = ['csc.json', 'dotnet-format.json'];
+
 export async function run() {
   try {
     //
@@ -112,8 +118,11 @@ export async function run() {
       await restoreCache(cacheDependencyPath);
     }
 
-    const matchersPath = path.join(__dirname, '..', '..', '.github');
-    core.info(`##[add-matcher]${path.join(matchersPath, 'csc.json')}`);
+    for (const file of problemMatchers) {
+      core.info(
+        `##[add-matcher]${path.join(__dirname, '..', '..', '.github', file)}`
+      );
+    }
   } catch (error) {
     core.setFailed(error.message);
   }
