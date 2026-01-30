@@ -184,7 +184,8 @@ jobs:
         with:
           dotnet-version: ${{ matrix.dotnet }}
       - name: Create temporary global.json
-        run: echo '{"sdk":{"version": "${{ steps.stepid.outputs.dotnet-version }}"}}' > ./global.json
+        run: |
+          echo '{"sdk":{"version": "${{ steps.stepid.outputs.dotnet-version }}"}}' > ./global.json
       - name: Execute dotnet
         run: dotnet build <my project>
 ```
