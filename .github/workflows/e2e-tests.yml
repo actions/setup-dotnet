@@ -623,3 +623,38 @@ jobs:
       - name: Verify dotnet
         shell: pwsh
         run: __tests__/verify-dotnet.ps1 -Patterns "^9\.0"
+
+  test-setup-with-architecture-input:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+        arch: [x64, arm64]
+        exclude:
+          - os: windows-latest
+            arch: arm64
+          - os: ubuntu-latest
+            arch: arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+
+      - name: Setup dotnet (${{ matrix.arch }})
+        uses: ./
+        with:
+          dotnet-version: |
+            8.0.416
+            8.0.x
+            9.0.308
+            10.0.101
+          architecture: ${{ matrix.arch }}
+
+      - name: Verify dotnet
+        shell: pwsh
+        run: __tests__/verify-dotnet.ps1 -Patterns "^8.0.416$", "^9.0.308$", "^10.0.101$", "^8.0"
