@@ -54919,6 +54919,8 @@ function normalizeArch(arch) {
     switch (arch.toLowerCase()) {
         case 'amd64':
             return 'x64';
+        case 'ia32':
+            return 'x86';
         default:
             return arch.toLowerCase();
     }
