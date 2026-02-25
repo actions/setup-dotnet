@@ -154,7 +154,7 @@ function getArchitectureInput(): SupportedArchitecture | '' {
   if (!raw) return '';
   const normalized = raw.toLowerCase();
   if ((supportedArchitectures as readonly string[]).includes(normalized)) {
-    return normalized as SupportedArchitecture;
+    return normalizeArch(normalized) as SupportedArchitecture;
   }
   throw new Error(
     `Value '${raw}' is not supported for the 'architecture' option. Supported values are: ${supportedArchitectures.join(

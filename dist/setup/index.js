@@ -55164,7 +55164,7 @@ function getArchitectureInput() {
         return '';
     const normalized = raw.toLowerCase();
     if (supportedArchitectures.includes(normalized)) {
-        return normalized;
+        return (0, installer_1.normalizeArch)(normalized);
     }
     throw new Error(`Value '${raw}' is not supported for the 'architecture' option. Supported values are: ${supportedArchitectures.join(', ')}.`);
 }
