@@ -284,20 +284,18 @@ export class DotnetCoreInstaller {
     const versionResolver = new DotnetVersionResolver(this.version);
     const dotnetVersion = await versionResolver.createDotnetVersion();
 
-    const crossArchInstallDir =
+    const architectureArguments =
       this.architecture &&
       normalizeArch(this.architecture) !== normalizeArch(os.arch())
-        ? IS_WINDOWS
-          ? [
-              `-InstallDir "${path.join(DotnetInstallDir.dirPath, this.architecture)}"`
-            ]
-          : [
-              '--install-dir',
-              path.join(DotnetInstallDir.dirPath, this.architecture)
-            ]
+        ? [
+            IS_WINDOWS ? '-InstallDir' : '--install-dir',
+            IS_WINDOWS
+              ? `"${path.join(DotnetInstallDir.dirPath, this.architecture)}"`
+              : path.join(DotnetInstallDir.dirPath, this.architecture)
+          ]
         : [];
     /**
-     * Install dotnet runitme first in order to get
+     * Install dotnet runtime first in order to get
      * the latest stable version of dotnet CLI
      */
     const runtimeInstallOutput = await new DotnetInstallScript()
@@ -310,7 +308,7 @@ export class DotnetCoreInstaller {
       .useArguments(IS_WINDOWS ? '-Runtime' : '--runtime', 'dotnet')
       // Use latest stable version
       .useArguments(IS_WINDOWS ? '-Channel' : '--channel', 'LTS')
-      .useArguments(...crossArchInstallDir)
+      .useArguments(...architectureArguments)
       .execute();
 
     if (runtimeInstallOutput.exitCode) {
@@ -335,7 +333,7 @@ export class DotnetCoreInstaller {
       )
       // Use version provided by user
       .useVersion(dotnetVersion, this.quality)
-      .useArguments(...crossArchInstallDir)
+      .useArguments(...architectureArguments)
       .execute();
 
     if (dotnetInstallOutput.exitCode) {
