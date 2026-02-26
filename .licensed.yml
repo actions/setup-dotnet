@@ -14,3 +14,4 @@ allowed:
 reviewed:
   npm:
     - sax # ISC + MIT
+    - "@actions/http-client"
