@@ -2,6 +2,7 @@ import each from 'jest-each';
 import semver from 'semver';
 import fs from 'fs';
 import fspromises from 'fs/promises';
+import os from 'os';
 import * as exec from '@actions/exec';
 import * as core from '@actions/core';
 import * as io from '@actions/io';
@@ -327,6 +328,143 @@ describe('installer tests', () => {
           );
         });
       }
+
+      it(`should supply 'architecture' argument to the installation script when architecture is provided`, async () => {
+        const inputVersion = '10.0.101';
+        const inputQuality = '' as QualityOptions;
+        const inputArchitecture = 'x64';
+        const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
+
+        getExecOutputSpy.mockImplementation(() => {
+          return Promise.resolve({
+            exitCode: 0,
+            stdout: `${stdout}`,
+            stderr: ''
+          });
+        });
+        maxSatisfyingSpy.mockImplementation(() => inputVersion);
+
+        const dotnetInstaller = new installer.DotnetCoreInstaller(
+          inputVersion,
+          inputQuality,
+          inputArchitecture
+        );
+
+        await dotnetInstaller.installDotnet();
+
+        const callIndex = 1;
+        const scriptArguments = (
+          getExecOutputSpy.mock.calls[callIndex][1] as string[]
+        ).join(' ');
+        const expectedArgument = IS_WINDOWS
+          ? `-Architecture ${inputArchitecture}`
+          : `--architecture ${inputArchitecture}`;
+
+        expect(scriptArguments).toContain(expectedArgument);
+      });
+
+      it(`should NOT supply 'architecture' argument when architecture is not provided`, async () => {
+        const inputVersion = '10.0.101';
+        const inputQuality = '' as QualityOptions;
+        const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
+
+        getExecOutputSpy.mockImplementation(() => {
+          return Promise.resolve({
+            exitCode: 0,
+            stdout: `${stdout}`,
+            stderr: ''
+          });
+        });
+        maxSatisfyingSpy.mockImplementation(() => inputVersion);
+
+        const dotnetInstaller = new installer.DotnetCoreInstaller(
+          inputVersion,
+          inputQuality
+        );
+
+        await dotnetInstaller.installDotnet();
+
+        const callIndex = 1;
+        const scriptArguments = (
+          getExecOutputSpy.mock.calls[callIndex][1] as string[]
+        ).join(' ');
+
+        expect(scriptArguments).not.toContain('--architecture');
+        expect(scriptArguments).not.toContain('-Architecture');
+      });
+
+      it(`should supply 'install-dir' with arch subdirectory for cross-arch install`, async () => {
+        const inputVersion = '10.0.101';
+        const inputQuality = '' as QualityOptions;
+        const inputArchitecture = 'x64';
+        const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
+
+        getExecOutputSpy.mockImplementation(() => {
+          return Promise.resolve({
+            exitCode: 0,
+            stdout: `${stdout}`,
+            stderr: ''
+          });
+        });
+        maxSatisfyingSpy.mockImplementation(() => inputVersion);
+
+        // Mock os.arch() to return a different arch to simulate cross-arch
+        const archSpy = jest.spyOn(os, 'arch').mockReturnValue('arm64');
+
+        const dotnetInstaller = new installer.DotnetCoreInstaller(
+          inputVersion,
+          inputQuality,
+          inputArchitecture
+        );
+
+        await dotnetInstaller.installDotnet();
+
+        const callIndex = 1;
+        const scriptArguments = (
+          getExecOutputSpy.mock.calls[callIndex][1] as string[]
+        ).join(' ');
+
+        const expectedInstallDirFlag = IS_WINDOWS
+          ? '-InstallDir'
+          : '--install-dir';
+
+        expect(scriptArguments).toContain(expectedInstallDirFlag);
+        expect(scriptArguments).toContain(inputArchitecture);
+
+        archSpy.mockRestore();
+      });
+
+      it(`should NOT supply 'install-dir' when architecture matches runner's native arch`, async () => {
+        const inputVersion = '10.0.101';
+        const inputQuality = '' as QualityOptions;
+        const nativeArch = os.arch().toLowerCase();
+        const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
+
+        getExecOutputSpy.mockImplementation(() => {
+          return Promise.resolve({
+            exitCode: 0,
+            stdout: `${stdout}`,
+            stderr: ''
+          });
+        });
+        maxSatisfyingSpy.mockImplementation(() => inputVersion);
+
+        const dotnetInstaller = new installer.DotnetCoreInstaller(
+          inputVersion,
+          inputQuality,
+          nativeArch
+        );
+
+        await dotnetInstaller.installDotnet();
+
+        const callIndex = 1;
+        const scriptArguments = (
+          getExecOutputSpy.mock.calls[callIndex][1] as string[]
+        ).join(' ');
+
+        expect(scriptArguments).not.toContain('--install-dir');
+        expect(scriptArguments).not.toContain('-InstallDir');
+      });
     });
 
     describe('addToPath() tests', () => {
@@ -343,6 +481,32 @@ describe('installer tests', () => {
         const path = process.env['PATH'];
         expect(path).toContain(process.env['DOTNET_INSTALL_DIR']);
       });
+    });
+  });
+
+  describe('normalizeArch() tests', () => {
+    it(`should normalize 'amd64' to 'x64'`, () => {
+      expect(installer.normalizeArch('amd64')).toBe('x64');
+    });
+
+    it(`should normalize 'AMD64' to 'x64' (case-insensitive)`, () => {
+      expect(installer.normalizeArch('AMD64')).toBe('x64');
+    });
+
+    it(`should pass through 'x64' unchanged`, () => {
+      expect(installer.normalizeArch('x64')).toBe('x64');
+    });
+
+    it(`should pass through 'arm64' unchanged`, () => {
+      expect(installer.normalizeArch('arm64')).toBe('arm64');
+    });
+
+    it(`should lowercase 'ARM64'`, () => {
+      expect(installer.normalizeArch('ARM64')).toBe('arm64');
+    });
+
+    it(`should pass through 'x86' unchanged`, () => {
+      expect(installer.normalizeArch('x86')).toBe('x86');
     });
   });
 

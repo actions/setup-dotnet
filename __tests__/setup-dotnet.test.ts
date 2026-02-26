@@ -2,7 +2,7 @@ import * as core from '@actions/core';
 import fs from 'fs';
 import semver from 'semver';
 import * as auth from '../src/authutil';
-
+import os from 'os';
 import * as setup from '../src/setup-dotnet';
 import {DotnetCoreInstaller, DotnetInstallDir} from '../src/installer';
 import * as cacheUtils from '../src/cache-utils';
@@ -220,6 +220,41 @@ describe('setup-dotnet tests', () => {
 
       await setup.run();
       expect(restoreCacheSpy).not.toHaveBeenCalled();
+    });
+
+    it('should pass valid architecture input to DotnetCoreInstaller', async () => {
+      inputs['dotnet-version'] = ['10.0.101'];
+      inputs['dotnet-quality'] = '';
+      inputs['architecture'] = os.arch().toLowerCase();
+
+      installDotnetSpy.mockImplementation(() => Promise.resolve(''));
+
+      await setup.run();
+      expect(installDotnetSpy).toHaveBeenCalledTimes(1);
+      expect(DotnetInstallDir.addToPath).toHaveBeenCalledTimes(1);
+    });
+
+    it('should work with empty architecture input for auto-detection', async () => {
+      inputs['dotnet-version'] = ['10.0.101'];
+      inputs['dotnet-quality'] = '';
+      inputs['architecture'] = '';
+
+      installDotnetSpy.mockImplementation(() => Promise.resolve(''));
+
+      await setup.run();
+      expect(installDotnetSpy).toHaveBeenCalledTimes(1);
+      expect(DotnetInstallDir.addToPath).toHaveBeenCalledTimes(1);
+    });
+
+    it('should fail the action if unsupported architecture is provided', async () => {
+      inputs['dotnet-version'] = ['10.0.101'];
+      inputs['dotnet-quality'] = '';
+      inputs['architecture'] = 'x688';
+
+      const expectedErrorMessage = `Value 'x688' is not supported for the 'architecture' option. Supported values are: x64, x86, arm64, amd64, arm, s390x, ppc64le, riscv64.`;
+
+      await setup.run();
+      expect(setFailedSpy).toHaveBeenCalledWith(expectedErrorMessage);
     });
   });
 });
