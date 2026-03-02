@@ -1,5 +1,5 @@
 name: 'Setup .NET Core SDK'
-description: 'Used to build and publish .NET source. Set up a specific version of the .NET and authentication to private NuGet repository'
+description: 'Used to build and publish .NET source. Set up a specific version of the .NET Core CLI in the PATH and set up authentication to a private NuGet repository'
 author: 'GitHub'
 branding:
   icon: play
