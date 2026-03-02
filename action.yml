@@ -27,6 +27,9 @@ inputs:
   workloads:
     description: 'Optional SDK workloads to install for additional platform support. Examples: wasm-tools, maui, aspire.'
     required: false
+  architecture:
+    description: 'Optional architecture for the .NET install. Supported values: x64, x86, arm64, amd64, arm, s390x, ppc64le, riscv64. If not set, the installer auto-detects the current system architecture.'
+    required: false
 outputs:
   cache-hit:
     description: 'A boolean value to indicate if a cache was hit.'
