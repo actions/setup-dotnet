@@ -184,6 +184,16 @@ export class DotnetInstallScript {
     return this;
   }
 
+  // When architecture is empty/undefined, the installer auto-detects the current runner architecture.
+  public useArchitecture(architecture?: string) {
+    if (!architecture) return this;
+    this.useArguments(
+      IS_WINDOWS ? '-Architecture' : '--architecture',
+      architecture
+    );
+    return this;
+  }
+
   public useVersion(dotnetVersion: DotnetVersion, quality?: QualityOptions) {
     if (dotnetVersion.type) {
       this.useArguments(dotnetVersion.type, dotnetVersion.value);
@@ -250,6 +260,17 @@ export abstract class DotnetInstallDir {
   }
 }
 
+export function normalizeArch(arch: string): string {
+  switch (arch.toLowerCase()) {
+    case 'amd64':
+      return 'x64';
+    case 'ia32':
+      return 'x86';
+    default:
+      return arch.toLowerCase();
+  }
+}
+
 export class DotnetCoreInstaller {
   static {
     DotnetInstallDir.setEnvironmentVariable();
@@ -257,18 +278,30 @@ export class DotnetCoreInstaller {
 
   constructor(
     private version: string,
-    private quality: QualityOptions
+    private quality: QualityOptions,
+    private architecture?: string
   ) {}
 
   public async installDotnet(): Promise<string | null> {
     const versionResolver = new DotnetVersionResolver(this.version);
     const dotnetVersion = await versionResolver.createDotnetVersion();
 
+    const architectureArguments =
+      this.architecture &&
+      normalizeArch(this.architecture) !== normalizeArch(os.arch())
+        ? [
+            IS_WINDOWS ? '-InstallDir' : '--install-dir',
+            IS_WINDOWS
+              ? `"${path.join(DotnetInstallDir.dirPath, this.architecture)}"`
+              : path.join(DotnetInstallDir.dirPath, this.architecture)
+          ]
+        : [];
     /**
-     * Install dotnet runitme first in order to get
+     * Install dotnet runtime first in order to get
      * the latest stable version of dotnet CLI
      */
     const runtimeInstallOutput = await new DotnetInstallScript()
+      .useArchitecture(this.architecture)
       // If dotnet CLI is already installed - avoid overwriting it
       .useArguments(
         IS_WINDOWS ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files'
@@ -277,6 +310,7 @@ export class DotnetCoreInstaller {
       .useArguments(IS_WINDOWS ? '-Runtime' : '--runtime', 'dotnet')
       // Use latest stable version
       .useArguments(IS_WINDOWS ? '-Channel' : '--channel', 'LTS')
+      .useArguments(...architectureArguments)
       .execute();
 
     if (runtimeInstallOutput.exitCode) {
@@ -294,12 +328,14 @@ export class DotnetCoreInstaller {
      * dotnet CLI
      */
     const dotnetInstallOutput = await new DotnetInstallScript()
+      .useArchitecture(this.architecture)
       // Don't overwrite CLI because it should be already installed
       .useArguments(
         IS_WINDOWS ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files'
       )
       // Use version provided by user
       .useVersion(dotnetVersion, this.quality)
+      .useArguments(...architectureArguments)
       .execute();
 
     if (dotnetInstallOutput.exitCode) {

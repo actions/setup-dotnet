@@ -59,6 +59,23 @@ The `dotnet-version` input supports following syntax:
 - **A.B.Cxx** (e.g. 8.0.4xx) - available since `.NET 5.0` release. Installs the latest version of the specific SDK release, including prerelease versions (preview, rc). 
 
 
+## Using the `architecture` input
+Using the architecture input, it is possible to specify the required .NET SDK architecture. Possible values:  `x64`, `x86`, `arm64`, `amd64`, `arm`, `s390x`, `ppc64le`, `riscv64`. If the input is not specified, the architecture defaults to the host OS architecture (not all of the architectures are available on all platforms).
+
+**Example: Install multiple SDK versions for a specific architecture**
+```yml
+steps:
+- uses: actions/checkout@v6
+- name: Setup dotnet (x86)
+  uses: actions/setup-dotnet@v5
+  with:
+    dotnet-version: |
+      8.0.x
+      9.0.x
+    architecture: x86
+- run: dotnet build <my project>
+```
+
 ## Using the `dotnet-quality` input
 This input sets up the action to install the latest build of the specified quality in the channel. The possible values of `dotnet-quality` are: **daily**, **signed**, **validated**, **preview**, **ga**.
 
