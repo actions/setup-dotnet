@@ -1,0 +1,42 @@
+name: Validate dotnet
+
+on:
+  pull_request:
+    paths-ignore:
+      - '**.md'
+  push:
+    branches:
+      - main
+      - releases/*
+    paths-ignore:
+      - '**.md'
+
+jobs:
+  setup-version:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system:
+          [
+            ubuntu-latest,
+            ubuntu-22.04,
+            windows-latest,
+            macos-15-intel,
+            macos-latest
+          ]
+        dotnet-version: ['8.0', '9.0', '10.0']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+      - name: Setup dotnet ${{ matrix.dotnet-version }}
+        uses: ./
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}
+      - name: Verify installed version
+        shell: pwsh
+        run: |
+          __tests__/verify-dotnet.ps1 -Patterns "^${{ matrix.dotnet-version }}"

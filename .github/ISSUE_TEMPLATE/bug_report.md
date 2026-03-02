@@ -2,22 +2,31 @@
 name: Bug report
 about: Create a bug report
 title: ''
-labels: ''
+labels: bug, needs triage
 assignees: ''
 
 ---
 
-### Description
+**Description:**
+A clear and concise description of what the bug is.
 
-<!--
-* Please share short description of the problem
-  -->
+**Task version:**
+Specify the task version
 
-### Details
+**Platform:**
+- [ ] Ubuntu
+- [ ] macOS
+- [ ] Windows
 
-<!--
-* Include the relevant yaml, platform, and dotnet versions in use
-* If an error occurred on a public action, please share a link
-* Include any error messages received in text (search does not work for images)
-* Was this a regression from previous behavior?
-  -->
+**Runner type:**
+- [ ] Hosted
+- [ ] Self-hosted
+
+**Repro steps:**  
+A description with steps to reproduce the issue. If your have a public example or repo to share, please provide the link.
+
+**Expected behavior:**
+A description of what you expected to happen.
+
+**Actual behavior:**
+A description of what is actually happening.

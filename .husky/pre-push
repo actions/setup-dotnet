@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Tests are not run at push time since they can take 2-4 minutes to complete
+npm run format-check
+npm run lint

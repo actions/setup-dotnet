@@ -1,36 +1,132 @@
 import * as core from '@actions/core';
-import * as installer from './installer';
+import * as exec from '@actions/exec';
+import {
+  DotnetCoreInstaller,
+  DotnetInstallDir,
+  normalizeArch
+} from './installer';
 import * as fs from 'fs';
-import * as path from 'path';
+import path from 'path';
+import semver from 'semver';
+import os from 'os';
 import * as auth from './authutil';
+import {isCacheFeatureAvailable} from './cache-utils';
+import {restoreCache} from './cache-restore';
+import {Outputs} from './constants';
+import JSON5 from 'json5';
+
+const qualityOptions = [
+  'daily',
+  'signed',
+  'validated',
+  'preview',
+  'ga'
+] as const;
+const supportedArchitectures = [
+  'x64',
+  'x86',
+  'arm64',
+  'amd64',
+  'arm',
+  's390x',
+  'ppc64le',
+  'riscv64'
+] as const;
+type SupportedArchitecture = (typeof supportedArchitectures)[number];
+
+export type QualityOptions = (typeof qualityOptions)[number];
 
 export async function run() {
   try {
     //
-    // Version is optional.  If supplied, install / use from the tool cache
-    // If not supplied then task is still used to setup proxy, auth, etc...
+    // dotnet-version is optional, but needs to be provided for most use cases.
+    // If supplied, install / use from the tool cache.
+    // global-version-file may be specified to point to a specific global.json
+    // and will be used to install an additional version.
+    // If not supplied, look for version in ./global.json.
+    // If a valid version still can't be identified, nothing will be installed.
+    // Proxy, auth, (etc) are still set up, even if no version is identified
     //
-    let version: string = core.getInput('version');
-    if (!version) {
-      version = core.getInput('dotnet-version');
+    const versions = core.getMultilineInput('dotnet-version');
+    const installedDotnetVersions: (string | null)[] = [];
+    const architecture = getArchitectureInput();
+
+    const globalJsonFileInput = core.getInput('global-json-file');
+    if (globalJsonFileInput) {
+      const globalJsonPath = path.resolve(process.cwd(), globalJsonFileInput);
+      if (!fs.existsSync(globalJsonPath)) {
+        throw new Error(
+          `The specified global.json file '${globalJsonFileInput}' does not exist`
+        );
+      }
+      versions.push(getVersionFromGlobalJson(globalJsonPath));
     }
-    if (!version) {
+
+    if (!versions.length) {
       // Try to fall back to global.json
       core.debug('No version found, trying to find version from global.json');
       const globalJsonPath = path.join(process.cwd(), 'global.json');
       if (fs.existsSync(globalJsonPath)) {
-        const globalJson = JSON.parse(
-          fs.readFileSync(globalJsonPath, {encoding: 'utf8'})
+        versions.push(getVersionFromGlobalJson(globalJsonPath));
+      } else {
+        core.info(
+          `The global.json wasn't found in the root directory. No .NET version will be installed.`
         );
-        if (globalJson.sdk && globalJson.sdk.version) {
-          version = globalJson.sdk.version;
-        }
       }
     }
 
-    if (version) {
-      const dotnetInstaller = new installer.DotnetCoreInstaller(version);
-      await dotnetInstaller.installDotnet();
+    if (versions.length) {
+      const quality = core.getInput('dotnet-quality') as QualityOptions;
+
+      if (quality && !qualityOptions.includes(quality)) {
+        throw new Error(
+          `Value '${quality}' is not supported for the 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`
+        );
+      }
+
+      let dotnetInstaller: DotnetCoreInstaller;
+      const uniqueVersions = new Set<string>(versions);
+      for (const version of uniqueVersions) {
+        dotnetInstaller = new DotnetCoreInstaller(
+          version,
+          quality,
+          architecture
+        );
+        const installedVersion = await dotnetInstaller.installDotnet();
+        installedDotnetVersions.push(installedVersion);
+      }
+      if (
+        architecture &&
+        normalizeArch(architecture) !== normalizeArch(os.arch())
+      ) {
+        process.env['DOTNET_INSTALL_DIR'] = path.join(
+          DotnetInstallDir.dirPath,
+          architecture
+        );
+      }
+      DotnetInstallDir.addToPath();
+
+      const workloadsInput = core.getInput('workloads');
+      if (workloadsInput) {
+        const workloads = workloadsInput
+          .split(',')
+          .map(w => w.trim())
+          .filter(Boolean);
+
+        if (workloads.length) {
+          try {
+            core.info(`Refreshing workload manifests...`);
+            await exec.exec('dotnet', ['workload', 'update']);
+
+            core.info(`Installing workloads: ${workloads.join(', ')}`);
+            await exec.exec('dotnet', ['workload', 'install', ...workloads]);
+          } catch (err) {
+            throw new Error(
+              `Failed to install workloads [${workloads.join(', ')}]: ${err}`
+            );
+          }
+        }
+      }
     }
 
     const sourceUrl: string = core.getInput('source-url');
@@ -39,11 +135,87 @@ export async function run() {
       auth.configAuthentication(sourceUrl, configFile);
     }
 
-    const matchersPath = path.join(__dirname, '..', '.github');
-    console.log(`##[add-matcher]${path.join(matchersPath, 'csc.json')}`);
+    outputInstalledVersion(installedDotnetVersions, globalJsonFileInput);
+
+    if (core.getBooleanInput('cache') && isCacheFeatureAvailable()) {
+      const cacheDependencyPath = core.getInput('cache-dependency-path');
+      await restoreCache(cacheDependencyPath);
+    }
+
+    const matchersPath = path.join(__dirname, '..', '..', '.github');
+    core.info(`##[add-matcher]${path.join(matchersPath, 'csc.json')}`);
   } catch (error) {
     core.setFailed(error.message);
   }
+}
+
+function getArchitectureInput(): SupportedArchitecture | '' {
+  const raw = (core.getInput('architecture') || '').trim();
+  if (!raw) return '';
+  const normalized = raw.toLowerCase();
+  if ((supportedArchitectures as readonly string[]).includes(normalized)) {
+    return normalizeArch(normalized) as SupportedArchitecture;
+  }
+  throw new Error(
+    `Value '${raw}' is not supported for the 'architecture' option. Supported values are: ${supportedArchitectures.join(
+      ', '
+    )}.`
+  );
+}
+
+function getVersionFromGlobalJson(globalJsonPath: string): string {
+  let version = '';
+  const globalJson = JSON5.parse(
+    // .trim() is necessary to strip BOM https://github.com/nodejs/node/issues/20649
+    fs.readFileSync(globalJsonPath, {encoding: 'utf8'}).trim(),
+    // is necessary as JSON5 supports wider variety of options for numbers: https://www.npmjs.com/package/json5#numbers
+    (key, value) => {
+      if (key === 'version' || key === 'rollForward') return String(value);
+      return value;
+    }
+  );
+  if (globalJson.sdk && globalJson.sdk.version) {
+    version = globalJson.sdk.version;
+    const rollForward = globalJson.sdk.rollForward;
+    if (rollForward && rollForward === 'latestFeature') {
+      const [major, minor] = version.split('.');
+      version = `${major}.${minor}`;
+    }
+  }
+  return version;
+}
+
+function outputInstalledVersion(
+  installedVersions: (string | null)[],
+  globalJsonFileInput: string
+): void {
+  if (!installedVersions.length) {
+    core.info(`The '${Outputs.DotnetVersion}' output will not be set.`);
+    return;
+  }
+
+  if (installedVersions.includes(null)) {
+    core.warning(
+      `Failed to output the installed version of .NET. The '${Outputs.DotnetVersion}' output will not be set.`
+    );
+    return;
+  }
+
+  if (globalJsonFileInput) {
+    const versionToOutput = installedVersions.at(-1); // .NET SDK version parsed from the global.json file is installed last
+    core.setOutput(Outputs.DotnetVersion, versionToOutput);
+    return;
+  }
+
+  const versionToOutput = semver.maxSatisfying(
+    installedVersions as string[],
+    '*',
+    {
+      includePrerelease: true
+    }
+  );
+
+  core.setOutput(Outputs.DotnetVersion, versionToOutput);
 }
 
 run();
