@@ -33,7 +33,7 @@
     "@actions/core": "^2.0.0",
     "@actions/exec": "^2.0.0",
     "@actions/github": "^6.0.0",
-    "@actions/glob": "^0.5.0",
+    "@actions/glob": "^0.6.1",
     "@actions/http-client": "^3.0.0",
     "@actions/io": "^1.0.2",
     "fast-xml-parser": "^5.3.6",
