@@ -54786,15 +54786,51 @@ const utils_1 = __nccwpck_require__(71314);
 const QUALITY_INPUT_MINIMAL_MAJOR_TAG = 6;
 const LATEST_PATCH_SYNTAX_MINIMAL_MAJOR_TAG = 5;
 class DotnetVersionResolver {
+    quality;
+    dotnetChannel;
     inputVersion;
     resolvedArgument;
-    constructor(version) {
+    constructor(version, quality = '', dotnetChannel) {
+        this.quality = quality;
+        this.dotnetChannel = dotnetChannel;
         this.inputVersion = version.trim();
         this.resolvedArgument = { type: '', value: '', qualityFlag: false };
     }
+    isVersionChannel(channel) {
+        // A.B format (e.g., 3.1, 8.0)
+        if (/^\d+\.\d+$/.test(channel))
+            return true;
+        // A.B.Cxx format (e.g., 8.0.1xx) is supported only for .NET 5.0+
+        const latestPatchMatch = channel.match(/^(\d+)\.\d+\.\d{1}xx$/);
+        if (latestPatchMatch) {
+            const major = Number(latestPatchMatch[1]);
+            return (!Number.isNaN(major) && major >= LATEST_PATCH_SYNTAX_MINIMAL_MAJOR_TAG);
+        }
+        return false;
+    }
     async resolveVersionInput() {
+        if (this.inputVersion.toLowerCase() === 'latest') {
+            const channel = this.dotnetChannel || '';
+            if (this.isVersionChannel(channel)) {
+                // A.B or A.B.Cxx channels are passed directly to the install script
+                this.resolvedArgument.value = channel;
+            }
+            else {
+                // LTS, STS, or empty — resolve via releases index API
+                this.resolvedArgument.value = await this.getLatestVersion(channel);
+            }
+            this.resolvedArgument.type = 'channel';
+            const latestChannelMajorTag = Number(this.resolvedArgument.value.split('.')[0]);
+            this.resolvedArgument.qualityFlag =
+                !Number.isNaN(latestChannelMajorTag) &&
+                    latestChannelMajorTag >= QUALITY_INPUT_MINIMAL_MAJOR_TAG;
+            return;
+        }
+        if (this.dotnetChannel) {
+            core.warning(`The 'dotnet-channel' input is only supported when 'dotnet-version' is set to 'latest'.`);
+        }
         if (!semver_1.default.validRange(this.inputVersion) && !this.isLatestPatchSyntax()) {
-            throw new Error(`The 'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B, A.B.x, A, A.x, A.B.Cxx`);
+            throw new Error(`The 'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B, A.B.x, A, A.x, A.B.Cxx, latest`);
         }
         if (semver_1.default.valid(this.inputVersion)) {
             this.createVersionArgument();
@@ -54851,6 +54887,46 @@ class DotnetVersionResolver {
                 this.resolvedArgument.type === 'channel' ? '--channel' : '--version';
         }
         return this.resolvedArgument;
+    }
+    async getLatestVersion(channelFilter) {
+        const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
+            allowRetries: true,
+            maxRetries: 3
+        });
+        const response = await httpClient.getJson(DotnetVersionResolver.DotnetCoreIndexUrl);
+        const result = response.result;
+        const rawReleasesInfo = result?.['releases-index'];
+        if (!Array.isArray(rawReleasesInfo)) {
+            throw new Error('Unexpected response format from .NET releases index.');
+        }
+        let releasesInfo = rawReleasesInfo;
+        // Filter out EOL versions
+        releasesInfo = releasesInfo.filter(info => info['support-phase'] !== 'eol');
+        // Filter out preview versions if quality is not 'preview' or 'daily'
+        // If quality is not specified, we assume strict stability (GA only)
+        const normalizedQuality = (this.quality || '').toLowerCase();
+        if (!['preview', 'daily'].includes(normalizedQuality)) {
+            releasesInfo = releasesInfo.filter(info => info['support-phase'] !== 'preview');
+        }
+        // Apply channel filter (LTS/STS)
+        if (channelFilter) {
+            const type = channelFilter.toLowerCase();
+            releasesInfo = releasesInfo.filter(info => info['release-type'] === type);
+        }
+        releasesInfo.sort((a, b) => {
+            const partsA = a['channel-version'].split('.').map(Number);
+            const partsB = b['channel-version'].split('.').map(Number);
+            for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
+                const diff = (partsB[i] || 0) - (partsA[i] || 0);
+                if (diff !== 0)
+                    return diff;
+            }
+            return 0;
+        });
+        if (releasesInfo.length === 0) {
+            throw new Error(`Could not find any active releases matching channel '${channelFilter || 'any'}'`);
+        }
+        return releasesInfo[0]['channel-version'];
     }
     async getLatestByMajorTag(majorTag) {
         const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
@@ -54987,16 +55063,18 @@ class DotnetCoreInstaller {
     version;
     quality;
     architecture;
+    dotnetChannel;
     static {
         DotnetInstallDir.setEnvironmentVariable();
     }
-    constructor(version, quality, architecture) {
+    constructor(version, quality, architecture, dotnetChannel) {
         this.version = version;
         this.quality = quality;
         this.architecture = architecture;
+        this.dotnetChannel = dotnetChannel;
     }
     async installDotnet() {
-        const versionResolver = new DotnetVersionResolver(this.version);
+        const versionResolver = new DotnetVersionResolver(this.version, this.quality, this.dotnetChannel);
         const dotnetVersion = await versionResolver.createDotnetVersion();
         const architectureArguments = this.architecture &&
             normalizeArch(this.architecture) !== normalizeArch(os_1.default.arch())
@@ -55115,13 +55193,7 @@ const cache_utils_1 = __nccwpck_require__(41678);
 const cache_restore_1 = __nccwpck_require__(19517);
 const constants_1 = __nccwpck_require__(69042);
 const json5_1 = __importDefault(__nccwpck_require__(86904));
-const qualityOptions = [
-    'daily',
-    'signed',
-    'validated',
-    'preview',
-    'ga'
-];
+const qualityOptions = ['daily', 'preview', 'ga'];
 const supportedArchitectures = [
     'x64',
     'x86',
@@ -55132,6 +55204,19 @@ const supportedArchitectures = [
     'ppc64le',
     'riscv64'
 ];
+function isValidChannel(channel) {
+    const upper = channel.toUpperCase();
+    if (upper === 'LTS' || upper === 'STS')
+        return true;
+    // A.B format (e.g., 3.1, 8.0)
+    if (/^\d+\.\d+$/.test(channel))
+        return true;
+    // A.B.Cxx format (e.g., 8.0.1xx) - available since 5.0
+    const match = channel.match(/^(?<major>\d+)\.\d+\.\d{1}xx$/);
+    if (match && parseInt(match.groups.major) >= 5)
+        return true;
+    return false;
+}
 async function run() {
     try {
         //
@@ -55146,6 +55231,21 @@ async function run() {
         const versions = core.getMultilineInput('dotnet-version');
         const installedDotnetVersions = [];
         const architecture = getArchitectureInput();
+        let dotnetChannel = core.getInput('dotnet-channel');
+        const isLatestRequested = versions.some(version => version && version.toLowerCase() === 'latest');
+        if (dotnetChannel && !isValidChannel(dotnetChannel)) {
+            if (isLatestRequested) {
+                throw new Error(`Value '${dotnetChannel}' is not supported for the 'dotnet-channel' option. Supported values are: LTS, STS, A.B (e.g. 8.0), A.B.Cxx (e.g. 8.0.1xx).`);
+            }
+            else {
+                core.warning(`Value '${dotnetChannel}' is not supported for the 'dotnet-channel' option and will be ignored because 'dotnet-version' is not set to 'latest'. Supported values are: LTS, STS, A.B (e.g. 8.0), A.B.Cxx (e.g. 8.0.1xx).`);
+                dotnetChannel = '';
+            }
+        }
+        else if (dotnetChannel && !isLatestRequested) {
+            core.warning(`The 'dotnet-channel' input is only supported when 'dotnet-version' is set to 'latest'.`);
+            dotnetChannel = '';
+        }
         const globalJsonFileInput = core.getInput('global-json-file');
         if (globalJsonFileInput) {
             const globalJsonPath = path_1.default.resolve(process.cwd(), globalJsonFileInput);
@@ -55168,12 +55268,12 @@ async function run() {
         if (versions.length) {
             const quality = core.getInput('dotnet-quality');
             if (quality && !qualityOptions.includes(quality)) {
-                throw new Error(`Value '${quality}' is not supported for the 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`);
+                throw new Error(`Value '${quality}' is not supported for the 'dotnet-quality' option. Supported values are: daily, preview, ga.`);
             }
             let dotnetInstaller;
-            const uniqueVersions = new Set(versions);
+            const uniqueVersions = new Set(versions.map(v => (v.toLowerCase() === 'latest' ? 'latest' : v)));
             for (const version of uniqueVersions) {
-                dotnetInstaller = new installer_1.DotnetCoreInstaller(version, quality, architecture);
+                dotnetInstaller = new installer_1.DotnetCoreInstaller(version, quality, architecture, version.toLowerCase() === 'latest' ? dotnetChannel : undefined);
                 const installedVersion = await dotnetInstaller.installDotnet();
                 installedDotnetVersions.push(installedVersion);
             }
