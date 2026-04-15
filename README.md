@@ -111,7 +111,7 @@ steps:
 - uses: actions/setup-dotnet@v5
   with:
     dotnet-version: '8.0.x'
-    dotnet-quality: 'daily'
+    dotnet-quality: 'preview'
 - run: dotnet build <my project>
 ```
 
