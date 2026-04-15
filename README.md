@@ -1,4 +1,4 @@
-# setup-dotnet
+# dotnet
 
 [![Basic validation](https://github.com/actions/setup-dotnet/actions/workflows/basic-validation.yml/badge.svg?branch=main)](https://github.com/actions/setup-dotnet/actions/workflows/basic-validation.yml)
 [![e2e tests](https://github.com/actions/setup-dotnet/actions/workflows/e2e-tests.yml/badge.svg?branch=main)](https://github.com/actions/setup-dotnet/actions/workflows/e2e-tests.yml)
