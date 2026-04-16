@@ -2,7 +2,6 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as io from '@actions/io';
-import * as hc from '@actions/http-client';
 import {chmodSync} from 'fs';
 import path from 'path';
 import os from 'os';
@@ -74,10 +73,13 @@ export class DotnetVersionResolver {
     } else if (this.isNumericTag(major)) {
       // starting with .NET 5 the minor version is always zero, hardcode the earlier versions since they won't get new releases
       this.resolvedArgument.value =
-        major == '1' ? '1.1' :
-        major == '2' ? '2.2' :
-        major == '3' ? '3.1' :
-        `${major}.0`;
+        major == '1'
+          ? '1.1'
+          : major == '2'
+            ? '2.2'
+            : major == '3'
+              ? '3.1'
+              : `${major}.0`;
     } else {
       // If "dotnet-version" is specified as *, x or X resolve latest version of .NET explicitly from LTS channel. The version argument will default to "latest" by install-dotnet script.
       this.resolvedArgument.value = 'LTS';
