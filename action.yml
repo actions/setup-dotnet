@@ -24,13 +24,19 @@ inputs:
   cache-dependency-path:
     description: 'Used to specify the path to a dependency file: packages.lock.json. Supports wildcards or a list of file names for caching multiple dependencies.'
     required: false
+  workloads:
+    description: 'Optional SDK workloads to install for additional platform support. Examples: wasm-tools, maui, aspire.'
+    required: false
+  architecture:
+    description: 'Optional architecture for the .NET install. Supported values: x64, x86, arm64, amd64, arm, s390x, ppc64le, riscv64. If not set, the installer auto-detects the current system architecture.'
+    required: false
 outputs:
   cache-hit:
     description: 'A boolean value to indicate if a cache was hit.'
   dotnet-version:
     description: 'Contains the installed by action .NET SDK version for reuse.'
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/setup/index.js'
   post: 'dist/cache-save/index.js'
   post-if: success()
