@@ -20,7 +20,7 @@ inputs:
   cache:
     description: 'Optional input to enable caching of the NuGet global-packages folder'
     required: false
-    default: false
+    default: 'false'
   cache-dependency-path:
     description: 'Used to specify the path to a dependency file: packages.lock.json. Supports wildcards or a list of file names for caching multiple dependencies.'
     required: false
@@ -30,6 +30,10 @@ inputs:
   architecture:
     description: 'Optional architecture for the .NET install. Supported values: x64, x86, arm64, amd64, arm, s390x, ppc64le, riscv64. If not set, the installer auto-detects the current system architecture.'
     required: false
+  verbose:
+    description: 'Optional input to enable verbose output of installer script'
+    required: false
+    default: 'false'
 outputs:
   cache-hit:
     description: 'A boolean value to indicate if a cache was hit.'
