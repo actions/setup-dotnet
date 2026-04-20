@@ -29,22 +29,22 @@ describe('DotnetVersionResolver with latest', () => {
       {
         'channel-version': '10.0',
         'support-phase': 'preview',
-        'release-type': 'sts'
+        'release-type': 'lts'
       },
       {
         'channel-version': '9.0',
         'support-phase': 'active',
-        'release-type': 'lts'
+        'release-type': 'sts'
       },
       {
         'channel-version': '8.0',
-        'support-phase': 'maintenance',
-        'release-type': 'sts'
+        'support-phase': 'active',
+        'release-type': 'lts'
       },
       {
         'channel-version': '7.0',
         'support-phase': 'eol',
-        'release-type': 'lts'
+        'release-type': 'sts'
       }
     ]
   };
@@ -86,7 +86,7 @@ describe('DotnetVersionResolver with latest', () => {
     const resolver = new DotnetVersionResolver('latest', '', 'LTS');
     const version = await resolver.createDotnetVersion();
 
-    expect(version.value).toBe('9.0');
+    expect(version.value).toBe('8.0');
   });
 
   it('should resolve "latest" with channel filter STS', async () => {
@@ -95,7 +95,7 @@ describe('DotnetVersionResolver with latest', () => {
     const resolver = new DotnetVersionResolver('latest', '', 'STS');
     const version = await resolver.createDotnetVersion();
 
-    expect(version.value).toBe('8.0');
+    expect(version.value).toBe('9.0');
   });
 
   it('should resolve "latest" with channel filter STS and preview quality', async () => {
@@ -104,7 +104,8 @@ describe('DotnetVersionResolver with latest', () => {
     const resolver = new DotnetVersionResolver('latest', 'preview', 'STS');
     const version = await resolver.createDotnetVersion();
 
-    expect(version.value).toBe('10.0');
+    // preview quality includes all support-phases; STS filter → 9.0 (active, sts)
+    expect(version.value).toBe('9.0');
   });
 
   it('should warn if channel is provided but version is not latest', async () => {
@@ -124,7 +125,7 @@ describe('DotnetVersionResolver with latest', () => {
         {
           'channel-version': '7.0',
           'support-phase': 'eol',
-          'release-type': 'lts'
+          'release-type': 'sts'
         }
       ]
     };
@@ -173,8 +174,8 @@ describe('DotnetVersionResolver with latest', () => {
     const resolver = new DotnetVersionResolver('latest', 'daily', 'LTS');
     const version = await resolver.createDotnetVersion();
 
-    // daily allows previews, but LTS filter applies — 9.0 is the only LTS
-    expect(version.value).toBe('9.0');
+    // daily allows previews, LTS filter applies — 10.0 (preview, lts) is the highest LTS
+    expect(version.value).toBe('10.0');
     expect(version.qualityFlag).toBe(true);
   });
 
