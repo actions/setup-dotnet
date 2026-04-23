@@ -36,7 +36,7 @@
     "@actions/glob": "^0.5.1",
     "@actions/http-client": "^3.0.2",
     "@actions/io": "^2.0.0",
-    "fast-xml-parser": "^5.5.11",
+    "fast-xml-parser": "^5.7.1",
     "json5": "^2.2.3",
     "semver": "^7.6.0"
   },
