@@ -1,17 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <OutputType>Exe</OutputType>
     <TargetFramework>$(TEST_TARGET_FRAMEWORK)</TargetFramework>
     <IsPackable>false</IsPackable>
     <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
-    <SuppressTfmSupportBuildErrors>true</SuppressTfmSupportBuildErrors>
   </PropertyGroup>
 
   <ItemGroup>
     <!-- These packages will be downloaded over the network for testing proxy settings -->
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
-    <PackageReference Include="MSTest.TestAdapter" Version="4.0.2" />
-    <PackageReference Include="MSTest.TestFramework" Version="4.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 
 </Project>
