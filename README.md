@@ -57,7 +57,30 @@ The `dotnet-version` input supports following syntax:
 - **A.B** or **A.B.x** (e.g. 8.0, 8.0.x) - installs the latest patch version of .NET SDK on the channel `8.0`, including prerelease versions (preview, rc)
 - **A** or **A.x** (e.g. 8, 8.x) - installs the latest minor version of the specified major tag, including prerelease versions (preview, rc)
 - **A.B.Cxx** (e.g. 8.0.4xx) - available since `.NET 5.0` release. Installs the latest version of the specific SDK release, including prerelease versions (preview, rc). 
+- **latest** - dynamically resolves to the highest active .NET SDK version. By default, it installs the latest **stable (GA)** version (excluding previews and end-of-life releases). Can be combined with `dotnet-channel` and `dotnet-quality`.
 
+## Using with `dotnet-channel` input
+
+The optional `dotnet-channel` input specifies the source channel for the installation. Supported values:
+
+| Value | Description |
+|-------|-------------|
+| `STS` | The most recent Standard Term Support release |
+| `LTS` | The most recent Long Term Support release |
+| `A.B` (e.g. `8.0`) | A specific release channel |
+| `A.B.Cxx` (e.g. `8.0.1xx`) | A specific SDK release (available since 5.0) |
+
+> **Note**: The `dotnet-channel` input is only applied when `dotnet-version` is set to `latest`. If used with a specific version, a warning will be logged and the channel input will be ignored.
+
+**Install latest LTS version:**
+```yaml
+steps:
+- uses: actions/checkout@v6
+- uses: actions/setup-dotnet@v5
+  with:
+    dotnet-version: latest
+    dotnet-channel: LTS
+```
 
 ## Using the `architecture` input
 Using the architecture input, it is possible to specify the required .NET SDK architecture. Possible values:  `x64`, `x86`, `arm64`, `amd64`, `arm`, `s390x`, `ppc64le`, `riscv64`. If the input is not specified, the architecture defaults to the host OS architecture (not all of the architectures are available on all platforms).
@@ -77,9 +100,10 @@ steps:
 ```
 
 ## Using the `dotnet-quality` input
-This input sets up the action to install the latest build of the specified quality in the channel. The possible values of `dotnet-quality` are: **daily**, **signed**, **validated**, **preview**, **ga**.
 
-> **Note**: `dotnet-quality` input can be used only with .NET SDK version in 'A.B', 'A.B.x', 'A', 'A.x' and 'A.B.Cxx' formats where the major version is higher than 5. In other cases, `dotnet-quality` input will be ignored.
+The `dotnet-quality` input installs the latest build of the specified quality in the channel. Supported values: `daily`, `preview`, `ga`.
+
+> **Note**: When used with a specific SDK version, `dotnet-quality` supports only `A.B`, `A.B.x`, `A`, `A.x`, and `A.B.Cxx` formats where the major version is higher than 5. For all other formats, `dotnet-quality` will be ignored.
 
 ```yml
 steps:
@@ -89,6 +113,18 @@ steps:
     dotnet-version: '8.0.x'
     dotnet-quality: 'preview'
 - run: dotnet build <my project>
+```
+
+`dotnet-quality` can also be combined with `dotnet-version: latest` and `dotnet-channel` to target specific builds such as the latest `daily` build from the `LTS` channel.
+
+```yaml
+steps:
+- uses: actions/checkout@v6
+- uses: actions/setup-dotnet@v5
+  with:
+    dotnet-version: latest
+    dotnet-channel: LTS
+    dotnet-quality: daily
 ```
 
 ## Using the `global-json-file` input

@@ -2,6 +2,7 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as io from '@actions/io';
+import * as hc from '@actions/http-client';
 import {chmodSync} from 'fs';
 import path from 'path';
 import os from 'os';
@@ -15,21 +16,74 @@ export interface DotnetVersion {
   qualityFlag: boolean;
 }
 
+interface ReleaseIndexEntry {
+  'channel-version': string;
+  'support-phase': string;
+  'release-type': string;
+}
+
+interface ReleaseIndexResponse {
+  'releases-index': ReleaseIndexEntry[];
+}
+
 const QUALITY_INPUT_MINIMAL_MAJOR_TAG = 6;
 const LATEST_PATCH_SYNTAX_MINIMAL_MAJOR_TAG = 5;
 export class DotnetVersionResolver {
   private inputVersion: string;
   private resolvedArgument: DotnetVersion;
 
-  constructor(version: string) {
+  constructor(
+    version: string,
+    private quality: QualityOptions = '',
+    private dotnetChannel?: string
+  ) {
     this.inputVersion = version.trim();
     this.resolvedArgument = {type: '', value: '', qualityFlag: false};
   }
 
+  private isVersionChannel(channel: string): boolean {
+    // A.B format (e.g., 3.1, 8.0)
+    if (/^\d+\.\d+$/.test(channel)) return true;
+    // A.B.Cxx format (e.g., 8.0.1xx) is supported only for .NET 5.0+
+    const latestPatchMatch = channel.match(/^(\d+)\.\d+\.\d{1}xx$/);
+    if (latestPatchMatch) {
+      const major = Number(latestPatchMatch[1]);
+      return (
+        !Number.isNaN(major) && major >= LATEST_PATCH_SYNTAX_MINIMAL_MAJOR_TAG
+      );
+    }
+    return false;
+  }
+
   private async resolveVersionInput(): Promise<void> {
+    if (this.inputVersion.toLowerCase() === 'latest') {
+      const channel = this.dotnetChannel || '';
+      if (this.isVersionChannel(channel)) {
+        // A.B or A.B.Cxx channels are passed directly to the install script
+        this.resolvedArgument.value = channel;
+      } else {
+        // LTS, STS, or empty — resolve via releases index API
+        this.resolvedArgument.value = await this.getLatestVersion(channel);
+      }
+      this.resolvedArgument.type = 'channel';
+      const latestChannelMajorTag = Number(
+        this.resolvedArgument.value.split('.')[0]
+      );
+      this.resolvedArgument.qualityFlag =
+        !Number.isNaN(latestChannelMajorTag) &&
+        latestChannelMajorTag >= QUALITY_INPUT_MINIMAL_MAJOR_TAG;
+      return;
+    }
+
+    if (this.dotnetChannel) {
+      core.warning(
+        `The 'dotnet-channel' input is only supported when 'dotnet-version' is set to 'latest'.`
+      );
+    }
+
     if (!semver.validRange(this.inputVersion) && !this.isLatestPatchSyntax()) {
       throw new Error(
-        `The 'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B, A.B.x, A, A.x, A.B.Cxx`
+        `The 'dotnet-version' was supplied in invalid format: ${this.inputVersion}! Supported syntax: A.B.C, A.B, A.B.x, A, A.x, A.B.Cxx, latest`
       );
     }
     if (semver.valid(this.inputVersion)) {
@@ -109,6 +163,67 @@ export class DotnetVersionResolver {
     }
     return this.resolvedArgument;
   }
+
+  private async getLatestVersion(channelFilter: string): Promise<string> {
+    const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
+      allowRetries: true,
+      maxRetries: 3
+    });
+
+    const response = await httpClient.getJson<ReleaseIndexResponse>(
+      DotnetVersionResolver.DotnetCoreIndexUrl
+    );
+
+    const result = response.result;
+    const rawReleasesInfo = result?.['releases-index'];
+
+    if (!Array.isArray(rawReleasesInfo)) {
+      throw new Error('Unexpected response format from .NET releases index.');
+    }
+
+    let releasesInfo = rawReleasesInfo;
+
+    // Filter out EOL versions
+    releasesInfo = releasesInfo.filter(info => info['support-phase'] !== 'eol');
+
+    // Filter out preview versions if quality is not 'preview' or 'daily'
+    // If quality is not specified, we assume strict stability (GA only)
+    const normalizedQuality = (this.quality || '').toLowerCase();
+    if (!['preview', 'daily'].includes(normalizedQuality)) {
+      releasesInfo = releasesInfo.filter(
+        info => info['support-phase'] !== 'preview'
+      );
+    }
+
+    // Apply channel filter (LTS/STS)
+    if (channelFilter) {
+      const type = channelFilter.toLowerCase();
+      releasesInfo = releasesInfo.filter(info => info['release-type'] === type);
+    }
+
+    releasesInfo.sort((a, b) => {
+      const partsA = a['channel-version'].split('.').map(Number);
+      const partsB = b['channel-version'].split('.').map(Number);
+      for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
+        const diff = (partsB[i] || 0) - (partsA[i] || 0);
+        if (diff !== 0) return diff;
+      }
+      return 0;
+    });
+
+    if (releasesInfo.length === 0) {
+      throw new Error(
+        `Could not find any active releases matching channel '${
+          channelFilter || 'any'
+        }'`
+      );
+    }
+
+    return releasesInfo[0]['channel-version'];
+  }
+
+  static DotnetCoreIndexUrl =
+    'https://builds.dotnet.microsoft.com/dotnet/release-metadata/releases-index.json';
 }
 
 export class DotnetInstallScript {
@@ -263,11 +378,16 @@ export class DotnetCoreInstaller {
   constructor(
     private version: string,
     private quality: QualityOptions,
-    private architecture?: string
+    private architecture?: string,
+    private dotnetChannel?: string
   ) {}
 
   public async installDotnet(): Promise<string | null> {
-    const versionResolver = new DotnetVersionResolver(this.version);
+    const versionResolver = new DotnetVersionResolver(
+      this.version,
+      this.quality,
+      this.dotnetChannel
+    );
     const dotnetVersion = await versionResolver.createDotnetVersion();
 
     const architectureArguments =
