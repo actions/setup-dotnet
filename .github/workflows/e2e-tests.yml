@@ -254,6 +254,106 @@ jobs:
         shell: pwsh
         run: __tests__/verify-dotnet.ps1 -Patterns "^9.0", "^10.0"
 
+  test-setup-global-json-rollforward-latestmajor:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+      - name: Write global.json
+        shell: bash
+        run: |
+          mkdir subdirectory
+          echo '{"sdk":{"version": "3.1.0","rollForward": "latestMajor"}}' > ./subdirectory/global.json
+      - name: Setup dotnet
+        uses: ./
+        with:
+          global-json-file: ./subdirectory/global.json
+      - name: Verify dotnet
+        shell: pwsh
+        run: __tests__/verify-dotnet.ps1 -Patterns "^(?!3)"
+
+  test-setup-global-json-rollforward-latestminor:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [windows-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+      - name: Write global.json
+        shell: bash
+        run: |
+          mkdir subdirectory
+          echo '{"sdk":{"version": "3.0.100","rollForward": "latestMinor"}}' > ./subdirectory/global.json
+      - name: Setup dotnet
+        uses: ./
+        with:
+          global-json-file: ./subdirectory/global.json
+      - name: Verify dotnet
+        shell: pwsh
+        run: __tests__/verify-dotnet.ps1 -Patterns "^3.1"
+
+  test-setup-global-json-rollforward-latestfeature:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+      - name: Write global.json
+        shell: bash
+        run: |
+          mkdir subdirectory
+          echo '{"sdk":{"version": "6.0.100","rollForward": "latestFeature"}}' > ./subdirectory/global.json
+      - name: Setup dotnet
+        uses: ./
+        with:
+          global-json-file: ./subdirectory/global.json
+      - name: Verify dotnet
+        shell: pwsh
+        run: __tests__/verify-dotnet.ps1 -Patterns "^6.0.4"
+
+  test-setup-global-json-rollforward-latestpatch:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+      - name: Write global.json
+        shell: bash
+        run: |
+          mkdir subdirectory
+          echo '{"sdk":{"version": "6.0.400","rollForward": "latestPatch"}}' > ./subdirectory/global.json
+      - name: Setup dotnet
+        uses: ./
+        with:
+          global-json-file: ./subdirectory/global.json
+      - name: Verify dotnet
+        shell: pwsh
+        run: __tests__/verify-dotnet.ps1 -Patterns "^6.0.428$"
+
   test-setup-global-json-only:
     runs-on: ${{ matrix.operating-system }}
     strategy:
