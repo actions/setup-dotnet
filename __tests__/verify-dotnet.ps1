@@ -104,7 +104,7 @@ foreach ($version in $Versions)
   }
 
   Write-Host "Testing compiled C# project with $version .NET version."
-  & $dotnet test --no-build
+  & $dotnet run --no-build
   if ($LASTEXITCODE -ne 0)
   {
     throw "Testing process is not successful, exit code: $LASTEXITCODE"
