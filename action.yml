@@ -26,6 +26,10 @@ inputs:
   cache-dependency-path:
     description: 'Used to specify the path to a dependency file: packages.lock.json. Supports wildcards or a list of file names for caching multiple dependencies.'
     required: false
+  cache-write:
+    description: 'Whether to save the cache at the end of the workflow. Set to false for cache read-only mode, useful for preventing cache poisoning from untrusted PR builds.'
+    required: false
+    default: true
   workloads:
     description: 'Optional SDK workloads to install for additional platform support. Examples: wasm-tools, maui, aspire.'
     required: false
