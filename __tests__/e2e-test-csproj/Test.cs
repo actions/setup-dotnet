@@ -1,12 +1,18 @@
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 
 namespace test_csproj
 {
-    public static class Program
+    [TestClass]
+    public class Test
     {
-        public static void Main()
+        [TestMethod]
+        public void TestMethod()
         {   
-            Console.WriteLine("Test");
+            Console.WriteLine("TestMethod");
+            int calculatedResult = 1000 / 25;
+            int expectedResult = 40;
+            Assert.AreEqual(expectedResult, calculatedResult);
         }
     }
 }
