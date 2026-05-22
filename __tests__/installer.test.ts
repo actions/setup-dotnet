@@ -9,7 +9,6 @@ import * as io from '@actions/io';
 import * as installer from '../src/installer';
 
 import {IS_WINDOWS} from '../src/utils';
-import {QualityOptions} from '../src/setup-dotnet';
 
 describe('installer tests', () => {
   const env = process.env;
@@ -40,7 +39,7 @@ describe('installer tests', () => {
 
       it('should throw the error in case of non-zero exit code of the installation script. The error message should contain logs.', async () => {
         const inputVersion = '10.0.101';
-        const inputQuality = '' as QualityOptions;
+        const inputQuality = '';
         const errorMessage = 'fictitious error message!';
 
         getExecOutputSpy.mockImplementation(() => {
@@ -62,7 +61,7 @@ describe('installer tests', () => {
 
       it('should return version of .NET SDK after installation complete', async () => {
         const inputVersion = '10.0.101';
-        const inputQuality = '' as QualityOptions;
+        const inputQuality = '';
         const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
         getExecOutputSpy.mockImplementation(() => {
           return Promise.resolve({
@@ -84,7 +83,7 @@ describe('installer tests', () => {
 
       it(`should supply 'version' argument to the installation script if supplied version is in A.B.C syntax`, async () => {
         const inputVersion = '10.0.101';
-        const inputQuality = '' as QualityOptions;
+        const inputQuality = '';
         const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
 
         getExecOutputSpy.mockImplementation(() => {
@@ -122,7 +121,7 @@ describe('installer tests', () => {
 
       it(`should warn if the 'quality' input is set and the supplied version is in A.B.C syntax`, async () => {
         const inputVersion = '10.0.101';
-        const inputQuality = 'ga' as QualityOptions;
+        const inputQuality = 'ga';
         const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
         getExecOutputSpy.mockImplementation(() => {
           return Promise.resolve({
@@ -147,7 +146,7 @@ describe('installer tests', () => {
 
       it(`should warn if the 'quality' input is set and version isn't in A.B.C syntax but major tag is lower then 6`, async () => {
         const inputVersion = '3.1';
-        const inputQuality = 'ga' as QualityOptions;
+        const inputQuality = 'ga';
         const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
 
         getExecOutputSpy.mockImplementation(() => {
@@ -174,7 +173,7 @@ describe('installer tests', () => {
       each(['10', '10.0', '10.0.x', '10.0.*', '10.0.X']).test(
         `should supply 'quality' argument to the installation script if quality input is set and version (%s) is not in A.B.C syntax`,
         async inputVersion => {
-          const inputQuality = 'ga' as QualityOptions;
+          const inputQuality = 'ga';
           const exitCode = 0;
           const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
           getExecOutputSpy.mockImplementation(() => {
@@ -214,7 +213,7 @@ describe('installer tests', () => {
       each(['10', '10.0', '10.0.x', '10.0.*', '10.0.X']).test(
         `should supply 'channel' argument to the installation script if version (%s) isn't in A.B.C syntax`,
         async inputVersion => {
-          const inputQuality = '' as QualityOptions;
+          const inputQuality = '';
           const exitCode = 0;
           const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
           getExecOutputSpy.mockImplementation(() => {
@@ -255,7 +254,7 @@ describe('installer tests', () => {
         it(`should supply '-ProxyAddress' argument to the installation script if env.variable 'https_proxy' is set`, async () => {
           process.env['https_proxy'] = 'https://proxy.com';
           const inputVersion = '10.0.101';
-          const inputQuality = '' as QualityOptions;
+          const inputQuality = '';
           const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
 
           getExecOutputSpy.mockImplementation(() => {
@@ -293,7 +292,7 @@ describe('installer tests', () => {
         it(`should supply '-ProxyBypassList' argument to the installation script if env.variable 'no_proxy' is set`, async () => {
           process.env['no_proxy'] = 'first.url,second.url';
           const inputVersion = '10.0.101';
-          const inputQuality = '' as QualityOptions;
+          const inputQuality = '';
           const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
 
           getExecOutputSpy.mockImplementation(() => {
@@ -331,7 +330,7 @@ describe('installer tests', () => {
 
       it(`should supply 'architecture' argument to the installation script when architecture is provided`, async () => {
         const inputVersion = '10.0.101';
-        const inputQuality = '' as QualityOptions;
+        const inputQuality = '';
         const inputArchitecture = 'x64';
         const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
 
@@ -365,7 +364,7 @@ describe('installer tests', () => {
 
       it(`should NOT supply 'architecture' argument when architecture is not provided`, async () => {
         const inputVersion = '10.0.101';
-        const inputQuality = '' as QualityOptions;
+        const inputQuality = '';
         const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
 
         getExecOutputSpy.mockImplementation(() => {
@@ -395,7 +394,7 @@ describe('installer tests', () => {
 
       it(`should supply 'install-dir' with arch subdirectory for cross-arch install`, async () => {
         const inputVersion = '10.0.101';
-        const inputQuality = '' as QualityOptions;
+        const inputQuality = '';
         const inputArchitecture = 'x64';
         const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
 
@@ -436,7 +435,7 @@ describe('installer tests', () => {
 
       it(`should NOT supply 'install-dir' when architecture matches runner's native arch`, async () => {
         const inputVersion = '10.0.101';
-        const inputQuality = '' as QualityOptions;
+        const inputQuality = '';
         const nativeArch = os.arch().toLowerCase();
         const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
 

@@ -15,13 +15,7 @@ import {restoreCache} from './cache-restore';
 import {Outputs} from './constants';
 import JSON5 from 'json5';
 
-const qualityOptions = [
-  'daily',
-  'signed',
-  'validated',
-  'preview',
-  'ga'
-] as const;
+const qualityOptions = ['daily', 'preview', 'ga'] as const;
 const supportedArchitectures = [
   'x64',
   'x86',
@@ -34,7 +28,18 @@ const supportedArchitectures = [
 ] as const;
 type SupportedArchitecture = (typeof supportedArchitectures)[number];
 
-export type QualityOptions = (typeof qualityOptions)[number];
+export type QualityOptions = (typeof qualityOptions)[number] | '';
+
+function isValidChannel(channel: string): boolean {
+  const upper = channel.toUpperCase();
+  if (upper === 'LTS' || upper === 'STS') return true;
+  // A.B format (e.g., 3.1, 8.0)
+  if (/^\d+\.\d+$/.test(channel)) return true;
+  // A.B.Cxx format (e.g., 8.0.1xx) - available since 5.0
+  const match = channel.match(/^(?<major>\d+)\.\d+\.\d{1}xx$/);
+  if (match && parseInt(match.groups!.major) >= 5) return true;
+  return false;
+}
 
 export async function run() {
   try {
@@ -50,6 +55,28 @@ export async function run() {
     const versions = core.getMultilineInput('dotnet-version');
     const installedDotnetVersions: (string | null)[] = [];
     const architecture = getArchitectureInput();
+    let dotnetChannel = core.getInput('dotnet-channel');
+
+    const isLatestRequested = versions.some(
+      version => version && version.toLowerCase() === 'latest'
+    );
+    if (dotnetChannel && !isValidChannel(dotnetChannel)) {
+      if (isLatestRequested) {
+        throw new Error(
+          `Value '${dotnetChannel}' is not supported for the 'dotnet-channel' option. Supported values are: LTS, STS, A.B (e.g. 8.0), A.B.Cxx (e.g. 8.0.1xx).`
+        );
+      } else {
+        core.warning(
+          `Value '${dotnetChannel}' is not supported for the 'dotnet-channel' option and will be ignored because 'dotnet-version' is not set to 'latest'. Supported values are: LTS, STS, A.B (e.g. 8.0), A.B.Cxx (e.g. 8.0.1xx).`
+        );
+        dotnetChannel = '';
+      }
+    } else if (dotnetChannel && !isLatestRequested) {
+      core.warning(
+        `The 'dotnet-channel' input is only supported when 'dotnet-version' is set to 'latest'.`
+      );
+      dotnetChannel = '';
+    }
 
     const globalJsonFileInput = core.getInput('global-json-file');
     if (globalJsonFileInput) {
@@ -80,17 +107,20 @@ export async function run() {
 
       if (quality && !qualityOptions.includes(quality)) {
         throw new Error(
-          `Value '${quality}' is not supported for the 'dotnet-quality' option. Supported values are: daily, signed, validated, preview, ga.`
+          `Value '${quality}' is not supported for the 'dotnet-quality' option. Supported values are: daily, preview, ga.`
         );
       }
 
       let dotnetInstaller: DotnetCoreInstaller;
-      const uniqueVersions = new Set<string>(versions);
+      const uniqueVersions = new Set<string>(
+        versions.map(v => (v.toLowerCase() === 'latest' ? 'latest' : v))
+      );
       for (const version of uniqueVersions) {
         dotnetInstaller = new DotnetCoreInstaller(
           version,
           quality,
-          architecture
+          architecture,
+          version.toLowerCase() === 'latest' ? dotnetChannel : undefined
         );
         const installedVersion = await dotnetInstaller.installDotnet();
         installedDotnetVersions.push(installedVersion);

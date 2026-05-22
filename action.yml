@@ -6,9 +6,11 @@ branding:
   color: green
 inputs:
   dotnet-version:
-    description: 'Optional SDK version(s) to use. If not provided, will install global.json version when available. Examples: 2.2.104, 3.1, 3.1.x, 3.x, 6.0.2xx'
+    description: 'Optional SDK version(s) to use. If not provided, will install global.json version when available. Examples: 2.2.104, 3.1, 3.1.x, 3.x, 6.0.2xx, latest'
   dotnet-quality:
-    description: 'Optional quality of the build. The possible values are: daily, signed, validated, preview, ga.'
+    description: 'Optional quality of the build. The possible values are: daily, preview, ga.'
+  dotnet-channel:
+    description: 'Optional channel for the installation. The possible values are: STS, LTS, A.B (e.g. 8.0), A.B.Cxx (e.g. 8.0.1xx, available since 5.0). To be used with "dotnet-version: latest".'
   global-json-file:
     description: 'Optional global.json location, if your global.json isn''t located in the root of the repo.'
   source-url:
