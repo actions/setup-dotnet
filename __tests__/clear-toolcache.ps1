@@ -6,8 +6,8 @@ $dotnetPaths = @{
 
 foreach ($srcPath in $dotnetPaths[$args[0]]) {
     if (Test-Path $srcPath) {
-        Write-Host "Move $srcPath path"
-        $dstPath = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName())
+        $dstPath = "$srcPath-" + [IO.Path]::GetRandomFileName()
+        Write-Host "Moving $srcPath to $dstPath"
         Move-Item -Path $srcPath -Destination $dstPath
     }
 }
