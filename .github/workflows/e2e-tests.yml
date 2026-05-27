@@ -577,6 +577,11 @@ jobs:
         image: ubuntu/squid:latest
         ports:
           - 3128:3128
+        options: >-
+          --health-cmd "bash -c '</dev/tcp/localhost/3128'"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     env:
       https_proxy: http://squid-proxy:3128
       http_proxy: http://squid-proxy:3128
