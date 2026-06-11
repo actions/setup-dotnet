@@ -273,14 +273,14 @@ jobs:
         shell: bash
         run: |
           mkdir subdirectory
-          echo '{"sdk":{"version": "3.1.0","rollForward": "latestMajor"}}' > ./subdirectory/global.json
+          echo '{"sdk":{"version": "8.0.100","rollForward": "latestMajor"}}' > ./subdirectory/global.json
       - name: Setup dotnet
         uses: ./
         with:
           global-json-file: ./subdirectory/global.json
       - name: Verify dotnet
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^(?!3)"
+        run: __tests__/verify-dotnet.ps1 -Patterns "^(?!8)"
 
   test-setup-global-json-rollforward-latestfeature:
     runs-on: ${{ matrix.operating-system }}
