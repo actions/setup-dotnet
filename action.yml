@@ -13,6 +13,9 @@ inputs:
     description: 'Optional channel for the installation. The possible values are: STS, LTS, A.B (e.g. 8.0), A.B.Cxx (e.g. 8.0.1xx, available since 5.0). To be used with "dotnet-version: latest".'
   global-json-file:
     description: 'Optional global.json location, if your global.json isn''t located in the root of the repo.'
+  dotnet-version-file:
+    description: 'Optional path to a file with the .NET SDK version to install. Supports a .tool-versions file (asdf/mise format, reads the "dotnet" entry) or a global.json file.'
+    required: false
   source-url:
     description: 'Optional package source for which to set up authentication. Will consult any existing NuGet.config in the root of the repo and provide a temporary NuGet.config using the NUGET_AUTH_TOKEN environment variable as a ClearTextPassword'
   owner:

@@ -144,6 +144,32 @@ steps:
 
 > **Note**: The action supports `latest*` variants of the [rollForward](https://learn.microsoft.com/en-us/dotnet/core/tools/global-json#rollforward) field in `global.json`. When set to `latestPatch`, `latestFeature`, `latestMinor`, or `latestMajor`, the action installs the appropriate SDK version.
 
+## Using the `dotnet-version-file` input
+`setup-dotnet` can read the .NET SDK version from a version file via the `dotnet-version-file` input. This is handy for sharing a single source of truth with tools such as [asdf](https://asdf-vm.com/) and [mise](https://mise.jdx.dev/). The input accepts:
+
+- a [`.tool-versions`](https://asdf-vm.com/manage/configuration.html#tool-versions) file — the version is read from its `dotnet` entry;
+- a `global.json` file — the version is read from its `sdk.version` field.
+
+If the file supplied to `dotnet-version-file` doesn't exist, the action fails. If the file exists but contains no .NET SDK version, a warning is logged and no version is installed from it.
+
+```yml
+steps:
+- uses: actions/checkout@v6
+- uses: actions/setup-dotnet@v5
+  with:
+    dotnet-version-file: .tool-versions
+- run: dotnet build <my project>
+```
+
+A `.tool-versions` file may pin several tools; only the `dotnet` entry is used:
+
+```
+nodejs 20.11.0
+dotnet 8.0.100
+```
+
+>**Note**: In case both `dotnet-version` and `dotnet-version-file` inputs are used, versions from both inputs will be installed.
+
 ## Caching NuGet Packages
 The action has a built-in functionality for caching and restoring dependencies. It uses [toolkit/cache](https://github.com/actions/toolkit/tree/main/packages/cache) under the hood for caching global packages data but requires less configuration settings. The `cache` input is optional, and caching is turned off by default.
 

@@ -21,6 +21,7 @@ describe('setup-dotnet tests', () => {
   const setOutputSpy = jest.spyOn(core, 'setOutput');
 
   const existsSyncSpy = jest.spyOn(fs, 'existsSync');
+  const readFileSyncSpy = jest.spyOn(fs, 'readFileSync');
 
   const maxSatisfyingSpy = jest.spyOn(semver, 'maxSatisfying');
 
@@ -77,6 +78,80 @@ describe('setup-dotnet tests', () => {
       expect(debugSpy).toHaveBeenCalledWith(expectedDebugMessage);
       expect(existsSyncSpy).toHaveBeenCalled();
       expect(infoSpy).toHaveBeenCalledWith(expectedInfoMessage);
+    });
+
+    it('should fail the action if dotnet-version-file input is present, but the file does not exist in the file system', async () => {
+      inputs['dotnet-version'] = [];
+      inputs['global-json-file'] = '';
+      inputs['dotnet-version-file'] = '.tool-versions';
+
+      existsSyncSpy.mockReturnValue(false);
+
+      const expectedErrorMessage = `The specified dotnet-version-file '${inputs['dotnet-version-file']}' does not exist`;
+
+      await setup.run();
+      expect(setFailedSpy).toHaveBeenCalledWith(expectedErrorMessage);
+
+      inputs['dotnet-version-file'] = '';
+    });
+
+    it('should read the .NET SDK version from a .tool-versions file supplied via dotnet-version-file', async () => {
+      inputs['dotnet-version'] = [];
+      inputs['global-json-file'] = '';
+      inputs['dotnet-quality'] = '';
+      inputs['dotnet-version-file'] = '.tool-versions';
+
+      existsSyncSpy.mockReturnValue(true);
+      readFileSyncSpy.mockReturnValue('nodejs 20.0.0\ndotnet 8.0.100\n');
+      installDotnetSpy.mockImplementation(() => Promise.resolve('8.0.100'));
+      setOutputSpy.mockImplementation(() => {});
+
+      await setup.run();
+
+      expect(installDotnetSpy).toHaveBeenCalledTimes(1);
+      expect(setOutputSpy).toHaveBeenCalledWith('dotnet-version', '8.0.100');
+
+      inputs['dotnet-version-file'] = '';
+    });
+
+    it('should read the .NET SDK version from a global.json supplied via dotnet-version-file', async () => {
+      inputs['dotnet-version'] = [];
+      inputs['global-json-file'] = '';
+      inputs['dotnet-quality'] = '';
+      inputs['dotnet-version-file'] = 'csharp/global.json';
+
+      existsSyncSpy.mockReturnValue(true);
+      readFileSyncSpy.mockReturnValue('{"sdk":{"version":"8.0.100"}}');
+      installDotnetSpy.mockImplementation(() => Promise.resolve('8.0.100'));
+      setOutputSpy.mockImplementation(() => {});
+
+      await setup.run();
+
+      expect(installDotnetSpy).toHaveBeenCalledTimes(1);
+      expect(setOutputSpy).toHaveBeenCalledWith('dotnet-version', '8.0.100');
+
+      inputs['dotnet-version-file'] = '';
+    });
+
+    it('should warn and not install if dotnet-version-file has no dotnet entry', async () => {
+      inputs['dotnet-version'] = [];
+      inputs['global-json-file'] = '';
+      inputs['dotnet-version-file'] = '.tool-versions';
+
+      // The version file exists, but the fallback global.json in the repo root does not.
+      existsSyncSpy.mockImplementation(filePath =>
+        String(filePath).endsWith('.tool-versions')
+      );
+      readFileSyncSpy.mockReturnValue('nodejs 20.0.0\n# no dotnet here\n');
+
+      await setup.run();
+
+      expect(warningSpy).toHaveBeenCalledWith(
+        `No .NET SDK version was found in '${inputs['dotnet-version-file']}'. Make sure the file contains a 'dotnet' entry (.tool-versions) or an 'sdk.version' field (global.json).`
+      );
+      expect(installDotnetSpy).not.toHaveBeenCalled();
+
+      inputs['dotnet-version-file'] = '';
     });
 
     it('should fail the action if quality is supplied but its value is not supported', async () => {

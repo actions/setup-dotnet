@@ -89,6 +89,24 @@ export async function run() {
       versions.push(getVersionFromGlobalJson(globalJsonPath));
     }
 
+    const versionFileInput = core.getInput('dotnet-version-file');
+    if (versionFileInput) {
+      const versionFilePath = path.resolve(process.cwd(), versionFileInput);
+      if (!fs.existsSync(versionFilePath)) {
+        throw new Error(
+          `The specified dotnet-version-file '${versionFileInput}' does not exist`
+        );
+      }
+      const versionFromFile = getVersionFromFile(versionFilePath);
+      if (versionFromFile) {
+        versions.push(versionFromFile);
+      } else {
+        core.warning(
+          `No .NET SDK version was found in '${versionFileInput}'. Make sure the file contains a 'dotnet' entry (.tool-versions) or an 'sdk.version' field (global.json).`
+        );
+      }
+    }
+
     if (!versions.length) {
       // Try to fall back to global.json
       core.debug('No version found, trying to find version from global.json');
@@ -165,7 +183,10 @@ export async function run() {
       auth.configAuthentication(sourceUrl, configFile);
     }
 
-    outputInstalledVersion(installedDotnetVersions, globalJsonFileInput);
+    outputInstalledVersion(
+      installedDotnetVersions,
+      globalJsonFileInput || versionFileInput
+    );
 
     if (core.getBooleanInput('cache') && isCacheFeatureAvailable()) {
       const cacheDependencyPath = core.getInput('cache-dependency-path');
@@ -233,9 +254,32 @@ function getVersionFromGlobalJson(globalJsonPath: string): string {
   return version;
 }
 
+function getVersionFromToolVersions(toolVersionsPath: string): string {
+  const content = fs.readFileSync(toolVersionsPath, {encoding: 'utf8'});
+  for (const line of content.split(/\r?\n/)) {
+    // A .tool-versions entry is `<tool> <version>`; lines starting with `#` are comments.
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const [tool, version] = trimmed.split(/\s+/);
+    if (tool === 'dotnet' && version) {
+      return version;
+    }
+  }
+  return '';
+}
+
+function getVersionFromFile(versionFilePath: string): string {
+  // Dispatch by file: a global.json is parsed as JSON, anything else
+  // (e.g. .tool-versions) is parsed in the asdf/mise `<tool> <version>` format.
+  if (path.basename(versionFilePath).toLowerCase().endsWith('.json')) {
+    return getVersionFromGlobalJson(versionFilePath);
+  }
+  return getVersionFromToolVersions(versionFilePath);
+}
+
 function outputInstalledVersion(
   installedVersions: (string | null)[],
-  globalJsonFileInput: string
+  versionFileInput: string
 ): void {
   if (!installedVersions.length) {
     core.info(`The '${Outputs.DotnetVersion}' output will not be set.`);
@@ -249,8 +293,8 @@ function outputInstalledVersion(
     return;
   }
 
-  if (globalJsonFileInput) {
-    const versionToOutput = installedVersions.at(-1); // .NET SDK version parsed from the global.json file is installed last
+  if (versionFileInput) {
+    const versionToOutput = installedVersions.at(-1); // .NET SDK version parsed from the version file is installed last
     core.setOutput(Outputs.DotnetVersion, versionToOutput);
     return;
   }
