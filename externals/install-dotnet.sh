@@ -1003,12 +1003,12 @@ copy_files_or_dirs_from_list() {
     cat | uniq | while read -r file_path; do
         local path="$(remove_beginning_slash "${file_path#$root_path}")"
         local target="$out_path/$path"
-        if [ "$override" = true ] || (! ([ -d "$target" ] || [ -e "$target" ])); then
+        if [ "$override" = true ] || (! ([ -d "$target" ] || [ -e "$target" ] || [ -L "$target" ])); then
             mkdir -p "$out_path/$(dirname "$path")"
-            if [ -d "$target" ]; then
+            if [ -d "$target" ] || [ -L "$target" ]; then
                 rm -rf "$target"
             fi
-            cp -R $override_switch "$root_path/$path" "$target"
+            cp -RP $override_switch "$root_path/$path" "$target"
         fi
     done
 }
@@ -1053,8 +1053,8 @@ extract_dotnet_package() {
     tar -xzf "$zip_path" -C "$temp_out_path" > /dev/null || failed=true
 
     local folders_with_version_regex='^.*/[0-9]+\.[0-9]+[^/]+/'
-    find "$temp_out_path" -type f | grep -Eo "$folders_with_version_regex" | sort | copy_files_or_dirs_from_list "$temp_out_path" "$out_path" false
-    find "$temp_out_path" -type f | grep -Ev "$folders_with_version_regex" | copy_files_or_dirs_from_list "$temp_out_path" "$out_path" "$override_non_versioned_files"
+    find "$temp_out_path" \( -type f -o -type l \) | grep -Eo "$folders_with_version_regex" | sort | copy_files_or_dirs_from_list "$temp_out_path" "$out_path" false
+    find "$temp_out_path" \( -type f -o -type l \) | grep -Ev "$folders_with_version_regex" | copy_files_or_dirs_from_list "$temp_out_path" "$out_path" "$override_non_versioned_files"
     
     validate_remote_local_file_sizes "$zip_path" "$remote_file_size"
     
