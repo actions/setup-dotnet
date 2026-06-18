@@ -247,7 +247,7 @@ jobs:
         shell: bash
         run: |
           mkdir subdirectory
-          echo '{"sdk":{"version": "9.0.308","rollForward": "latestFeature"}}' > ./subdirectory/global.json
+          echo '{"sdk":{"version": "9.0.308"}}' > ./subdirectory/global.json
       - name: Setup dotnet
         uses: ./
         with:
@@ -332,38 +332,6 @@ jobs:
         shell: pwsh
         run: __tests__/verify-dotnet.ps1 -Patterns "^10.0.1(?!00)"
 
-  test-setup-global-json-only:
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      fail-fast: false
-      matrix:
-        operating-system:
-          [
-            ubuntu-22.04,
-            ubuntu-latest,
-            windows-latest,
-            macos-latest,
-            macos-15-intel
-          ]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - name: Clear toolcache
-        shell: pwsh
-        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
-      - name: Write global.json
-        shell: bash
-        run: |
-          mkdir subdirectory
-          echo '{"sdk":{"version": "10.0.101","rollForward": "latestFeature"}}' > ./subdirectory/global.json
-      - name: Setup dotnet
-        uses: ./
-        with:
-          global-json-file: ./subdirectory/global.json
-      - name: Verify dotnet
-        shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^10.0"
-
   test-global-json-with-comments:
     runs-on: ${{ matrix.operating-system }}
     strategy:
@@ -387,7 +355,7 @@ jobs:
         shell: bash
         run: |
           mkdir subdirectory
-          echo '/* should support comments */ {"sdk":{"version": "10.0.101","rollForward": "latestFeature"}} // should support comments' > ./subdirectory/global.json
+          echo '/* should support comments */ {"sdk":{"version": "10.0.101"}} // should support comments' > ./subdirectory/global.json
       - name: Setup dotnet
         uses: ./
         with:
