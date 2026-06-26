@@ -1,11 +1,21 @@
-import * as cache from '@actions/cache';
-import * as exec from '@actions/exec';
+import {jest} from '@jest/globals';
 
-import {getNuGetFolderPath, isCacheFeatureAvailable} from '../src/cache-utils';
+jest.unstable_mockModule('@actions/cache', () => ({
+  isFeatureAvailable: jest.fn()
+}));
+jest.unstable_mockModule('@actions/core', () => ({
+  warning: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn()
+}));
+jest.unstable_mockModule('@actions/exec', () => ({
+  getExecOutput: jest.fn()
+}));
 
-jest.mock('@actions/cache');
-jest.mock('@actions/core');
-jest.mock('@actions/exec');
+const cache = await import('@actions/cache');
+const exec = await import('@actions/exec');
+const {getNuGetFolderPath, isCacheFeatureAvailable} =
+  await import('../src/cache-utils.js');
 
 describe('cache-utils tests', () => {
   describe('getNuGetFolderPath()', () => {

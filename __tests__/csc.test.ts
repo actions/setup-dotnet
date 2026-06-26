@@ -1,4 +1,4 @@
-import cscFile from '../.github/csc.json';
+import cscFile from '../.github/csc.json' with {type: 'json'};
 describe('csc tests', () => {
   const regexPattern = cscFile['problemMatcher'][0]['pattern'][0]['regexp'];
   const regexResultsMap = cscFile['problemMatcher'][0]['pattern'][0];
@@ -85,7 +85,7 @@ describe('csc tests', () => {
       expect(matchedResultsArray).not.toBeNull();
 
       for (const propName in results) {
-        const propertyIndex = regexResultsMap[propName];
+        const propertyIndex = (regexResultsMap as any)[propName];
         const expectedPropValue = results[propName];
         const matchedPropValue = matchedResultsArray![propertyIndex];
         expect(matchedPropValue).toEqual(expectedPropValue);

@@ -1,14 +1,44 @@
+import {jest} from '@jest/globals';
 import each from 'jest-each';
 import semver from 'semver';
-import fs from 'fs';
 import fspromises from 'fs/promises';
 import os from 'os';
-import * as exec from '@actions/exec';
-import * as core from '@actions/core';
-import * as io from '@actions/io';
-import * as installer from '../src/installer';
+import path from 'path';
 
-import {IS_WINDOWS} from '../src/utils';
+jest.unstable_mockModule('@actions/exec', () => ({
+  getExecOutput: jest.fn()
+}));
+jest.unstable_mockModule('@actions/core', () => ({
+  warning: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+  setOutput: jest.fn(),
+  exportVariable: jest.fn((name: string, val: string) => {
+    process.env[name] = val;
+  }),
+  addPath: jest.fn((p: string) => {
+    process.env['PATH'] = `${p}${path.delimiter}${process.env['PATH']}`;
+  })
+}));
+jest.unstable_mockModule('@actions/io', () => ({
+  which: jest.fn()
+}));
+jest.unstable_mockModule('fs', () => {
+  const actual = jest.requireActual('fs') as typeof import('fs');
+  const chmodSync = jest.fn();
+  return {
+    ...actual,
+    chmodSync,
+    default: {...actual, chmodSync}
+  };
+});
+
+const exec = await import('@actions/exec');
+const core = await import('@actions/core');
+const io = await import('@actions/io');
+const fs = await import('fs');
+const installer = await import('../src/installer.js');
+const {IS_WINDOWS} = await import('../src/utils.js');
 
 describe('installer tests', () => {
   const env = process.env;
@@ -16,14 +46,24 @@ describe('installer tests', () => {
   beforeEach(() => {
     jest.resetModules();
     process.env = {...env};
+    (core.exportVariable as jest.Mock).mockImplementation(
+      (...args: unknown[]) => {
+        const [name, val] = args as [string, string];
+        process.env[name] = val;
+      }
+    );
+    (core.addPath as jest.Mock).mockImplementation((...args: unknown[]) => {
+      const [p] = args as [string];
+      process.env['PATH'] = `${p}${path.delimiter}${process.env['PATH']}`;
+    });
   });
 
   describe('DotnetCoreInstaller tests', () => {
-    const getExecOutputSpy = jest.spyOn(exec, 'getExecOutput');
-    const warningSpy = jest.spyOn(core, 'warning');
-    const whichSpy = jest.spyOn(io, 'which');
+    const getExecOutputSpy = exec.getExecOutput as jest.Mock;
+    const warningSpy = core.warning as jest.Mock;
+    const whichSpy = io.which as jest.Mock;
     const maxSatisfyingSpy = jest.spyOn(semver, 'maxSatisfying');
-    const chmodSyncSpy = jest.spyOn(fs, 'chmodSync');
+    const chmodSyncSpy = fs.chmodSync as jest.Mock;
     const readdirSpy = jest.spyOn(fspromises, 'readdir');
 
     describe('installDotnet() tests', () => {

@@ -1,6 +1,9 @@
 import path from 'path';
 import fs from 'fs';
+import {fileURLToPath} from 'url';
 import * as hc from '@actions/http-client';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const HTTP_CLIENT_OPTIONS = {allowRetries: true, maxRetries: 10} as const;
 const TEST_TIMEOUT = 30000;

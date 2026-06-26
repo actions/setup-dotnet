@@ -1,14 +1,32 @@
-import * as cache from '@actions/cache';
-import * as core from '@actions/core';
-import fs from 'node:fs';
-import {run} from '../src/cache-save';
-import {getNuGetFolderPath} from '../src/cache-utils';
-import {State} from '../src/constants';
+import {jest} from '@jest/globals';
 
-jest.mock('@actions/cache');
-jest.mock('@actions/core');
-jest.mock('node:fs');
-jest.mock('../src/cache-utils');
+jest.unstable_mockModule('@actions/cache', () => ({
+  saveCache: jest.fn()
+}));
+jest.unstable_mockModule('@actions/core', () => ({
+  setFailed: jest.fn(),
+  getState: jest.fn(),
+  setOutput: jest.fn(),
+  getBooleanInput: jest.fn(),
+  debug: jest.fn(),
+  info: jest.fn(),
+  warning: jest.fn()
+}));
+jest.unstable_mockModule('node:fs', () => ({
+  default: {
+    existsSync: jest.fn()
+  }
+}));
+jest.unstable_mockModule('../src/cache-utils', () => ({
+  getNuGetFolderPath: jest.fn()
+}));
+
+const cache = await import('@actions/cache');
+const core = await import('@actions/core');
+const fs = (await import('node:fs')).default;
+const {run} = await import('../src/cache-save.js');
+const {getNuGetFolderPath} = await import('../src/cache-utils.js');
+const {State} = await import('../src/constants.js');
 
 describe('cache-save tests', () => {
   beforeAll(() => {
