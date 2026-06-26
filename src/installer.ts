@@ -9,7 +9,7 @@ import {fileURLToPath} from 'url';
 import os from 'os';
 import semver from 'semver';
 import {IS_WINDOWS, PLATFORM} from './utils.js';
-import {QualityOptions} from './setup-dotnet.js';
+import type {QualityOptions} from './setup-dotnet.js';
 
 export interface DotnetVersion {
   type: string;
