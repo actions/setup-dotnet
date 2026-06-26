@@ -17,7 +17,8 @@ export const restoreCache = async (cacheDependencyPath?: string) => {
   }
 
   const platform = process.env.RUNNER_OS;
-  const primaryKey = `dotnet-cache-${platform}-${fileHash}`;
+  const arch = process.arch;
+  const primaryKey = `dotnet-cache-${platform}-${arch}-${fileHash}`;
   core.debug(`primary key is ${primaryKey}`);
 
   core.saveState(State.CachePrimaryKey, primaryKey);
