@@ -1,4 +1,12 @@
-import {jest} from '@jest/globals';
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest
+} from '@jest/globals';
 
 jest.unstable_mockModule('node:fs/promises', () => ({
   readdir: jest.fn()
@@ -48,7 +56,9 @@ describe('cache-restore tests', () => {
       jest.mocked(core.setOutput).mockClear();
       jest.mocked(cache.restoreCache).mockClear();
     });
-    afterEach(() => (process.env.GITHUB_WORKSPACE = githubWorkspace));
+    afterEach(() => {
+      process.env.GITHUB_WORKSPACE = githubWorkspace;
+    });
 
     it('throws error when lock file is not found', async () => {
       jest.mocked(glob.hashFiles).mockResolvedValue('');

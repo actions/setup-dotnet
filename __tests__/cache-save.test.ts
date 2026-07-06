@@ -1,4 +1,4 @@
-import {jest} from '@jest/globals';
+import {beforeAll, beforeEach, describe, expect, it, jest} from '@jest/globals';
 
 jest.unstable_mockModule('@actions/cache', () => ({
   saveCache: jest.fn()

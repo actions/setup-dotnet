@@ -1,3 +1,4 @@
+import {afterAll, beforeEach, describe, expect, it} from '@jest/globals';
 import * as io from '@actions/io';
 import fs from 'fs';
 import path from 'path';

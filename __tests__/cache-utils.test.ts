@@ -1,4 +1,12 @@
-import {jest} from '@jest/globals';
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest
+} from '@jest/globals';
 
 jest.unstable_mockModule('@actions/cache', () => ({
   isFeatureAvailable: jest.fn()
@@ -114,9 +122,15 @@ Options:
     url => {
       // Save & Restore env
       let serverUrlEnv: string | undefined;
-      beforeAll(() => (serverUrlEnv = process.env['GITHUB_SERVER_URL']));
-      beforeEach(() => (process.env['GITHUB_SERVER_URL'] = url));
-      afterEach(() => (process.env['GITHUB_SERVER_URL'] = serverUrlEnv));
+      beforeAll(() => {
+        serverUrlEnv = process.env['GITHUB_SERVER_URL'];
+      });
+      beforeEach(() => {
+        process.env['GITHUB_SERVER_URL'] = url;
+      });
+      afterEach(() => {
+        process.env['GITHUB_SERVER_URL'] = serverUrlEnv;
+      });
 
       it('returns true when cache.isFeatureAvailable() === true', () => {
         jest.mocked(cache.isFeatureAvailable).mockReturnValue(true);

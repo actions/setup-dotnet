@@ -1,4 +1,12 @@
-import {jest} from '@jest/globals';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+  test
+} from '@jest/globals';
 import semver from 'semver';
 import os from 'os';
 
