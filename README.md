@@ -142,7 +142,7 @@ steps:
   working-directory: csharp
 ```
 
-> **Note**: The action supports `latest*` variants of the [rollForward](https://learn.microsoft.com/en-us/dotnet/core/tools/global-json#rollforward) field in `global.json`. When set to `latestPatch`, `latestFeature`, `latestMinor`, or `latestMajor`, the action installs the appropriate SDK version.
+> **Note**: The action supports `latest*` variants of the [rollForward](https://learn.microsoft.com/en-us/dotnet/core/tools/global-json#rollforward) field in `global.json`. When set to `latestPatch`, `latestFeature`, `latestMinor`, or `latestMajor`, the action installs the appropriate SDK version. For prerelease versions, the exact pinned version is always installed regardless of the `rollForward` setting.
 
 ## Using the `dotnet-version-file` input
 `setup-dotnet` can read the .NET SDK version from a version file via the `dotnet-version-file` input. This is handy for sharing a single source of truth with tools such as [asdf](https://asdf-vm.com/) and [mise](https://mise.jdx.dev/). The input accepts:
@@ -265,7 +265,8 @@ jobs:
         with:
           dotnet-version: ${{ matrix.dotnet }}
       - name: Create temporary global.json
-        run: echo '{"sdk":{"version": "${{ steps.stepid.outputs.dotnet-version }}"}}' > ./global.json
+        run: |
+          echo '{"sdk":{"version": "${{ steps.stepid.outputs.dotnet-version }}"}}' > ./global.json
       - name: Execute dotnet
         run: dotnet build <my project>
 ```

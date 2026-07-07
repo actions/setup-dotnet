@@ -3,6 +3,7 @@ import * as core from '@actions/core';
 import fs from 'node:fs';
 import {run} from '../src/cache-save';
 import {getNuGetFolderPath} from '../src/cache-utils';
+import {State} from '../src/constants';
 
 jest.mock('@actions/cache');
 jest.mock('@actions/core');
@@ -83,5 +84,23 @@ describe('cache-save tests', () => {
     expect(jest.mocked(core.setFailed)).not.toHaveBeenCalled();
     expect(jest.mocked(core.getState)).toHaveBeenCalledTimes(2);
     expect(jest.mocked(cache.saveCache)).toHaveBeenCalled();
+  });
+
+  it('does not fail and traces when saveCache returns -1', async () => {
+    jest.mocked(core.getBooleanInput).mockReturnValue(true);
+    jest.mocked(core.getState).mockImplementation(s => s);
+    jest.mocked(fs.existsSync).mockReturnValue(true);
+    jest.mocked(cache.saveCache).mockResolvedValue(-1);
+
+    await run();
+
+    expect(jest.mocked(core.setFailed)).not.toHaveBeenCalled();
+    expect(jest.mocked(cache.saveCache)).toHaveBeenCalled();
+    expect(jest.mocked(core.debug)).toHaveBeenCalledWith(
+      `Cache was not saved for the key: ${State.CachePrimaryKey}`
+    );
+    expect(jest.mocked(core.info)).not.toHaveBeenCalledWith(
+      `Cache saved with the key: ${State.CachePrimaryKey}`
+    );
   });
 });
