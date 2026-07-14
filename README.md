@@ -15,9 +15,9 @@ documentation:
 [Software installed on github hosted runners](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#supported-software)
 for .NET SDK versions that are currently available.
 
-## Breaking changes in V6
+## What's new in V6
 
-- **Migrated to ESM** to enable support for the latest `@actions/*` package versions.
+- Migrated action internals to ESM for compatibility with latest `@actions/*` packages. No changes to action inputs, outputs, or behavior.
 
 ## Breaking changes in V5
 
