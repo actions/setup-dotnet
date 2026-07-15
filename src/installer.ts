@@ -5,10 +5,11 @@ import * as io from '@actions/io';
 import * as hc from '@actions/http-client';
 import {chmodSync} from 'fs';
 import path from 'path';
+import {fileURLToPath} from 'url';
 import os from 'os';
 import semver from 'semver';
-import {IS_WINDOWS, PLATFORM} from './utils';
-import {QualityOptions} from './setup-dotnet';
+import {IS_WINDOWS, PLATFORM} from './utils.js';
+import type {QualityOptions} from './setup-dotnet.js';
 
 export interface DotnetVersion {
   type: string;
@@ -233,7 +234,13 @@ export class DotnetInstallScript {
 
   constructor() {
     this.escapedScript = path
-      .join(__dirname, '..', '..', 'externals', this.scriptName)
+      .join(
+        path.dirname(fileURLToPath(import.meta.url)),
+        '..',
+        '..',
+        'externals',
+        this.scriptName
+      )
       .replace(/'/g, "''");
 
     if (IS_WINDOWS) {

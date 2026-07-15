@@ -1,26 +1,71 @@
-import * as core from '@actions/core';
-import fs from 'fs';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+  test
+} from '@jest/globals';
 import semver from 'semver';
-import * as auth from '../src/authutil';
 import os from 'os';
-import * as setup from '../src/setup-dotnet';
-import {DotnetCoreInstaller, DotnetInstallDir} from '../src/installer';
-import * as cacheUtils from '../src/cache-utils';
-import * as cacheRestore from '../src/cache-restore';
+
+jest.unstable_mockModule('@actions/core', () => ({
+  getInput: jest.fn(),
+  getMultilineInput: jest.fn(),
+  getBooleanInput: jest.fn(),
+  setFailed: jest.fn(),
+  warning: jest.fn(),
+  debug: jest.fn(),
+  info: jest.fn(),
+  setOutput: jest.fn(),
+  addPath: jest.fn(),
+  exportVariable: jest.fn()
+}));
+jest.unstable_mockModule('fs', () => {
+  const actual = jest.requireActual('fs') as typeof import('fs');
+  const existsSync = jest.fn(actual.existsSync);
+  const readFileSync = jest.fn(actual.readFileSync);
+  return {
+    ...actual,
+    existsSync,
+    readFileSync,
+    default: {...actual, existsSync, readFileSync}
+  };
+});
+jest.unstable_mockModule('../src/authutil', () => ({
+  configAuthentication: jest.fn()
+}));
+jest.unstable_mockModule('../src/cache-utils', () => ({
+  isCacheFeatureAvailable: jest.fn(),
+  getNuGetFolderPath: jest.fn()
+}));
+jest.unstable_mockModule('../src/cache-restore', () => ({
+  restoreCache: jest.fn()
+}));
+
+const core = await import('@actions/core');
+const fs = await import('fs');
+const auth = await import('../src/authutil.js');
+const cacheUtils = await import('../src/cache-utils.js');
+const cacheRestore = await import('../src/cache-restore.js');
+const setup = await import('../src/setup-dotnet.js');
+const {DotnetCoreInstaller, DotnetInstallDir} =
+  await import('../src/installer.js');
 
 describe('setup-dotnet tests', () => {
   const inputs = {} as any;
 
-  const getInputSpy = jest.spyOn(core, 'getInput');
-  const getMultilineInputSpy = jest.spyOn(core, 'getMultilineInput');
-  const getBooleanInputSpy = jest.spyOn(core, 'getBooleanInput');
-  const setFailedSpy = jest.spyOn(core, 'setFailed');
-  const warningSpy = jest.spyOn(core, 'warning');
-  const debugSpy = jest.spyOn(core, 'debug');
-  const infoSpy = jest.spyOn(core, 'info');
-  const setOutputSpy = jest.spyOn(core, 'setOutput');
+  const getInputSpy = core.getInput as jest.Mock;
+  const getMultilineInputSpy = core.getMultilineInput as jest.Mock;
+  const getBooleanInputSpy = core.getBooleanInput as jest.Mock;
+  const setFailedSpy = core.setFailed as jest.Mock;
+  const warningSpy = core.warning as jest.Mock;
+  const debugSpy = core.debug as jest.Mock;
+  const infoSpy = core.info as jest.Mock;
+  const setOutputSpy = core.setOutput as jest.Mock;
 
-  const existsSyncSpy = jest.spyOn(fs, 'existsSync');
+  const existsSyncSpy = fs.existsSync as jest.Mock;
 
   const maxSatisfyingSpy = jest.spyOn(semver, 'maxSatisfying');
 
@@ -29,12 +74,10 @@ describe('setup-dotnet tests', () => {
     'installDotnet'
   );
 
-  const isCacheFeatureAvailableSpy = jest.spyOn(
-    cacheUtils,
-    'isCacheFeatureAvailable'
-  );
-  const restoreCacheSpy = jest.spyOn(cacheRestore, 'restoreCache');
-  const configAuthenticationSpy = jest.spyOn(auth, 'configAuthentication');
+  const isCacheFeatureAvailableSpy =
+    cacheUtils.isCacheFeatureAvailable as jest.Mock;
+  const restoreCacheSpy = cacheRestore.restoreCache as jest.Mock;
+  const configAuthenticationSpy = auth.configAuthentication as jest.Mock;
   const addToPathOriginal = DotnetInstallDir.addToPath;
 
   describe('run() tests', () => {
