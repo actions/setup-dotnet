@@ -2,7 +2,7 @@ import * as cache from '@actions/cache';
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 
-import {cliCommand} from './constants';
+import {cliCommand} from './constants.js';
 
 type NuGetFolderName =
   | 'http-cache'

@@ -1,16 +1,40 @@
-import {readdir} from 'node:fs/promises';
-import * as cache from '@actions/cache';
-import * as core from '@actions/core';
-import * as glob from '@actions/glob';
-import {restoreCache} from '../src/cache-restore';
-import {getNuGetFolderPath} from '../src/cache-utils';
-import {lockFilePatterns} from '../src/constants';
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest
+} from '@jest/globals';
 
-jest.mock('node:fs/promises');
-jest.mock('@actions/cache');
-jest.mock('@actions/core');
-jest.mock('@actions/glob');
-jest.mock('../src/cache-utils');
+jest.unstable_mockModule('node:fs/promises', () => ({
+  readdir: jest.fn()
+}));
+jest.unstable_mockModule('@actions/cache', () => ({
+  restoreCache: jest.fn()
+}));
+jest.unstable_mockModule('@actions/core', () => ({
+  saveState: jest.fn(),
+  setOutput: jest.fn(),
+  info: jest.fn(),
+  warning: jest.fn(),
+  debug: jest.fn()
+}));
+jest.unstable_mockModule('@actions/glob', () => ({
+  hashFiles: jest.fn()
+}));
+jest.unstable_mockModule('../src/cache-utils', () => ({
+  getNuGetFolderPath: jest.fn()
+}));
+
+const {readdir} = await import('node:fs/promises');
+const cache = await import('@actions/cache');
+const core = await import('@actions/core');
+const glob = await import('@actions/glob');
+const {restoreCache} = await import('../src/cache-restore.js');
+const {getNuGetFolderPath} = await import('../src/cache-utils.js');
+const {lockFilePatterns} = await import('../src/constants.js');
 
 describe('cache-restore tests', () => {
   describe.each(lockFilePatterns)('restoreCache("%s")', lockFilePattern => {
@@ -32,7 +56,9 @@ describe('cache-restore tests', () => {
       jest.mocked(core.setOutput).mockClear();
       jest.mocked(cache.restoreCache).mockClear();
     });
-    afterEach(() => (process.env.GITHUB_WORKSPACE = githubWorkspace));
+    afterEach(() => {
+      process.env.GITHUB_WORKSPACE = githubWorkspace;
+    });
 
     it('throws error when lock file is not found', async () => {
       jest.mocked(glob.hashFiles).mockResolvedValue('');

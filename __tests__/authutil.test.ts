@@ -1,6 +1,10 @@
+import {afterAll, beforeEach, describe, expect, it} from '@jest/globals';
 import * as io from '@actions/io';
 import fs from 'fs';
 import path from 'path';
+import {fileURLToPath} from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const fakeSourcesDirForTesting = path.join(
   __dirname,
@@ -71,7 +75,7 @@ const azureartifactsnugetorgNuGetConfig = `<?xml version="1.0" encoding="utf-8"?
 const nugetConfigFile = path.join(fakeSourcesDirForTesting, '../nuget.config');
 
 process.env['GITHUB_REPOSITORY'] = 'OwnerName/repo';
-import * as auth from '../src/authutil';
+import * as auth from '../src/authutil.js';
 
 describe('authutil tests', () => {
   beforeEach(async () => {

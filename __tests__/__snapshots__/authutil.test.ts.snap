@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`authutil tests existing config not in repo root, sets up a partial NuGet.config user/PAT for GPR 1`] = `
 "<?xml version="1.0"?>
