@@ -148,7 +148,7 @@ steps:
 
 > **Note**: The action supports `latest*` variants of the [rollForward](https://learn.microsoft.com/en-us/dotnet/core/tools/global-json#rollforward) field in `global.json`. When set to `latestPatch`, `latestFeature`, `latestMinor`, or `latestMajor`, the action installs the appropriate SDK version. For prerelease versions, the exact pinned version is always installed regardless of the `rollForward` setting.
 
-> **Important**: When using `rollForward` in `global.json`, the `sdk.version` field must be a valid, fully-qualified SDK version in the `A.B.Cxx` format (e.g., `8.0.100`, `10.0.100`). Wildcard versions (e.g., `10.0.*`) and runtime-style versions (e.g., `8.0.0`) are not supported. See the [.NET SDK version specification](https://learn.microsoft.com/en-us/dotnet/core/tools/global-json#version) for details.
+> **Important**: When using `rollForward` in `global.json`, the `sdk.version` field must be a fully-qualified SDK version (e.g., `8.0.100`, `10.0.100`). Wildcard versions (e.g., `10.0.*`) and runtime-style versions (e.g., `8.0.0`) are not supported. See the [.NET SDK version specification](https://learn.microsoft.com/en-us/dotnet/core/tools/global-json#version) for details.
 
 ## Caching NuGet Packages
 The action has a built-in functionality for caching and restoring dependencies. It uses [toolkit/cache](https://github.com/actions/toolkit/tree/main/packages/cache) under the hood for caching global packages data but requires less configuration settings. The `cache` input is optional, and caching is turned off by default.
