@@ -4,8 +4,8 @@ import * as cache from '@actions/cache';
 import * as core from '@actions/core';
 import * as glob from '@actions/glob';
 
-import {getNuGetFolderPath} from './cache-utils';
-import {lockFilePatterns, State, Outputs} from './constants';
+import {getNuGetFolderPath} from './cache-utils.js';
+import {lockFilePatterns, State, Outputs} from './constants.js';
 
 export const restoreCache = async (cacheDependencyPath?: string) => {
   const lockFilePath = cacheDependencyPath || (await findLockFile());

@@ -10,8 +10,11 @@ allowed:
   - mit
   - cc0-1.0
   - unlicense
+  - blueoak-1.0.0
 
 reviewed:
   npm:
     - sax # ISC + MIT
     - "@actions/http-client" # MIT
+    - balanced-match # MIT
+    - brace-expansion # MIT

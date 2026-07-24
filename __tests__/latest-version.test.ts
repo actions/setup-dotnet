@@ -1,22 +1,31 @@
-import {DotnetVersionResolver} from '../src/installer';
-import * as hc from '@actions/http-client';
-import * as core from '@actions/core';
+import {afterEach, beforeEach, describe, expect, it, jest} from '@jest/globals';
 
-// Mock http-client
-jest.mock('@actions/http-client');
+jest.unstable_mockModule('@actions/http-client', () => ({
+  HttpClient: jest.fn()
+}));
+jest.unstable_mockModule('@actions/core', () => ({
+  warning: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn()
+}));
+
+const hc = await import('@actions/http-client');
+const core = await import('@actions/core');
+const {DotnetVersionResolver} = await import('../src/installer.js');
 
 describe('DotnetVersionResolver with latest', () => {
-  let getJsonMock: jest.Mock;
-  let warningSpy: jest.SpyInstance;
+  let getJsonMock: jest.Mock<(...args: any[]) => Promise<any>>;
+  let warningSpy: jest.Mock;
 
   beforeEach(() => {
-    getJsonMock = jest.fn();
-    (hc.HttpClient as any).mockImplementation(() => {
+    getJsonMock = jest.fn<(...args: any[]) => Promise<any>>();
+    (hc.HttpClient as jest.Mock).mockImplementation(() => {
       return {
         getJson: getJsonMock
       };
     });
-    warningSpy = jest.spyOn(core, 'warning').mockImplementation(() => {});
+    warningSpy = core.warning as jest.Mock;
+    warningSpy.mockImplementation(() => {});
   });
 
   afterEach(() => {

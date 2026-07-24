@@ -4,15 +4,16 @@ import {
   DotnetCoreInstaller,
   DotnetInstallDir,
   normalizeArch
-} from './installer';
+} from './installer.js';
 import * as fs from 'fs';
 import path from 'path';
+import {fileURLToPath} from 'url';
 import semver from 'semver';
 import os from 'os';
-import * as auth from './authutil';
-import {isCacheFeatureAvailable} from './cache-utils';
-import {restoreCache} from './cache-restore';
-import {Outputs} from './constants';
+import * as auth from './authutil.js';
+import {isCacheFeatureAvailable} from './cache-utils.js';
+import {restoreCache} from './cache-restore.js';
+import {Outputs} from './constants.js';
 import JSON5 from 'json5';
 
 const qualityOptions = ['daily', 'preview', 'ga'] as const;
@@ -170,7 +171,8 @@ export async function run() {
             await exec.exec('dotnet', ['workload', 'install', ...workloads]);
           } catch (err) {
             throw new Error(
-              `Failed to install workloads [${workloads.join(', ')}]: ${err}`
+              `Failed to install workloads [${workloads.join(', ')}]: ${err}`,
+              {cause: err}
             );
           }
         }
@@ -193,7 +195,12 @@ export async function run() {
       await restoreCache(cacheDependencyPath);
     }
 
-    const matchersPath = path.join(__dirname, '..', '..', '.github');
+    const matchersPath = path.join(
+      path.dirname(fileURLToPath(import.meta.url)),
+      '..',
+      '..',
+      '.github'
+    );
     core.info(`##[add-matcher]${path.join(matchersPath, 'csc.json')}`);
   } catch (error) {
     core.setFailed(error.message);
