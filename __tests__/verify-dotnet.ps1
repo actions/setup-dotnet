@@ -74,6 +74,7 @@ $targetFrameworkVersionMap = @{
   "8.0" = "net8.0";
   "9.0" = "net9.0";
   "10.0" = "net10.0";
+  "11.0" = "net11.0";
  }
 
 foreach ($version in $Versions)
