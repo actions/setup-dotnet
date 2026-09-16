@@ -107,6 +107,20 @@ steps:
 
 The `dotnet-quality` input installs the latest build of the specified quality in the channel. Supported values: `daily`, `preview`, `ga`. For more details about quality options, see the [official .NET documentation](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-install-script#options).
 
+> **Important**: `dotnet-quality` is a single input shared across all versions listed in `dotnet-version` for the same step (and is only applied where supported by the version format), so per-version quality is not supported. For example, setting `dotnet-quality: preview` for `10.0.x` and `11.0.x` resolves both versions as previews. To install a released SDK alongside a preview SDK, use separate steps:
+
+```yaml
+steps:
+- uses: actions/setup-dotnet@v6
+  with:
+    dotnet-version: '10.0.x'
+
+- uses: actions/setup-dotnet@v6
+  with:
+    dotnet-version: '11.0.x'
+    dotnet-quality: 'preview'
+```
+
 > **Note**: When used with a specific SDK version, `dotnet-quality` supports only `A.B`, `A.B.x`, `A`, `A.x`, and `A.B.Cxx` formats where the major version is higher than 5. For all other formats, `dotnet-quality` will be ignored.
 
 ```yml
