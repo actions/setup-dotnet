@@ -3,7 +3,7 @@ import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as io from '@actions/io';
 import * as hc from '@actions/http-client';
-import {chmodSync} from 'fs';
+import {chmodSync, existsSync, readdirSync} from 'fs';
 import path from 'path';
 import {fileURLToPath} from 'url';
 import os from 'os';
@@ -29,6 +29,25 @@ interface ReleaseIndexResponse {
 
 const QUALITY_INPUT_MINIMAL_MAJOR_TAG = 6;
 const LATEST_PATCH_SYNTAX_MINIMAL_MAJOR_TAG = 5;
+
+/**
+ * Maps a bare major version tag to the channel used by the install scripts.
+ * Starting with .NET 5, the minor version is always zero. The earlier versions
+ * are hardcoded because they will not get new releases.
+ */
+function channelForMajor(major: string): string {
+  switch (major) {
+    case '1':
+      return '1.1';
+    case '2':
+      return '2.2';
+    case '3':
+      return '3.1';
+    default:
+      return `${major}.0`;
+  }
+}
+
 export class DotnetVersionResolver {
   private inputVersion: string;
   private resolvedArgument: DotnetVersion;
@@ -126,22 +145,7 @@ export class DotnetVersionResolver {
     } else if (this.isNumericTag(major) && this.isNumericTag(minor)) {
       this.resolvedArgument.value = `${major}.${minor}`;
     } else if (this.isNumericTag(major)) {
-      // Starting with .NET 5, the minor version is always zero.
-      // Hardcode the earlier versions because they will not get new releases.
-      switch (major) {
-        case '1':
-          this.resolvedArgument.value = '1.1';
-          break;
-        case '2':
-          this.resolvedArgument.value = '2.2';
-          break;
-        case '3':
-          this.resolvedArgument.value = '3.1';
-          break;
-        default:
-          this.resolvedArgument.value = `${major}.0`;
-          break;
-      }
+      this.resolvedArgument.value = channelForMajor(major);
     } else {
       // If "dotnet-version" is specified as *, x or X resolve latest version of .NET explicitly from LTS channel. The version argument will default to "latest" by install-dotnet script.
       this.resolvedArgument.value = 'LTS';
@@ -378,6 +382,8 @@ export function normalizeArch(arch: string): string {
 }
 
 export class DotnetCoreInstaller {
+  private static readonly FeatureBandSyntax = /^(\d+)\.(\d+)\.(\d)xx$/;
+
   static {
     DotnetInstallDir.setEnvironmentVariable();
   }
@@ -386,10 +392,274 @@ export class DotnetCoreInstaller {
     private version: string,
     private quality: QualityOptions,
     private architecture?: string,
-    private dotnetChannel?: string
-  ) {}
+    private dotnetChannel?: string,
+    private checkLatest: boolean = true,
+    private minimumVersion?: string
+  ) {
+    // Align with DotnetVersionResolver, which trims the input. Without this,
+    // leading/trailing whitespace could prevent a local-SDK match when
+    // 'check-latest' is false, even though the online resolver would accept it.
+    this.version = version.trim();
+  }
+
+  /**
+   * Enumerates the SDK versions already installed under the install directory.
+   * Returns only entries that are valid semver versions and contain a usable
+   * SDK.
+   */
+  private getInstalledSdkVersions(): string[] {
+    const sdkDir = path.join(DotnetInstallDir.dirPath, 'sdk');
+    try {
+      const versions = readdirSync(sdkDir, {withFileTypes: true})
+        // Custom and container images often symlink SDK folders instead of
+        // copying them, so symlinks have to be treated as directories.
+        .filter(entry => entry.isDirectory() || entry.isSymbolicLink())
+        .map(entry => entry.name)
+        .filter(name => semver.valid(name) !== null)
+        // An emptied folder left over by a failed install (or a dangling
+        // symlink) still has a version-shaped name, so the SDK entry point has
+        // to be present as well. 'existsSync' resolves symlinks, which also
+        // filters out broken ones.
+        .filter(name => existsSync(path.join(sdkDir, name, 'dotnet.dll')));
+      core.debug(
+        `Locally installed .NET SDKs in '${sdkDir}': ${
+          versions.join(', ') || '<none>'
+        }`
+      );
+      return versions;
+    } catch {
+      // Directory doesn't exist or can't be read - treat as no local SDKs.
+      core.debug(`Unable to read the SDK directory '${sdkDir}'.`);
+      return [];
+    }
+  }
+
+  /**
+   * The SDK folders are only usable when the 'dotnet' muxer sits next to them.
+   * A partially removed installation would otherwise be reported as a success
+   * while the CLI is not runnable at all.
+   */
+  private hasDotnetMuxer(): boolean {
+    return existsSync(
+      path.join(DotnetInstallDir.dirPath, IS_WINDOWS ? 'dotnet.exe' : 'dotnet')
+    );
+  }
+
+  /**
+   * Mirrors DotnetVersionResolver's quality gating: the 'dotnet-quality' input
+   * is only honored when the requested major tag is .NET 6 or higher. An
+   * unknown major (bare 'latest', wildcards, LTS/STS) resolves to a supported
+   * channel online, so quality applies there.
+   */
+  private qualityApplies(): boolean {
+    const source =
+      this.version.toLowerCase() === 'latest'
+        ? (this.dotnetChannel || '').trim()
+        : this.version;
+    const major = source.match(/^(\d+)/)?.[1];
+    return major ? Number(major) >= QUALITY_INPUT_MINIMAL_MAJOR_TAG : true;
+  }
+
+  private findByMajorMinor(
+    candidates: string[],
+    major: string,
+    minor: string
+  ): string | null {
+    return (
+      candidates.find(version => {
+        const parsed = semver.parse(version);
+        return (
+          parsed &&
+          parsed.major === Number(major) &&
+          parsed.minor === Number(minor)
+        );
+      }) ?? null
+    );
+  }
+
+  private findByFeatureBand(
+    candidates: string[],
+    major: string,
+    minor: string,
+    band: string
+  ): string | null {
+    return (
+      candidates.find(version => {
+        const parsed = semver.parse(version);
+        return (
+          parsed &&
+          parsed.major === Number(major) &&
+          parsed.minor === Number(minor) &&
+          Math.floor(parsed.patch / 100) === Number(band)
+        );
+      }) ?? null
+    );
+  }
+
+  /**
+   * When 'check-latest' is false, look for a locally installed SDK that
+   * satisfies the requested version and return it. Returns null when nothing
+   * local satisfies the request (in which case the online path is used).
+   */
+  private findLocalSdkVersion(): string | null {
+    const installed = this.getInstalledSdkVersions();
+    if (!installed.length) {
+      return null;
+    }
+
+    if (!this.hasDotnetMuxer()) {
+      core.debug(
+        `The 'dotnet' executable was not found in '${DotnetInstallDir.dirPath}'. Locally installed SDKs are ignored.`
+      );
+      return null;
+    }
+
+    // A global.json 'rollForward' policy only ever rolls forward: the version
+    // it declares stays a lower bound. Reusing a lower SDK would make the
+    // action succeed while the next 'dotnet build' fails with
+    // "A compatible .NET SDK was not found".
+    const minimumVersion = this.minimumVersion;
+    const allowed = minimumVersion
+      ? installed.filter(version => semver.gte(version, minimumVersion))
+      : installed;
+
+    if (!allowed.length) {
+      core.debug(
+        `No locally installed .NET SDK satisfies the global.json minimum version '${minimumVersion}'.`
+      );
+      return null;
+    }
+
+    // A pinned version must always match exactly, including prereleases.
+    if (semver.valid(this.version)) {
+      return allowed.find(version => version === this.version) ?? null;
+    }
+
+    // Reuse the resolver's own validation so that inputs it rejects (e.g. the
+    // leading zeros in '08.0.x' or '8.00') are never matched locally and reach
+    // the online path, which throws the proper error. 'latest' and the A.B.Cxx
+    // syntax are not semver ranges and are validated separately.
+    if (
+      this.version.toLowerCase() !== 'latest' &&
+      !DotnetCoreInstaller.FeatureBandSyntax.test(this.version) &&
+      !semver.validRange(this.version)
+    ) {
+      core.debug(
+        `The requested version '${this.version}' is not a valid version spec. Locally installed SDKs are ignored.`
+      );
+      return null;
+    }
+
+    // For floating/channel/latest requests, honor the quality input: 'preview'
+    // and 'daily' ask for prerelease builds, every other value requires GA.
+    // The install script ignores 'dotnet-quality' below .NET 6, so a prerelease
+    // must not be reused locally for those versions either.
+    const wantsPrerelease =
+      ['preview', 'daily'].includes((this.quality || '').toLowerCase()) &&
+      this.qualityApplies();
+    const candidates = allowed
+      .filter(version =>
+        wantsPrerelease
+          ? semver.prerelease(version) !== null
+          : semver.prerelease(version) === null
+      )
+      .sort(semver.rcompare); // highest version first
+
+    if (!candidates.length) {
+      return null;
+    }
+
+    const input = this.version.toLowerCase();
+
+    // 'latest' has to honor 'dotnet-channel' exactly like the online path does.
+    if (input === 'latest') {
+      const channel = (this.dotnetChannel || '').trim();
+      // Without a channel the highest installed SDK is the right answer.
+      if (!channel) {
+        return candidates[0];
+      }
+      const channelMinor = channel.match(/^(\d+)\.(\d+)$/);
+      if (channelMinor) {
+        return this.findByMajorMinor(
+          candidates,
+          channelMinor[1],
+          channelMinor[2]
+        );
+      }
+      const channelBand = channel.match(/^(\d+)\.(\d+)\.(\d)xx$/);
+      if (channelBand) {
+        return this.findByFeatureBand(
+          candidates,
+          channelBand[1],
+          channelBand[2],
+          channelBand[3]
+        );
+      }
+      // LTS and STS cannot be mapped to a version without the releases index.
+      return null;
+    }
+
+    // Feature band A.B.Cxx (e.g. 8.0.1xx). Only lowercase is accepted here,
+    // because the online resolver rejects 'A.B.CXX' as an invalid format.
+    // The syntax exists only since .NET 5, so an older major is left to the
+    // online path, which rejects it with the proper error message.
+    const bandMatch = this.version.match(DotnetCoreInstaller.FeatureBandSyntax);
+    if (bandMatch) {
+      if (Number(bandMatch[1]) < LATEST_PATCH_SYNTAX_MINIMAL_MAJOR_TAG) {
+        return null;
+      }
+      return this.findByFeatureBand(
+        candidates,
+        bandMatch[1],
+        bandMatch[2],
+        bandMatch[3]
+      );
+    }
+
+    // A.B or A.B.x / A.B.X / A.B.* (e.g. 8.0, 8.0.x). semver treats 'x', 'X'
+    // and '*' as equivalent wildcards, so all of them have to be accepted.
+    const minorMatch = this.version.match(/^(\d+)\.(\d+)(?:\.[xX*])?$/);
+    if (minorMatch) {
+      return this.findByMajorMinor(candidates, minorMatch[1], minorMatch[2]);
+    }
+
+    // A or A.x / A.X / A.* (e.g. 8, 8.x). The online path turns a bare major
+    // into a concrete channel, so the same mapping has to be applied here.
+    const majorMatch = this.version.match(/^(\d+)(?:\.[xX*])?$/);
+    if (majorMatch) {
+      const [major, minor] = channelForMajor(majorMatch[1]).split('.');
+      return this.findByMajorMinor(candidates, major, minor);
+    }
+
+    // Bare wildcards ('x', 'X', '*') resolve to the LTS channel online and
+    // anything else is rejected by the resolver. Neither can be decided
+    // locally, so the online path stays responsible for resolving and
+    // validating the input.
+    return null;
+  }
 
   public async installDotnet(): Promise<string | null> {
+    const isCrossArch =
+      !!this.architecture &&
+      normalizeArch(this.architecture) !== normalizeArch(os.arch());
+
+    // When check-latest is false, try to reuse a locally installed SDK and
+    // skip all network calls. Cross-architecture requests are excluded because
+    // a host-arch SDK would be the wrong architecture; those always install
+    // online (and fail naturally when offline).
+    if (!this.checkLatest && !isCrossArch) {
+      const localVersion = this.findLocalSdkVersion();
+      if (localVersion) {
+        core.info(
+          `'check-latest' is false and a locally installed .NET SDK (${localVersion}) satisfies the '${this.version}' request. Skipping download.`
+        );
+        return localVersion;
+      }
+      core.info(
+        `'check-latest' is false but no locally installed .NET SDK satisfies the '${this.version}' request. Falling back to online installation.`
+      );
+    }
+
     const versionResolver = new DotnetVersionResolver(
       this.version,
       this.quality,
@@ -397,16 +667,14 @@ export class DotnetCoreInstaller {
     );
     const dotnetVersion = await versionResolver.createDotnetVersion();
 
-    const architectureArguments =
-      this.architecture &&
-      normalizeArch(this.architecture) !== normalizeArch(os.arch())
-        ? [
-            IS_WINDOWS ? '-InstallDir' : '--install-dir',
-            IS_WINDOWS
-              ? `"${path.join(DotnetInstallDir.dirPath, this.architecture)}"`
-              : path.join(DotnetInstallDir.dirPath, this.architecture)
-          ]
-        : [];
+    const architectureArguments = isCrossArch
+      ? [
+          IS_WINDOWS ? '-InstallDir' : '--install-dir',
+          IS_WINDOWS
+            ? `"${path.join(DotnetInstallDir.dirPath, this.architecture!)}"`
+            : path.join(DotnetInstallDir.dirPath, this.architecture!)
+        ]
+      : [];
     /**
      * Install dotnet runtime first in order to get
      * the latest stable version of dotnet CLI

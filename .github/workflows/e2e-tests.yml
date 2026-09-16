@@ -738,3 +738,34 @@ jobs:
       - name: Verify dotnet
         shell: pwsh
         run: __tests__/verify-dotnet.ps1 -Patterns "^9\.0\.1\d{2}"
+
+  test-check-latest-false:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+      # Oldest 9.0.1xx SDK: resolving '9.0.1xx' online would return a newer patch.
+      - name: Setup dotnet 9.0.100
+        uses: ./
+        with:
+          dotnet-version: '9.0.100'
+      - name: Setup dotnet 9.0.1xx with check-latest false
+        id: reuse
+        uses: ./
+        with:
+          dotnet-version: '9.0.1xx'
+          check-latest: false
+      - name: Verify dotnet
+        shell: pwsh
+        run: |
+          if ('${{ steps.reuse.outputs.dotnet-version }}' -ne '9.0.100') {
+            throw "Expected 9.0.100 to be reused, got '${{ steps.reuse.outputs.dotnet-version }}'."
+          }
+          __tests__/verify-dotnet.ps1 -Patterns "^9\.0\.100$"
