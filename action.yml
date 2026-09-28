@@ -39,6 +39,9 @@ inputs:
   architecture:
     description: 'Optional architecture for the .NET install. Supported values: x64, x86, arm64, amd64, arm, s390x, ppc64le, riscv64. If not set, the installer auto-detects the current system architecture.'
     required: false
+  check-latest:
+    description: 'Optional, defaults to true. When false, a locally installed SDK that satisfies the requested version is reused without any network calls, otherwise the latest matching version is installed online. Cross-architecture requests always install online. Falls back to the DOTNET_CHECK_LATEST environment variable when this input is not set.'
+    required: false
 outputs:
   cache-hit:
     description: 'A boolean value to indicate if a cache was hit.'
