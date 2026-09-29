@@ -1446,19 +1446,21 @@ describe('installer tests', () => {
         expect(DotnetInstallDir.dirPath).toBe('/usr/share/dotnet');
       });
 
-      it(`should not probe on macOS, where the default is already the home directory`, async () => {
+      it(`should keep the shared macOS location and warn when it is not writable`, async () => {
         // The mac default derives from HOME, homeInstallPath() from os.homedir();
-        // aligning them is what makes the equality short-circuit apply.
+        // aligning them is what makes both candidates the same path.
         process.env['HOME'] = os.homedir();
         const homePath = path.join(os.homedir(), '.dotnet');
-        // Nothing is writable, so any probe at all would change the result.
-        const {DotnetInstallDir, fs: freshFs} = await importInstallerFor(
-          'mac',
-          () => false
-        );
+        const {
+          DotnetInstallDir,
+          fs: freshFs,
+          core: freshCore
+        } = await importInstallerFor('mac', () => false);
 
         expect(DotnetInstallDir.dirPath).toBe(homePath);
-        expect(freshFs.mkdtempSync as jest.Mock).not.toHaveBeenCalled();
+        // One candidate, so it is probed once rather than twice.
+        expect(probedDirs(freshFs)).toEqual([homePath]);
+        expect(freshCore.warning).toHaveBeenCalled();
       });
 
       it(`should prefer DOTNET_INSTALL_DIR env.var without probing`, async () => {
