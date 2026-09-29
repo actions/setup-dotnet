@@ -45322,9 +45322,84 @@ class DotnetInstallDir {
         mac: external_path_default().join(process.env['HOME'] + '', '.dotnet'),
         windows: external_path_default().join(process.env['PROGRAMFILES'] + '', 'dotnet')
     };
-    static dirPath = process.env['DOTNET_INSTALL_DIR']
-        ? DotnetInstallDir.convertInstallPathToAbsolute(process.env['DOTNET_INSTALL_DIR'])
-        : DotnetInstallDir.default[PLATFORM];
+    static resolvedDirPath;
+    // Resolved on first use so a job that installs nothing never touches the disk.
+    static get dirPath() {
+        DotnetInstallDir.resolvedDirPath ??= DotnetInstallDir.resolveDirPath();
+        return DotnetInstallDir.resolvedDirPath;
+    }
+    static resolveDirPath() {
+        if (process.env['DOTNET_INSTALL_DIR']) {
+            return DotnetInstallDir.convertInstallPathToAbsolute(process.env['DOTNET_INSTALL_DIR']);
+        }
+        const systemPath = DotnetInstallDir.default[PLATFORM];
+        const homePath = DotnetInstallDir.homeInstallPath();
+        // A relative default (unset HOME/PROGRAMFILES) would probe the cwd.
+        if (external_path_default().isAbsolute(systemPath) &&
+            DotnetInstallDir.isWritableLocation(systemPath)) {
+            return systemPath;
+        }
+        // On macOS both candidates are the same path, already probed above.
+        const hasFallback = !!homePath && homePath !== systemPath;
+        if (hasFallback && DotnetInstallDir.isWritableLocation(homePath)) {
+            warning(`The default .NET install directory '${systemPath}' is not writable by the current user. Falling back to '${homePath}'; .NET preinstalled in the default location will no longer be used. Set the DOTNET_INSTALL_DIR environment variable to override this location.`);
+            return homePath;
+        }
+        // Not setFailed: the install may still succeed, so let it report the error.
+        warning(hasFallback
+            ? `Neither the default .NET install directory '${systemPath}' nor '${homePath}' is writable by the current user. Keeping '${systemPath}', but the installation is likely to fail. Set the DOTNET_INSTALL_DIR environment variable to a writable location.`
+            : `The default .NET install directory '${systemPath}' is not writable by the current user. Keeping it, but the installation is likely to fail. Set the DOTNET_INSTALL_DIR environment variable to a writable location.`);
+        return systemPath;
+    }
+    static homeInstallPath() {
+        try {
+            const home = external_os_default().homedir();
+            // An empty HOME resolves against the cwd; a root HOME gives '/.dotnet'.
+            if (!external_path_default().isAbsolute(home) || home === external_path_default().parse(home).root) {
+                return undefined;
+            }
+            return external_path_default().join(home, '.dotnet');
+        }
+        catch {
+            return undefined;
+        }
+    }
+    // Writability is tested by creating a directory. accessSync is not enough: it
+    // ignores Windows ACLs, so it reports success where the install would fail.
+    static isWritableLocation(installDir) {
+        let existingPath = external_path_default().resolve(installDir);
+        try {
+            // lstat also matches a broken symlink. existsSync does not, and the walk
+            // would skip past it to a writable parent and wrongly report success.
+            while (!(0,external_fs_namespaceObject.lstatSync)(existingPath, { throwIfNoEntry: false })) {
+                const parentPath = external_path_default().dirname(existingPath);
+                if (parentPath === existingPath)
+                    return false;
+                existingPath = parentPath;
+            }
+        }
+        catch {
+            return false;
+        }
+        let probeDir;
+        try {
+            probeDir = (0,external_fs_namespaceObject.mkdtempSync)(external_path_default().join(existingPath, '.setup-dotnet-probe-'));
+            return true;
+        }
+        catch {
+            return false;
+        }
+        finally {
+            if (probeDir) {
+                try {
+                    (0,external_fs_namespaceObject.rmSync)(probeDir, { recursive: true, force: true });
+                }
+                catch {
+                    // Throwing here would discard the result already returned above.
+                }
+            }
+        }
+    }
     static convertInstallPathToAbsolute(installDir) {
         if (external_path_default().isAbsolute(installDir))
             return external_path_default().normalize(installDir);
@@ -45383,9 +45458,6 @@ class DotnetCoreInstaller {
     minimumVersion;
     rollForward;
     static FeatureBandSyntax = /^(\d+)\.(\d+)\.(\d)xx$/;
-    static {
-        DotnetInstallDir.setEnvironmentVariable();
-    }
     constructor(version, quality, architecture, dotnetChannel, checkLatest = true, minimumVersion, rollForward) {
         this.version = version;
         this.quality = quality;
@@ -45572,6 +45644,8 @@ class DotnetCoreInstaller {
         return null;
     }
     async installDotnet() {
+        // Before findLocalSdkVersion(), which looks under the resolved directory.
+        DotnetInstallDir.setEnvironmentVariable();
         const isCrossArch = !!this.architecture &&
             normalizeArch(this.architecture) !== normalizeArch(external_os_default().arch());
         if (!this.checkLatest && !isCrossArch) {
