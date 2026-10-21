@@ -130,6 +130,8 @@ export async function run() {
         );
       }
 
+      const skipLtsPrepass = core.getBooleanInput('skip-lts-prepass');
+
       let dotnetInstaller: DotnetCoreInstaller;
       const uniqueVersions = new Set<string>(
         versions.map(v => (v.toLowerCase() === 'latest' ? 'latest' : v))
@@ -143,7 +145,8 @@ export async function run() {
           version.toLowerCase() === 'latest' ? dotnetChannel : undefined,
           checkLatest,
           constraint?.minimumVersion,
-          constraint?.rollForward
+          constraint?.rollForward,
+          skipLtsPrepass
         );
         const installedVersion = await dotnetInstaller.installDotnet();
         installedDotnetVersions.push(installedVersion);

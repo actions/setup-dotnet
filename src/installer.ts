@@ -421,7 +421,8 @@ export class DotnetCoreInstaller {
     private dotnetChannel?: string,
     private checkLatest: boolean = true,
     private minimumVersion?: string,
-    private rollForward?: string
+    private rollForward?: string,
+    private skipLtsPrepass: boolean = false
   ) {
     this.version = version.trim();
   }
@@ -720,29 +721,34 @@ export class DotnetCoreInstaller {
       : [];
     /**
      * Install dotnet runtime first in order to get
-     * the latest stable version of dotnet CLI
+     * the latest stable version of dotnet CLI.
+     * Opt-out via skip-lts-prepass when this safeguard isn't needed.
      */
-    const runtimeInstallOutput = await new DotnetInstallScript()
-      .useArchitecture(this.architecture)
-      // If dotnet CLI is already installed - avoid overwriting it
-      .useArguments(
-        IS_WINDOWS ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files'
-      )
-      // Install only runtime + CLI
-      .useArguments(IS_WINDOWS ? '-Runtime' : '--runtime', 'dotnet')
-      // Use latest stable version
-      .useArguments(IS_WINDOWS ? '-Channel' : '--channel', 'LTS')
-      .useArguments(...architectureArguments)
-      .execute();
+    if (!this.skipLtsPrepass) {
+      const runtimeInstallOutput = await new DotnetInstallScript()
+        .useArchitecture(this.architecture)
+        // If dotnet CLI is already installed - avoid overwriting it
+        .useArguments(
+          IS_WINDOWS ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files'
+        )
+        // Install only runtime + CLI
+        .useArguments(IS_WINDOWS ? '-Runtime' : '--runtime', 'dotnet')
+        // Use latest stable version
+        .useArguments(IS_WINDOWS ? '-Channel' : '--channel', 'LTS')
+        .useArguments(...architectureArguments)
+        .execute();
 
-    if (runtimeInstallOutput.exitCode) {
-      /**
-       * dotnetInstallScript will install CLI and runtime even if previous script haven't succeded,
-       * so at this point it's too early to throw an error
-       */
-      core.warning(
-        `Failed to install dotnet runtime + cli, exit code: ${runtimeInstallOutput.exitCode}. ${runtimeInstallOutput.stderr}`
-      );
+      if (runtimeInstallOutput.exitCode) {
+        /**
+         * dotnetInstallScript will install CLI and runtime even if previous script haven't succeded,
+         * so at this point it's too early to throw an error
+         */
+        core.warning(
+          `Failed to install dotnet runtime + cli, exit code: ${runtimeInstallOutput.exitCode}. ${runtimeInstallOutput.stderr}`
+        );
+      }
+    } else {
+      core.info('Skipping LTS runtime pre-pass (skip-lts-prepass: true).');
     }
 
     /**

@@ -1218,6 +1218,135 @@ describe('installer tests', () => {
           }
         );
       });
+
+      describe('skip-lts-prepass tests', () => {
+        it('should run the LTS pre-pass by default (skip-lts-prepass not set)', async () => {
+          const inputVersion = '9.0.100';
+          const inputQuality = '';
+          const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
+
+          getExecOutputSpy.mockImplementation(() => {
+            return Promise.resolve({exitCode: 0, stdout, stderr: ''});
+          });
+          maxSatisfyingSpy.mockImplementation(() => inputVersion);
+
+          const dotnetInstaller = new installer.DotnetCoreInstaller(
+            inputVersion,
+            inputQuality
+          );
+          await dotnetInstaller.installDotnet();
+
+          expect(getExecOutputSpy).toHaveBeenCalledTimes(2);
+          const ltsCallArguments = (
+            getExecOutputSpy.mock.calls[0][1] as string[]
+          ).join(' ');
+          expect(ltsCallArguments).toContain(
+            IS_WINDOWS ? '-Channel LTS' : '--channel LTS'
+          );
+        });
+
+        it('should skip the LTS pre-pass and install only the requested version when skip-lts-prepass is true', async () => {
+          const inputVersion = '9.0.100';
+          const inputQuality = '';
+          const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
+
+          getExecOutputSpy.mockImplementation(() => {
+            return Promise.resolve({exitCode: 0, stdout, stderr: ''});
+          });
+          maxSatisfyingSpy.mockImplementation(() => inputVersion);
+
+          const dotnetInstaller = new installer.DotnetCoreInstaller(
+            inputVersion,
+            inputQuality,
+            undefined,
+            undefined,
+            true,
+            undefined,
+            undefined,
+            true
+          );
+          const installedVersion = await dotnetInstaller.installDotnet();
+
+          expect(getExecOutputSpy).toHaveBeenCalledTimes(1);
+          const scriptArguments = (
+            getExecOutputSpy.mock.calls[0][1] as string[]
+          ).join(' ');
+          expect(scriptArguments).not.toContain('LTS');
+          expect(scriptArguments).toContain(
+            IS_WINDOWS
+              ? `-Version ${inputVersion}`
+              : `--version ${inputVersion}`
+          );
+          expect(installedVersion).toBe(inputVersion);
+        });
+
+        it('should skip the LTS pre-pass for a cross-architecture install', async () => {
+          const inputVersion = '9.0.100';
+          const inputQuality = '';
+          const inputArchitecture =
+            installer.normalizeArch(os.arch()) === 'x64' ? 'arm64' : 'x64';
+          const stdout = `Fictitious dotnet version ${inputVersion} is installed`;
+
+          getExecOutputSpy.mockImplementation(() => {
+            return Promise.resolve({exitCode: 0, stdout, stderr: ''});
+          });
+          maxSatisfyingSpy.mockImplementation(() => inputVersion);
+
+          const dotnetInstaller = new installer.DotnetCoreInstaller(
+            inputVersion,
+            inputQuality,
+            inputArchitecture,
+            undefined,
+            true,
+            undefined,
+            undefined,
+            true
+          );
+          await dotnetInstaller.installDotnet();
+
+          expect(getExecOutputSpy).toHaveBeenCalledTimes(1);
+          const scriptArguments = (
+            getExecOutputSpy.mock.calls[0][1] as string[]
+          ).join(' ');
+          expect(scriptArguments).not.toContain('LTS');
+          expect(scriptArguments).toContain(
+            IS_WINDOWS ? '-Architecture' : '--architecture'
+          );
+        });
+
+        it('should skip the LTS pre-pass for each requested version', async () => {
+          const inputQuality = '';
+
+          getExecOutputSpy.mockImplementation(() => {
+            return Promise.resolve({
+              exitCode: 0,
+              stdout: `Fictitious dotnet version installed`,
+              stderr: ''
+            });
+          });
+          maxSatisfyingSpy.mockImplementation(() => '9.0.100');
+
+          for (const version of ['8.0.100', '9.0.100']) {
+            const dotnetInstaller = new installer.DotnetCoreInstaller(
+              version,
+              inputQuality,
+              undefined,
+              undefined,
+              true,
+              undefined,
+              undefined,
+              true
+            );
+            await dotnetInstaller.installDotnet();
+          }
+
+          // 2 versions x 1 call each (no LTS pre-pass call for either)
+          expect(getExecOutputSpy).toHaveBeenCalledTimes(2);
+          for (const call of getExecOutputSpy.mock.calls) {
+            expect((call[1] as string[]).join(' ')).not.toContain('LTS');
+          }
+        });
+      });
     });
 
     describe('addToPath() tests', () => {
