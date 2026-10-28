@@ -14,7 +14,7 @@ on:
 jobs:
   call-basic-validation:
     name: Basic validation
-    cache-mode: read
+    cache-mode: 
     uses: actions/reusable-workflows/.github/workflows/basic-validation.yml@main
     with:
       node-version: '24'
