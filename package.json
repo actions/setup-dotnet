@@ -1,6 +1,6 @@
 {
   "name": "setup-dotnet",
-  "version": "6.0.0",
+  "version": "6.1.0",
   "type": "module",
   "private": true,
   "description": "setup dotnet action",
@@ -30,7 +30,7 @@
   "author": "GitHub",
   "license": "MIT",
   "dependencies": {
-    "@actions/cache": "^6.2.0",
+    "@actions/cache": "^6.3.0",
     "@actions/core": "^3.0.1",
     "@actions/exec": "^3.0.0",
     "@actions/github": "^9.1.1",
