@@ -327,7 +327,7 @@ The `workloads` input allows you to install .NET workloads as part of the SDK se
 
 ```yaml
 steps:
-- uses: actions/checkout@v5
+- uses: actions/checkout@v7
 - name: Setup .NET with workloads
   uses: actions/setup-dotnet@v6
   with:
