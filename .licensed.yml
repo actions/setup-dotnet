@@ -10,7 +10,7 @@ allowed:
   - mit
   - cc0-1.0
   - unlicense
-  - BlueOak-1.0.0
+  - blueoak-1.0.0
 
 reviewed:
   npm:

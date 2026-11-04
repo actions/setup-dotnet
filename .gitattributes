@@ -1,2 +1,5 @@
 * text=auto eol=lf
 .licenses/** -diff linguist-generated=true
+
+# Preserve Microsoft Authenticode-signed installer bytes.
+externals/install-dotnet.ps1 -text

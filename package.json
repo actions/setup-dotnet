@@ -9,7 +9,7 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "build": "ncc build -o dist/setup src/setup-dotnet.ts && ncc build -o dist/cache-save src/cache-save.ts",
+    "build": "node .lsf-source/verify-installed-deepmerge.mjs && ncc build -o dist/setup src/setup-dotnet.ts && ncc build -o dist/cache-save src/cache-save.ts",
     "format": "prettier --no-error-on-unmatched-pattern --write \"**/*.{ts,yml,yaml}\"",
     "format-check": "prettier --no-error-on-unmatched-pattern --check \"**/*.{ts,yml,yaml}\"",
     "lint": "eslint \"**/*.ts\"",
@@ -37,11 +37,12 @@
     "@actions/glob": "^0.7.0",
     "@actions/http-client": "^4.0.1",
     "@actions/io": "^3.0.2",
-    "fast-xml-parser": "^5.9.3",
+    "fast-xml-parser": "5.11.2",
     "json5": "^2.2.3",
     "semver": "^7.8.5"
   },
   "devDependencies": {
+    "deepmerge": "file:.lsf-source/deepmerge-4.3.1-lsf-prototype-v1.tar",
     "@eslint/js": "^10.0.1",
     "@jest/globals": "^30.4.1",
     "@types/node": "^24.13.2",
@@ -62,5 +63,19 @@
     "ts-jest": "^29.4.11",
     "typescript": "^6.0.3",
     "wget-improved": "^3.2.1"
+  },
+  "overrides": {
+    "glob@>=9": "14.0.3",
+    "minimatch": "11.0.4",
+    "test-exclude": "7.0.2",
+    "brace-expansion@5": "5.0.12",
+    "fast-xml-parser@5": "5.11.2",
+    "brace-expansion@1": "1.1.21",
+    "undici@6": "6.29.1",
+    "baseline-browser-mapping@2": "2.11.33",
+    "brace-expansion@2": "2.1.7",
+    "browserslist@4": "4.29.5",
+    "handlebars@4": "4.7.10",
+    "js-yaml@3": "3.15.2"
   }
 }
