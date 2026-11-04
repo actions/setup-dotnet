@@ -68,6 +68,7 @@
     "deepmerge": "$deepmerge",
     "glob@>=9": "14.0.3",
     "minimatch": "11.0.4",
+    "test-exclude": "7.0.2",
     "brace-expansion@5": "5.0.12",
     "fast-xml-parser@5": "5.11.2",
     "brace-expansion@1": "1.1.21",
