@@ -1,0 +1,45 @@
+name: LSF security candidate
+
+on:
+  push:
+    branches:
+      - lsf-security-candidate-20261104
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-node@fdae00b14e855eb751452bc70c64dde286270415
+        with:
+          node-version: 24.19.0
+          package-manager-cache: false
+      - name: Verify toolchain and install locked graph
+        run: |
+          test "$(node --version)" = v24.19.0
+          test "$(npm --version)" = 11.17.0
+          npm ci
+      - name: Build the verified distribution
+        run: npm run build
+      - name: Run upstream tests
+        run: npm test
+      - name: Check upstream lint and formatting
+        run: |
+          npm run lint
+          npm run format-check
+      - name: Retain candidate bundles and lock
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16
+        with:
+          name: setup-dotnet-security-candidate-${{ github.sha }}
+          path: |
+            dist/setup/index.js
+            dist/cache-save/index.js
+            package-lock.json
+          if-no-files-found: error

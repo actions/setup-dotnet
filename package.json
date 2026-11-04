@@ -65,7 +65,6 @@
     "wget-improved": "^3.2.1"
   },
   "overrides": {
-    "deepmerge": "$deepmerge",
     "glob@>=9": "14.0.3",
     "minimatch": "11.0.4",
     "test-exclude": "7.0.2",
