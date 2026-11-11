@@ -64,6 +64,8 @@ Pull requests are the easiest way to contribute changes to git repos at GitHub. 
 - To lint the code, **you need to run the `lint:fix` script**
 - To transpile source code to `javascript` we use [NCC](https://github.com/vercel/ncc). **It is very important to run the `build` script after making changes**, otherwise your changes will not get into the final `javascript` build
 
+Dependency-only updates also require rebuilding the action bundles. After updating the dependency manifest and lockfile, install the locked dependencies and run `npm run build`. Include regenerated files under `dist/setup/` and `dist/cache-save/` in the pull request, since GitHub Actions executes the checked-in bundles.
+
 **Learn more about how to implement tests:**
 
 Adding or changing tests is an integral part of making a change to the code. 
