@@ -101,6 +101,13 @@ export class DotnetVersionResolver {
       return;
     }
 
+    if (this.inputVersion === '') {
+      // global.json latestMajor: newest GA release, LTS or STS
+      this.resolvedArgument.type = 'channel';
+      this.resolvedArgument.value = await this.getLatestVersion('', '');
+      return;
+    }
+
     if (this.dotnetChannel) {
       core.warning(
         `The 'dotnet-channel' input is only supported when 'dotnet-version' is set to 'latest'.`
@@ -175,7 +182,10 @@ export class DotnetVersionResolver {
     return this.resolvedArgument;
   }
 
-  private async getLatestVersion(channelFilter: string): Promise<string> {
+  private async getLatestVersion(
+    channelFilter: string,
+    quality: QualityOptions = this.quality
+  ): Promise<string> {
     const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
       allowRetries: true,
       maxRetries: 3
@@ -199,7 +209,7 @@ export class DotnetVersionResolver {
 
     // Filter out preview versions if quality is not 'preview' or 'daily'
     // If quality is not specified, we assume strict stability (GA only)
-    const normalizedQuality = (this.quality || '').toLowerCase();
+    const normalizedQuality = (quality || '').toLowerCase();
     if (!['preview', 'daily'].includes(normalizedQuality)) {
       releasesInfo = releasesInfo.filter(
         info => info['support-phase'] !== 'preview'
