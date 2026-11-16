@@ -43957,6 +43957,12 @@ const PLATFORM = (() => {
 
 const QUALITY_INPUT_MINIMAL_MAJOR_TAG = 6;
 const LATEST_PATCH_SYNTAX_MINIMAL_MAJOR_TAG = 5;
+function hasAspNetCoreRuntime(version) {
+    const match = version.match(/^(\d+)\.(\d+)/);
+    return (!match ||
+        Number(match[1]) > 2 ||
+        (Number(match[1]) === 2 && Number(match[2]) >= 1));
+}
 function channelForMajor(major) {
     // Starting with .NET 5, the minor version is always zero.
     // Hardcode the earlier versions because they will not get new releases.
@@ -44471,6 +44477,9 @@ class DotnetCoreInstaller {
         if (this.rollForward && minimumVersion) {
             return this.findByRollForward(this.filterByQuality(allowed), this.rollForward, minimumVersion);
         }
+        return this.findMatchingVersion(allowed);
+    }
+    findMatchingVersion(allowed) {
         if (semver_default().valid(this.version)) {
             return allowed.find(version => version === this.version) ?? null;
         }
@@ -44517,6 +44526,50 @@ class DotnetCoreInstaller {
             return this.findByScope(candidates, major, minor);
         }
         return null;
+    }
+    getInstalledRuntimeVersions(framework) {
+        const runtimeDir = external_path_default().join(DotnetInstallDir.dirPath, 'shared', framework);
+        try {
+            return (0,external_fs_namespaceObject.readdirSync)(runtimeDir, { withFileTypes: true })
+                .filter(entry => entry.isDirectory() || entry.isSymbolicLink())
+                .map(entry => entry.name)
+                .filter(version => semver_default().valid(version) !== null)
+                .filter(version => isFile(external_path_default().join(runtimeDir, version, `${framework}.deps.json`)));
+        }
+        catch {
+            core_debug(`Unable to read the runtime directory '${runtimeDir}'.`);
+            return [];
+        }
+    }
+    findLocalRuntimeVersion() {
+        if (!this.hasDotnetMuxer()) {
+            return null;
+        }
+        const dotnetVersions = this.getInstalledRuntimeVersions('Microsoft.NETCore.App');
+        const aspnetVersions = this.getInstalledRuntimeVersions('Microsoft.AspNetCore.App');
+        // Preview pairs can have different build numbers, so a preview ASP.NET Core
+        // runtime is paired with the .NET runtime declared in its runtimeconfig.json.
+        const pairedVersions = new Set([
+            ...aspnetVersions,
+            ...aspnetVersions
+                .filter(version => semver_default().prerelease(version))
+                .flatMap(version => this.getDeclaredRuntimeVersion(version) ?? [])
+        ]);
+        return this.findMatchingVersion(dotnetVersions.filter(version => !hasAspNetCoreRuntime(version) || pairedVersions.has(version)));
+    }
+    getDeclaredRuntimeVersion(aspnetVersion) {
+        const configPath = external_path_default().join(DotnetInstallDir.dirPath, 'shared', 'Microsoft.AspNetCore.App', aspnetVersion, 'Microsoft.AspNetCore.App.runtimeconfig.json');
+        try {
+            const framework = JSON.parse((0,external_fs_namespaceObject.readFileSync)(configPath, 'utf8'))
+                .runtimeOptions?.framework;
+            return framework?.name === 'Microsoft.NETCore.App'
+                ? framework.version
+                : undefined;
+        }
+        catch {
+            core_debug(`Unable to read the runtime pairing from '${configPath}'.`);
+            return undefined;
+        }
     }
     async installDotnet() {
         // Before findLocalSdkVersion(), which looks under the resolved directory.
@@ -44584,6 +44637,107 @@ class DotnetCoreInstaller {
             throw new Error(`Failed to install dotnet, exit code: ${dotnetInstallOutput.exitCode}. ${dotnetInstallOutput.stderr}`);
         }
         return this.parseInstalledVersion(dotnetInstallOutput.stdout);
+    }
+    async installRuntime() {
+        this.validateRuntimeVersion();
+        DotnetInstallDir.setEnvironmentVariable();
+        const isCrossArch = !!this.architecture &&
+            normalizeArch(this.architecture) !== normalizeArch(external_os_default().arch());
+        if (!this.checkLatest && !isCrossArch) {
+            const localVersion = this.findLocalRuntimeVersion();
+            if (localVersion) {
+                info(`'check-latest' is false and locally installed .NET runtimes (${localVersion}) satisfy the '${this.version}' request. Skipping download.`);
+                return localVersion;
+            }
+            info(`'check-latest' is false but no complete local runtime installation satisfies the '${this.version}' request. Falling back to online installation.`);
+        }
+        const versionResolver = new DotnetVersionResolver(this.version, this.quality, this.dotnetChannel);
+        const dotnetVersion = await versionResolver.createDotnetVersion();
+        if (this.quality && !dotnetVersion.qualityFlag) {
+            warning(`The 'dotnet-quality' input can be used only with .NET runtime channels in A.B, A.B.x, A or A.x formats where the major tag is higher than 5, or 'latest' resolving to such a channel. You specified: ${dotnetVersion.value}. 'dotnet-quality' input is ignored for this runtime.`);
+        }
+        const installAspNetCore = hasAspNetCoreRuntime(dotnetVersion.value);
+        const aspnetVersion = installAspNetCore
+            ? await this.resolveAspNetCoreVersion(dotnetVersion)
+            : undefined;
+        if (!installAspNetCore) {
+            warning(`ASP.NET Core shared runtimes are not available before .NET Core 2.1. Installing only the .NET runtime for '${this.version}'.`);
+        }
+        const architectureArguments = isCrossArch
+            ? [
+                utils_IS_WINDOWS ? '-InstallDir' : '--install-dir',
+                utils_IS_WINDOWS
+                    ? `"${external_path_default().join(DotnetInstallDir.dirPath, this.architecture)}"`
+                    : external_path_default().join(DotnetInstallDir.dirPath, this.architecture)
+            ]
+            : [];
+        // Install the .NET runtime (Microsoft.NETCore.App) first, then the
+        // ASP.NET Core runtime (Microsoft.AspNetCore.App)
+        const dotnetRuntimeStdout = await this.installSharedRuntime('dotnet', dotnetVersion, architectureArguments);
+        if (aspnetVersion) {
+            await this.installSharedRuntime('aspnetcore', aspnetVersion, architectureArguments);
+        }
+        // The output remains the base runtime version, even when build numbers differ.
+        return this.parseInstalledVersion(dotnetRuntimeStdout);
+    }
+    // Runs before the resolver, whose errors name 'dotnet-version'.
+    validateRuntimeVersion() {
+        if (this.version.toLowerCase() === 'latest' ||
+            semver_default().validRange(this.version)) {
+            return;
+        }
+        // Feature bands (A.B.Cxx) exist only for SDKs, so the install script can't resolve them for runtimes.
+        const reason = DotnetCoreInstaller.FeatureBandSyntax.test(this.version)
+            ? ` The A.B.Cxx feature band syntax applies only to .NET SDKs and is supported only by 'dotnet-version'.`
+            : '';
+        throw new Error(`The 'dotnet-runtime' was supplied in invalid format: ${this.version}!${reason} Supported syntax: A.B.C, A.B, A.B.x, A, A.x, latest`);
+    }
+    async resolveAspNetCoreVersion(dotnetVersion) {
+        const version = dotnetVersion.value;
+        if (!semver_default().valid(version) || !semver_default().prerelease(version)) {
+            return dotnetVersion;
+        }
+        const channel = `${semver_default().major(version)}.${semver_default().minor(version)}`;
+        const httpClient = new lib_HttpClient('actions/setup-dotnet', [], {
+            allowRetries: true,
+            maxRetries: 3
+        });
+        try {
+            const response = await httpClient.getJson(`https://builds.dotnet.microsoft.com/dotnet/release-metadata/${channel}/releases.json`);
+            const releases = response.result?.releases;
+            const release = Array.isArray(releases)
+                ? releases.find(entry => entry?.runtime?.version === version)
+                : undefined;
+            const aspnetVersion = release?.['aspnetcore-runtime']?.version;
+            if (response.statusCode === 200 &&
+                typeof aspnetVersion === 'string' &&
+                semver_default().valid(aspnetVersion)) {
+                return { ...dotnetVersion, value: aspnetVersion };
+            }
+            warning(`No ASP.NET Core release mapping was found for '${version}' (HTTP ${response.statusCode}). Trying the same exact version for this potentially unpublished build; installation failures remain fatal.`);
+        }
+        catch (error) {
+            warning(`Unable to resolve the ASP.NET Core release paired with '${version}': ${error instanceof Error ? error.message : String(error)}. Trying the same exact version; installation failures remain fatal.`);
+        }
+        finally {
+            httpClient.dispose();
+        }
+        return dotnetVersion;
+    }
+    async installSharedRuntime(runtime, dotnetVersion, architectureArguments) {
+        const runtimeInstallOutput = await new DotnetInstallScript()
+            .useArchitecture(this.architecture)
+            // If dotnet CLI is already installed - avoid overwriting it
+            .useArguments(utils_IS_WINDOWS ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files')
+            .useArguments(utils_IS_WINDOWS ? '-Runtime' : '--runtime', runtime)
+            // Use version provided by user
+            .useVersion(dotnetVersion, dotnetVersion.qualityFlag ? this.quality : '')
+            .useArguments(...architectureArguments)
+            .execute();
+        if (runtimeInstallOutput.exitCode) {
+            throw new Error(`Failed to install ${runtime} runtime, exit code: ${runtimeInstallOutput.exitCode}. ${runtimeInstallOutput.stderr}`);
+        }
+        return runtimeInstallOutput.stdout;
     }
     parseInstalledVersion(stdout) {
         const regex = /(?<version>\d+\.\d+\.\d+[a-z0-9._-]*)/gm;
@@ -105569,6 +105723,7 @@ async function run() {
         //
         // dotnet-version is optional, but needs to be provided for most use cases.
         // If supplied, install / use from the tool cache.
+        // dotnet-runtime is optional and allows installing runtime-only versions.
         // global-version-file may be specified to point to a specific global.json
         // and will be used to install an additional version.
         // If not supplied, look for version in ./global.json.
@@ -105586,11 +105741,12 @@ async function run() {
                 globalJsonConstraints.set(version, { minimumVersion, rollForward });
             }
         };
+        const runtimeVersions = getMultilineInput('dotnet-runtime');
         const installedDotnetVersions = [];
         const architecture = getArchitectureInput();
         const checkLatest = getCheckLatestInput();
         let dotnetChannel = getInput('dotnet-channel');
-        const isLatestRequested = versions.some(version => version && version.toLowerCase() === 'latest');
+        const isLatestRequested = [...versions, ...runtimeVersions].some(version => version && version.toLowerCase() === 'latest');
         if (dotnetChannel && !isValidChannel(dotnetChannel)) {
             if (isLatestRequested) {
                 throw new Error(`Value '${dotnetChannel}' is not supported for the 'dotnet-channel' option. Supported values are: LTS, STS, A.B (e.g. 8.0), A.B.Cxx (e.g. 8.0.1xx).`);
@@ -105601,7 +105757,7 @@ async function run() {
             }
         }
         else if (dotnetChannel && !isLatestRequested) {
-            warning(`The 'dotnet-channel' input is only supported when 'dotnet-version' is set to 'latest'.`);
+            warning(`The 'dotnet-channel' input is only supported when 'dotnet-version' or 'dotnet-runtime' is set to 'latest'.`);
             dotnetChannel = '';
         }
         const globalJsonFileInput = getInput('global-json-file');
@@ -105619,15 +105775,17 @@ async function run() {
             if (external_fs_namespaceObject.existsSync(globalJsonPath)) {
                 addVersionFromGlobalJson(globalJsonPath);
             }
-            else {
+            else if (!runtimeVersions.length) {
                 info(`The global.json wasn't found in the root directory. No .NET version will be installed.`);
             }
         }
+        const quality = getInput('dotnet-quality');
+        if ((versions.length || runtimeVersions.length) &&
+            quality &&
+            !qualityOptions.includes(quality)) {
+            throw new Error(`Value '${quality}' is not supported for the 'dotnet-quality' option. Supported values are: daily, preview, ga.`);
+        }
         if (versions.length) {
-            const quality = getInput('dotnet-quality');
-            if (quality && !qualityOptions.includes(quality)) {
-                throw new Error(`Value '${quality}' is not supported for the 'dotnet-quality' option. Supported values are: daily, preview, ga.`);
-            }
             const skipLtsPrepass = getBooleanInput('skip-lts-prepass');
             let dotnetInstaller;
             const uniqueVersions = new Set(versions.map(v => (v.toLowerCase() === 'latest' ? 'latest' : v)));
@@ -105637,10 +105795,7 @@ async function run() {
                 const installedVersion = await dotnetInstaller.installDotnet();
                 installedDotnetVersions.push(installedVersion);
             }
-            if (architecture &&
-                normalizeArch(architecture) !== normalizeArch(external_os_default().arch())) {
-                process.env['DOTNET_INSTALL_DIR'] = external_path_default().join(DotnetInstallDir.dirPath, architecture);
-            }
+            setDotnetInstallDir(architecture);
             DotnetInstallDir.addToPath();
             const workloadsInput = getInput('workloads');
             if (workloadsInput) {
@@ -105661,6 +105816,21 @@ async function run() {
                 }
             }
         }
+        if (runtimeVersions.length) {
+            const uniqueRuntimeVersions = new Set(runtimeVersions.map(v => (v.toLowerCase() === 'latest' ? 'latest' : v)));
+            // Runtimes have no SDK feature bands, so A.B.Cxx uses its A.B channel.
+            const runtimeChannel = dotnetChannel.replace(/^(\d+\.\d+)\.\dxx$/, '$1');
+            for (const runtimeVersion of uniqueRuntimeVersions) {
+                const dotnetInstaller = new DotnetCoreInstaller(runtimeVersion, quality, architecture, runtimeVersion === 'latest' ? runtimeChannel : undefined, checkLatest);
+                await dotnetInstaller.installRuntime();
+            }
+            // installRuntime() resets DOTNET_INSTALL_DIR to the base directory.
+            setDotnetInstallDir(architecture);
+            // The SDK installation has already added the same directory to PATH.
+            if (!versions.length) {
+                DotnetInstallDir.addToPath();
+            }
+        }
         const sourceUrl = getInput('source-url');
         const configFile = getInput('config-file');
         if (sourceUrl) {
@@ -105676,6 +105846,12 @@ async function run() {
     }
     catch (error) {
         setFailed(error.message);
+    }
+}
+function setDotnetInstallDir(architecture) {
+    if (architecture &&
+        normalizeArch(architecture) !== normalizeArch(external_os_default().arch())) {
+        process.env['DOTNET_INSTALL_DIR'] = external_path_default().join(DotnetInstallDir.dirPath, architecture);
     }
 }
 function getArchitectureInput() {

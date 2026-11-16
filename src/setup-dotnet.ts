@@ -49,6 +49,7 @@ export async function run() {
     //
     // dotnet-version is optional, but needs to be provided for most use cases.
     // If supplied, install / use from the tool cache.
+    // dotnet-runtime is optional and allows installing runtime-only versions.
     // global-version-file may be specified to point to a specific global.json
     // and will be used to install an additional version.
     // If not supplied, look for version in ./global.json.
@@ -71,12 +72,13 @@ export async function run() {
         globalJsonConstraints.set(version, {minimumVersion, rollForward});
       }
     };
+    const runtimeVersions = core.getMultilineInput('dotnet-runtime');
     const installedDotnetVersions: (string | null)[] = [];
     const architecture = getArchitectureInput();
     const checkLatest = getCheckLatestInput();
     let dotnetChannel = core.getInput('dotnet-channel');
 
-    const isLatestRequested = versions.some(
+    const isLatestRequested = [...versions, ...runtimeVersions].some(
       version => version && version.toLowerCase() === 'latest'
     );
     if (dotnetChannel && !isValidChannel(dotnetChannel)) {
@@ -92,7 +94,7 @@ export async function run() {
       }
     } else if (dotnetChannel && !isLatestRequested) {
       core.warning(
-        `The 'dotnet-channel' input is only supported when 'dotnet-version' is set to 'latest'.`
+        `The 'dotnet-channel' input is only supported when 'dotnet-version' or 'dotnet-runtime' is set to 'latest'.`
       );
       dotnetChannel = '';
     }
@@ -114,22 +116,26 @@ export async function run() {
       const globalJsonPath = path.join(process.cwd(), 'global.json');
       if (fs.existsSync(globalJsonPath)) {
         addVersionFromGlobalJson(globalJsonPath);
-      } else {
+      } else if (!runtimeVersions.length) {
         core.info(
           `The global.json wasn't found in the root directory. No .NET version will be installed.`
         );
       }
     }
 
+    const quality = core.getInput('dotnet-quality') as QualityOptions;
+
+    if (
+      (versions.length || runtimeVersions.length) &&
+      quality &&
+      !qualityOptions.includes(quality)
+    ) {
+      throw new Error(
+        `Value '${quality}' is not supported for the 'dotnet-quality' option. Supported values are: daily, preview, ga.`
+      );
+    }
+
     if (versions.length) {
-      const quality = core.getInput('dotnet-quality') as QualityOptions;
-
-      if (quality && !qualityOptions.includes(quality)) {
-        throw new Error(
-          `Value '${quality}' is not supported for the 'dotnet-quality' option. Supported values are: daily, preview, ga.`
-        );
-      }
-
       const skipLtsPrepass = core.getBooleanInput('skip-lts-prepass');
 
       let dotnetInstaller: DotnetCoreInstaller;
@@ -151,15 +157,7 @@ export async function run() {
         const installedVersion = await dotnetInstaller.installDotnet();
         installedDotnetVersions.push(installedVersion);
       }
-      if (
-        architecture &&
-        normalizeArch(architecture) !== normalizeArch(os.arch())
-      ) {
-        process.env['DOTNET_INSTALL_DIR'] = path.join(
-          DotnetInstallDir.dirPath,
-          architecture
-        );
-      }
+      setDotnetInstallDir(architecture);
       DotnetInstallDir.addToPath();
 
       const workloadsInput = core.getInput('workloads');
@@ -186,6 +184,30 @@ export async function run() {
       }
     }
 
+    if (runtimeVersions.length) {
+      const uniqueRuntimeVersions = new Set<string>(
+        runtimeVersions.map(v => (v.toLowerCase() === 'latest' ? 'latest' : v))
+      );
+      // Runtimes have no SDK feature bands, so A.B.Cxx uses its A.B channel.
+      const runtimeChannel = dotnetChannel.replace(/^(\d+\.\d+)\.\dxx$/, '$1');
+      for (const runtimeVersion of uniqueRuntimeVersions) {
+        const dotnetInstaller = new DotnetCoreInstaller(
+          runtimeVersion,
+          quality,
+          architecture,
+          runtimeVersion === 'latest' ? runtimeChannel : undefined,
+          checkLatest
+        );
+        await dotnetInstaller.installRuntime();
+      }
+      // installRuntime() resets DOTNET_INSTALL_DIR to the base directory.
+      setDotnetInstallDir(architecture);
+      // The SDK installation has already added the same directory to PATH.
+      if (!versions.length) {
+        DotnetInstallDir.addToPath();
+      }
+    }
+
     const sourceUrl: string = core.getInput('source-url');
     const configFile: string = core.getInput('config-file');
     if (sourceUrl) {
@@ -208,6 +230,18 @@ export async function run() {
     core.info(`##[add-matcher]${path.join(matchersPath, 'csc.json')}`);
   } catch (error) {
     core.setFailed(error.message);
+  }
+}
+
+function setDotnetInstallDir(architecture: SupportedArchitecture | ''): void {
+  if (
+    architecture &&
+    normalizeArch(architecture) !== normalizeArch(os.arch())
+  ) {
+    process.env['DOTNET_INSTALL_DIR'] = path.join(
+      DotnetInstallDir.dirPath,
+      architecture
+    );
   }
 }
 

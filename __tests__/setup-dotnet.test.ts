@@ -9,6 +9,7 @@ import {
 } from '@jest/globals';
 import semver from 'semver';
 import os from 'os';
+import path from 'path';
 
 jest.unstable_mockModule('@actions/core', () => ({
   getInput: jest.fn(),
@@ -75,6 +76,11 @@ describe('setup-dotnet tests', () => {
     'installDotnet'
   );
 
+  const installRuntimeSpy = jest.spyOn(
+    DotnetCoreInstaller.prototype,
+    'installRuntime'
+  );
+
   const isCacheFeatureAvailableSpy =
     cacheUtils.isCacheFeatureAvailable as jest.Mock;
   const restoreCacheSpy = cacheRestore.restoreCache as jest.Mock;
@@ -84,6 +90,7 @@ describe('setup-dotnet tests', () => {
   describe('run() tests', () => {
     beforeEach(() => {
       DotnetInstallDir.addToPath = jest.fn();
+      inputs['dotnet-runtime'] = [];
       getMultilineInputSpy.mockImplementation(input => inputs[input as string]);
       getInputSpy.mockImplementation(input => inputs[input as string]);
       getBooleanInputSpy.mockImplementation(input => {
@@ -203,6 +210,97 @@ describe('setup-dotnet tests', () => {
 
       await setup.run();
       expect(DotnetInstallDir.addToPath).toHaveBeenCalledTimes(1);
+    });
+
+    describe('dotnet-runtime input', () => {
+      beforeEach(() => {
+        inputs['global-json-file'] = '';
+        inputs['dotnet-version'] = [];
+        inputs['dotnet-quality'] = '';
+        inputs['dotnet-channel'] = '';
+        inputs['architecture'] = '';
+        existsSyncSpy.mockReturnValue(false);
+      });
+
+      afterEach(() => {
+        inputs['dotnet-channel'] = '';
+        inputs['dotnet-quality'] = '';
+        inputs['check-latest'] = '';
+        inputs['architecture'] = '';
+        delete process.env['DOTNET_INSTALL_DIR'];
+      });
+
+      it('should install unique runtime versions, add PATH and not set the dotnet-version output without an SDK', async () => {
+        inputs['dotnet-runtime'] = ['8.0.x', '9.0.x', '8.0.x'];
+        installRuntimeSpy
+          .mockResolvedValueOnce('8.0.11')
+          .mockResolvedValueOnce('9.0.1');
+
+        await setup.run();
+        expect(setFailedSpy).not.toHaveBeenCalled();
+        expect(installDotnetSpy).not.toHaveBeenCalled();
+        expect(installRuntimeSpy).toHaveBeenCalledTimes(2);
+        expect(DotnetInstallDir.addToPath).toHaveBeenCalledTimes(1);
+        expect(setOutputSpy).not.toHaveBeenCalled();
+      });
+
+      it('should forward dotnet-channel (feature band as A.B), dotnet-quality and check-latest to runtime latest', async () => {
+        inputs['dotnet-runtime'] = ['latest'];
+        inputs['dotnet-channel'] = '8.0.1xx';
+        inputs['dotnet-quality'] = 'preview';
+        inputs['check-latest'] = 'false';
+        let capturedOptions: object | undefined;
+        installRuntimeSpy.mockImplementation(function (this: {
+          dotnetChannel?: string;
+          quality: string;
+          checkLatest: boolean;
+        }) {
+          capturedOptions = {
+            dotnetChannel: this.dotnetChannel,
+            quality: this.quality,
+            checkLatest: this.checkLatest
+          };
+          return Promise.resolve('8.0.0-preview.1');
+        });
+
+        await setup.run();
+        expect(setFailedSpy).not.toHaveBeenCalled();
+        expect(capturedOptions).toEqual({
+          dotnetChannel: '8.0',
+          quality: 'preview',
+          checkLatest: false
+        });
+      });
+
+      it('should fail the action if unsupported dotnet-channel value is provided with runtime latest', async () => {
+        inputs['dotnet-runtime'] = ['latest'];
+        inputs['dotnet-channel'] = 'invalid';
+
+        await setup.run();
+        expect(setFailedSpy).toHaveBeenCalledWith(
+          `Value 'invalid' is not supported for the 'dotnet-channel' option. Supported values are: LTS, STS, A.B (e.g. 8.0), A.B.Cxx (e.g. 8.0.1xx).`
+        );
+        expect(installRuntimeSpy).not.toHaveBeenCalled();
+      });
+
+      it('should keep the cross-architecture DOTNET_INSTALL_DIR after installing an SDK and a runtime', async () => {
+        const architecture = os.arch() === 'arm64' ? 'x64' : 'arm64';
+        inputs['dotnet-version'] = ['8.0.x'];
+        inputs['dotnet-runtime'] = ['9.0.x'];
+        inputs['architecture'] = architecture;
+        installDotnetSpy.mockResolvedValue('8.0.404');
+        installRuntimeSpy.mockImplementation(() => {
+          DotnetInstallDir.setEnvironmentVariable();
+          return Promise.resolve('9.0.1');
+        });
+
+        await setup.run();
+        expect(setFailedSpy).not.toHaveBeenCalled();
+        expect(process.env['DOTNET_INSTALL_DIR']).toBe(
+          path.join(DotnetInstallDir.dirPath, architecture)
+        );
+        expect(DotnetInstallDir.addToPath).toHaveBeenCalledTimes(1);
+      });
     });
 
     it(`shouldn't call setOutput() if parsing dotnet-installer logs failed`, async () => {
@@ -502,7 +600,7 @@ describe('setup-dotnet tests', () => {
       await setup.run();
       expect(setFailedSpy).not.toHaveBeenCalled();
       expect(warningSpy).toHaveBeenCalledWith(
-        `The 'dotnet-channel' input is only supported when 'dotnet-version' is set to 'latest'.`
+        `The 'dotnet-channel' input is only supported when 'dotnet-version' or 'dotnet-runtime' is set to 'latest'.`
       );
     });
 
