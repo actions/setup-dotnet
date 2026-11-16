@@ -40,6 +40,7 @@ jest.unstable_mockModule('fs', () => {
   const mkdtempSync = jest.fn(actual.mkdtempSync);
   const rmSync = jest.fn(actual.rmSync);
   const readdirSync = jest.fn();
+  const readFileSync = jest.fn(actual.readFileSync);
   const existsSync = jest.fn(() => true);
   const statSync = jest.fn(() => ({isFile: () => true}));
   const accessSync = jest.fn();
@@ -50,6 +51,7 @@ jest.unstable_mockModule('fs', () => {
     mkdtempSync,
     rmSync,
     readdirSync,
+    readFileSync,
     existsSync,
     statSync,
     accessSync
@@ -1466,6 +1468,67 @@ describe('installer tests', () => {
 
         expect(installedVersion).toBe('8.0.11');
         expect(getExecOutputSpy).not.toHaveBeenCalled();
+      });
+
+      describe('check-latest: false preview runtime pairing', () => {
+        const readFileSyncSpy = fs.readFileSync as unknown as jest.Mock;
+        const runtimeVersion = '8.0.0-rc.2.23479.6';
+        const config = (version: string) => () =>
+          JSON.stringify({
+            runtimeOptions: {
+              framework: {name: 'Microsoft.NETCore.App', version}
+            }
+          });
+
+        afterEach(() => readFileSyncSpy.mockReset());
+
+        it.each([
+          ['skip installation for a valid mapping', config(runtimeVersion), 0],
+          [
+            'fall back online for a missing config',
+            () => {
+              throw new Error('ENOENT');
+            },
+            2
+          ],
+          ['fall back online for a malformed config', () => '{', 2],
+          [
+            'fall back online for an absent declared runtime',
+            config('8.0.0-rc.2.23475.1'),
+            2
+          ]
+        ])('should %s', async (_, readConfig, installCalls) => {
+          // The ASP.NET Core preview build differs from the .NET runtime build.
+          readdirSyncSpy.mockImplementation((...args: unknown[]) =>
+            [
+              path.basename(args[0] as string) === 'Microsoft.NETCore.App'
+                ? runtimeVersion
+                : '8.0.0-rc.2.23480.2'
+            ].map(name => ({
+              name,
+              isDirectory: () => true,
+              isSymbolicLink: () => false
+            }))
+          );
+          readFileSyncSpy.mockImplementation(readConfig);
+          const getJsonSpy = jest
+            .spyOn(hc.HttpClient.prototype, 'getJson')
+            .mockRejectedValue(new Error('offline'));
+
+          try {
+            await new installer.DotnetCoreInstaller(
+              runtimeVersion,
+              '',
+              undefined,
+              undefined,
+              false
+            ).installRuntime();
+          } finally {
+            getJsonSpy.mockRestore();
+          }
+
+          expect(getExecOutputSpy).toHaveBeenCalledTimes(installCalls);
+        });
       });
 
       it.each([
