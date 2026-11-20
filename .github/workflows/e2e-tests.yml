@@ -12,6 +12,32 @@ on:
       - '**.md'
 
 jobs:
+  test-runtime-only:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Clear toolcache
+        shell: pwsh
+        run: __tests__/clear-toolcache.ps1 ${{ runner.os }}
+      - name: Setup dotnet runtime 8.0.11
+        uses: ./
+        with:
+          dotnet-runtime: 8.0.11
+      - name: Verify dotnet runtimes
+        shell: pwsh
+        run: |
+          $runtimes = dotnet --list-runtimes
+          foreach ($runtime in 'Microsoft.NETCore.App', 'Microsoft.AspNetCore.App') {
+            if (-not ($runtimes -like "$runtime 8.0.11 *")) {
+              throw "$runtime 8.0.11 was not installed."
+            }
+          }
+
   test-setup-multiple-versions:
     runs-on: ${{ matrix.operating-system }}
     strategy:

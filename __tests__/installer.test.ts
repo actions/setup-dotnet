@@ -40,6 +40,7 @@ jest.unstable_mockModule('fs', () => {
   const mkdtempSync = jest.fn(actual.mkdtempSync);
   const rmSync = jest.fn(actual.rmSync);
   const readdirSync = jest.fn();
+  const readFileSync = jest.fn(actual.readFileSync);
   const existsSync = jest.fn(() => true);
   const statSync = jest.fn(() => ({isFile: () => true}));
   const accessSync = jest.fn();
@@ -50,6 +51,7 @@ jest.unstable_mockModule('fs', () => {
     mkdtempSync,
     rmSync,
     readdirSync,
+    readFileSync,
     existsSync,
     statSync,
     accessSync
@@ -82,6 +84,7 @@ jest.unstable_mockModule('../src/utils.js', () => {
 const exec = await import('@actions/exec');
 const core = await import('@actions/core');
 const io = await import('@actions/io');
+const hc = await import('@actions/http-client');
 const fs = await import('fs');
 const installer = await import('../src/installer.js');
 const {IS_WINDOWS} = await import('../src/utils.js');
@@ -1369,6 +1372,182 @@ describe('installer tests', () => {
           }
         });
       });
+    });
+
+    describe('installRuntime() tests', () => {
+      const readdirSyncSpy = fs.readdirSync as unknown as jest.Mock;
+      const statSyncSpy = fs.statSync as unknown as jest.Mock;
+      const accessSyncSpy = fs.accessSync as unknown as jest.Mock;
+      const scriptArgs = () =>
+        getExecOutputSpy.mock.calls.map(call =>
+          (call[1] as string[]).join(' ')
+        );
+      const arg = (name: string, value: string) =>
+        IS_WINDOWS ? `-${name} ${value}` : `--${name.toLowerCase()} ${value}`;
+
+      beforeEach(() => {
+        jest.clearAllMocks();
+        delete process.env['DOTNET_INSTALL_DIR'];
+        whichSpy.mockImplementation(() => Promise.resolve('PathToShell'));
+        chmodSyncSpy.mockImplementation(() => {});
+        readdirSyncSpy.mockReturnValue([]);
+        statSyncSpy.mockReturnValue({isFile: () => true});
+        accessSyncSpy.mockImplementation(() => undefined);
+        getExecOutputSpy.mockImplementation(() =>
+          Promise.resolve({
+            exitCode: 0,
+            stdout: 'Installed version is 8.0.11',
+            stderr: ''
+          })
+        );
+      });
+
+      afterAll(() => {
+        jest.resetAllMocks();
+      });
+
+      it('should install the .NET and ASP.NET Core runtimes and set DOTNET_INSTALL_DIR', async () => {
+        const installedVersion = await new installer.DotnetCoreInstaller(
+          '8.0.11',
+          ''
+        ).installRuntime();
+
+        expect(installedVersion).toBe('8.0.11');
+        expect(process.env['DOTNET_INSTALL_DIR']).toBe(
+          installer.DotnetInstallDir.dirPath
+        );
+        expect(scriptArgs()).toHaveLength(2);
+        expect(scriptArgs()[0]).toContain(arg('Runtime', 'dotnet'));
+        expect(scriptArgs()[1]).toContain(arg('Runtime', 'aspnetcore'));
+        for (const args of scriptArgs()) {
+          expect(args).toContain(arg('Version', '8.0.11'));
+        }
+      });
+
+      it('should install the ASP.NET Core build paired with a prerelease runtime', async () => {
+        const getJsonSpy = jest
+          .spyOn(hc.HttpClient.prototype, 'getJson')
+          .mockResolvedValue({
+            statusCode: 200,
+            headers: {},
+            result: {
+              releases: [
+                {
+                  runtime: {version: '8.0.0-rc.2.23479.6'},
+                  'aspnetcore-runtime': {version: '8.0.0-rc.2.23480.2'}
+                }
+              ]
+            }
+          });
+
+        try {
+          await new installer.DotnetCoreInstaller(
+            '8.0.0-rc.2.23479.6',
+            ''
+          ).installRuntime();
+        } finally {
+          getJsonSpy.mockRestore();
+        }
+
+        expect(scriptArgs()[0]).toContain(arg('Version', '8.0.0-rc.2.23479.6'));
+        expect(scriptArgs()[1]).toContain(arg('Version', '8.0.0-rc.2.23480.2'));
+      });
+
+      it('should reuse a complete local runtime pair when check-latest is false', async () => {
+        readdirSyncSpy.mockReturnValue([
+          {name: '8.0.11', isDirectory: () => true, isSymbolicLink: () => false}
+        ]);
+
+        const installedVersion = await new installer.DotnetCoreInstaller(
+          '8.0.x',
+          '',
+          undefined,
+          undefined,
+          false
+        ).installRuntime();
+
+        expect(installedVersion).toBe('8.0.11');
+        expect(getExecOutputSpy).not.toHaveBeenCalled();
+      });
+
+      describe('check-latest: false preview runtime pairing', () => {
+        const readFileSyncSpy = fs.readFileSync as unknown as jest.Mock;
+        const runtimeVersion = '8.0.0-rc.2.23479.6';
+        const config = (version: string) => () =>
+          JSON.stringify({
+            runtimeOptions: {
+              framework: {name: 'Microsoft.NETCore.App', version}
+            }
+          });
+
+        afterEach(() => readFileSyncSpy.mockReset());
+
+        it.each([
+          ['skip installation for a valid mapping', config(runtimeVersion), 0],
+          [
+            'fall back online for a missing config',
+            () => {
+              throw new Error('ENOENT');
+            },
+            2
+          ],
+          ['fall back online for a malformed config', () => '{', 2],
+          [
+            'fall back online for an absent declared runtime',
+            config('8.0.0-rc.2.23475.1'),
+            2
+          ]
+        ])('should %s', async (_, readConfig, installCalls) => {
+          // The ASP.NET Core preview build differs from the .NET runtime build.
+          readdirSyncSpy.mockImplementation((...args: unknown[]) =>
+            [
+              path.basename(args[0] as string) === 'Microsoft.NETCore.App'
+                ? runtimeVersion
+                : '8.0.0-rc.2.23480.2'
+            ].map(name => ({
+              name,
+              isDirectory: () => true,
+              isSymbolicLink: () => false
+            }))
+          );
+          readFileSyncSpy.mockImplementation(readConfig);
+          const getJsonSpy = jest
+            .spyOn(hc.HttpClient.prototype, 'getJson')
+            .mockRejectedValue(new Error('offline'));
+
+          try {
+            await new installer.DotnetCoreInstaller(
+              runtimeVersion,
+              '',
+              undefined,
+              undefined,
+              false
+            ).installRuntime();
+          } finally {
+            getJsonSpy.mockRestore();
+          }
+
+          expect(getExecOutputSpy).toHaveBeenCalledTimes(installCalls);
+        });
+      });
+
+      it.each([
+        [
+          '8.0.1xx',
+          ` The A.B.Cxx feature band syntax applies only to .NET SDKs and is supported only by 'dotnet-version'.`
+        ],
+        ['abc', '']
+      ])(
+        "should reject '%s' with an error naming 'dotnet-runtime' before installing",
+        async (version, reason) => {
+          await expect(
+            new installer.DotnetCoreInstaller(version, '').installRuntime()
+          ).rejects.toThrow(
+            `The 'dotnet-runtime' was supplied in invalid format: ${version}!${reason} Supported syntax: A.B.C, A.B, A.B.x, A, A.x, latest`
+          );
+          expect(getExecOutputSpy).not.toHaveBeenCalled();
+        }
+      );
     });
 
     describe('addToPath() tests', () => {
