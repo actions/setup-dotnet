@@ -61,7 +61,8 @@ export class DotnetVersionResolver {
   constructor(
     version: string,
     private quality: QualityOptions = '',
-    private dotnetChannel?: string
+    private dotnetChannel?: string,
+    private rollForward?: string
   ) {
     this.inputVersion = version.trim();
     this.resolvedArgument = {type: '', value: '', qualityFlag: false};
@@ -98,6 +99,13 @@ export class DotnetVersionResolver {
       this.resolvedArgument.qualityFlag =
         !Number.isNaN(latestChannelMajorTag) &&
         latestChannelMajorTag >= QUALITY_INPUT_MINIMAL_MAJOR_TAG;
+      return;
+    }
+
+    if (this.inputVersion === '' && this.rollForward === 'latestMajor') {
+      // global.json latestMajor: newest GA release, LTS or STS
+      this.resolvedArgument.type = 'channel';
+      this.resolvedArgument.value = await this.getLatestVersion('', '');
       return;
     }
 
@@ -175,7 +183,10 @@ export class DotnetVersionResolver {
     return this.resolvedArgument;
   }
 
-  private async getLatestVersion(channelFilter: string): Promise<string> {
+  private async getLatestVersion(
+    channelFilter: string,
+    quality: QualityOptions = this.quality
+  ): Promise<string> {
     const httpClient = new hc.HttpClient('actions/setup-dotnet', [], {
       allowRetries: true,
       maxRetries: 3
@@ -199,7 +210,7 @@ export class DotnetVersionResolver {
 
     // Filter out preview versions if quality is not 'preview' or 'daily'
     // If quality is not specified, we assume strict stability (GA only)
-    const normalizedQuality = (this.quality || '').toLowerCase();
+    const normalizedQuality = (quality || '').toLowerCase();
     if (!['preview', 'daily'].includes(normalizedQuality)) {
       releasesInfo = releasesInfo.filter(
         info => info['support-phase'] !== 'preview'
@@ -795,7 +806,8 @@ export class DotnetCoreInstaller {
     const versionResolver = new DotnetVersionResolver(
       this.version,
       this.quality,
-      this.dotnetChannel
+      this.dotnetChannel,
+      this.rollForward
     );
     const dotnetVersion = await versionResolver.createDotnetVersion();
 
@@ -860,7 +872,20 @@ export class DotnetCoreInstaller {
       );
     }
 
-    return this.parseInstalledVersion(dotnetInstallOutput.stdout);
+    const installedVersion = this.parseInstalledVersion(
+      dotnetInstallOutput.stdout
+    );
+    if (
+      installedVersion &&
+      this.minimumVersion &&
+      semver.valid(installedVersion) &&
+      semver.lt(installedVersion, this.minimumVersion)
+    ) {
+      throw new Error(
+        `The installed .NET SDK ${installedVersion} is older than the global.json minimum version ${this.minimumVersion}.`
+      );
+    }
+    return installedVersion;
   }
 
   private parseInstalledVersion(stdout: string): string | null {
