@@ -120,7 +120,12 @@ describe('DotnetVersionResolver with latest', () => {
   it('should resolve an empty version (global.json latestMajor) to the highest stable release of any support type', async () => {
     getJsonMock.mockResolvedValue({result: mockReleases});
 
-    const resolver = new DotnetVersionResolver('');
+    const resolver = new DotnetVersionResolver(
+      '',
+      '',
+      undefined,
+      'latestMajor'
+    );
     const version = await resolver.createDotnetVersion();
 
     expect(version.value).toBe('9.0');
@@ -131,11 +136,24 @@ describe('DotnetVersionResolver with latest', () => {
   it('should keep resolving an empty version (global.json latestMajor) to a stable release when quality is preview', async () => {
     getJsonMock.mockResolvedValue({result: mockReleases});
 
-    const resolver = new DotnetVersionResolver('', 'preview');
+    const resolver = new DotnetVersionResolver(
+      '',
+      'preview',
+      undefined,
+      'latestMajor'
+    );
     const version = await resolver.createDotnetVersion();
 
     expect(version.value).toBe('9.0');
     expect(version.qualityFlag).toBe(false);
+  });
+
+  it('should keep resolving an empty version without latestMajor to the LTS channel', async () => {
+    const resolver = new DotnetVersionResolver('');
+    const version = await resolver.createDotnetVersion();
+
+    expect(version.value).toBe('LTS');
+    expect(getJsonMock).not.toHaveBeenCalled();
   });
 
   it('should warn if channel is provided but version is not latest', async () => {

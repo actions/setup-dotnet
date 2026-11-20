@@ -33,6 +33,35 @@ jest.unstable_mockModule('@actions/core', () => ({
 jest.unstable_mockModule('@actions/io', () => ({
   which: jest.fn()
 }));
+// Keeps resolution of the releases index deterministic and offline.
+const releasesIndex = {
+  'releases-index': [
+    {
+      'channel-version': '12.0',
+      'support-phase': 'preview',
+      'release-type': 'lts'
+    },
+    {
+      'channel-version': '11.0',
+      'support-phase': 'active',
+      'release-type': 'sts'
+    },
+    {
+      'channel-version': '10.0',
+      'support-phase': 'active',
+      'release-type': 'lts'
+    },
+    {'channel-version': '9.0', 'support-phase': 'eol', 'release-type': 'sts'}
+  ]
+};
+jest.unstable_mockModule('@actions/http-client', () => ({
+  // A plain class, so jest.resetAllMocks() does not clear the response.
+  HttpClient: class {
+    async getJson() {
+      return {statusCode: 200, result: releasesIndex, headers: {}};
+    }
+  }
+}));
 jest.unstable_mockModule('fs', () => {
   const actual = jest.requireActual('fs') as typeof import('fs');
   const chmodSync = jest.fn();
@@ -583,7 +612,7 @@ describe('installer tests', () => {
         getExecOutputSpy.mockImplementation(() =>
           Promise.resolve({
             exitCode: 0,
-            stdout: 'Fictitious dotnet version 1.2.3 is installed',
+            stdout: 'Fictitious dotnet version 99.0.100 is installed',
             stderr: ''
           })
         );
@@ -1239,6 +1268,90 @@ describe('installer tests', () => {
             }
           }
         );
+      });
+
+      describe('global.json online resolution tests', () => {
+        const mockInstalledVersion = (version: string) =>
+          getExecOutputSpy.mockImplementation(() =>
+            Promise.resolve({
+              exitCode: 0,
+              stdout: `Fictitious dotnet version ${version} is installed`,
+              stderr: ''
+            })
+          );
+        const installArguments = () =>
+          (getExecOutputSpy.mock.calls.at(-1)![1] as string[]).join(' ');
+        const channelArgument = (channel: string) =>
+          IS_WINDOWS ? `-Channel ${channel}` : `--channel ${channel}`;
+
+        beforeEach(() => {
+          readdirSyncSpy.mockReturnValue(makeDirents([]));
+        });
+
+        it('installs the newest active channel for latestMajor even when it is STS', async () => {
+          mockInstalledVersion('11.0.100');
+
+          const installedVersion = await new installer.DotnetCoreInstaller(
+            '',
+            '',
+            undefined,
+            undefined,
+            true,
+            '10.0.100',
+            'latestMajor'
+          ).installDotnet();
+
+          expect(installedVersion).toBe('11.0.100');
+          expect(installArguments()).toContain(channelArgument('11.0'));
+        });
+
+        it('keeps installing from the LTS channel for an empty version without latestMajor', async () => {
+          mockInstalledVersion('10.0.100');
+
+          await new installer.DotnetCoreInstaller(
+            '',
+            '',
+            undefined,
+            undefined,
+            true
+          ).installDotnet();
+
+          expect(installArguments()).toContain(channelArgument('LTS'));
+        });
+
+        it('fails when the installed SDK in the newest channel is below the global.json minimum', async () => {
+          mockInstalledVersion('11.0.100');
+
+          await expect(
+            new installer.DotnetCoreInstaller(
+              '',
+              '',
+              undefined,
+              undefined,
+              true,
+              '11.0.200',
+              'latestMajor'
+            ).installDotnet()
+          ).rejects.toThrow(
+            'The installed .NET SDK 11.0.100 is older than the global.json minimum version 11.0.200.'
+          );
+        });
+
+        it('accepts an installed SDK equal to the global.json minimum', async () => {
+          mockInstalledVersion('11.0.200');
+
+          const installedVersion = await new installer.DotnetCoreInstaller(
+            '',
+            '',
+            undefined,
+            undefined,
+            true,
+            '11.0.200',
+            'latestMajor'
+          ).installDotnet();
+
+          expect(installedVersion).toBe('11.0.200');
+        });
       });
 
       describe('skip-lts-prepass tests', () => {

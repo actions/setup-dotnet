@@ -61,7 +61,8 @@ export class DotnetVersionResolver {
   constructor(
     version: string,
     private quality: QualityOptions = '',
-    private dotnetChannel?: string
+    private dotnetChannel?: string,
+    private rollForward?: string
   ) {
     this.inputVersion = version.trim();
     this.resolvedArgument = {type: '', value: '', qualityFlag: false};
@@ -101,7 +102,7 @@ export class DotnetVersionResolver {
       return;
     }
 
-    if (this.inputVersion === '') {
+    if (this.inputVersion === '' && this.rollForward === 'latestMajor') {
       // global.json latestMajor: newest GA release, LTS or STS
       this.resolvedArgument.type = 'channel';
       this.resolvedArgument.value = await this.getLatestVersion('', '');
@@ -805,7 +806,8 @@ export class DotnetCoreInstaller {
     const versionResolver = new DotnetVersionResolver(
       this.version,
       this.quality,
-      this.dotnetChannel
+      this.dotnetChannel,
+      this.rollForward
     );
     const dotnetVersion = await versionResolver.createDotnetVersion();
 
@@ -870,7 +872,20 @@ export class DotnetCoreInstaller {
       );
     }
 
-    return this.parseInstalledVersion(dotnetInstallOutput.stdout);
+    const installedVersion = this.parseInstalledVersion(
+      dotnetInstallOutput.stdout
+    );
+    if (
+      installedVersion &&
+      this.minimumVersion &&
+      semver.valid(installedVersion) &&
+      semver.lt(installedVersion, this.minimumVersion)
+    ) {
+      throw new Error(
+        `The installed .NET SDK ${installedVersion} is older than the global.json minimum version ${this.minimumVersion}.`
+      );
+    }
+    return installedVersion;
   }
 
   private parseInstalledVersion(stdout: string): string | null {

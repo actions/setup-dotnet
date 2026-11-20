@@ -43974,11 +43974,13 @@ function channelForMajor(major) {
 class DotnetVersionResolver {
     quality;
     dotnetChannel;
+    rollForward;
     inputVersion;
     resolvedArgument;
-    constructor(version, quality = '', dotnetChannel) {
+    constructor(version, quality = '', dotnetChannel, rollForward) {
         this.quality = quality;
         this.dotnetChannel = dotnetChannel;
+        this.rollForward = rollForward;
         this.inputVersion = version.trim();
         this.resolvedArgument = { type: '', value: '', qualityFlag: false };
     }
@@ -44012,7 +44014,7 @@ class DotnetVersionResolver {
                     latestChannelMajorTag >= QUALITY_INPUT_MINIMAL_MAJOR_TAG;
             return;
         }
-        if (this.inputVersion === '') {
+        if (this.inputVersion === '' && this.rollForward === 'latestMajor') {
             // global.json latestMajor: newest GA release, LTS or STS
             this.resolvedArgument.type = 'channel';
             this.resolvedArgument.value = await this.getLatestVersion('', '');
@@ -44537,7 +44539,7 @@ class DotnetCoreInstaller {
             }
             info(`'check-latest' is false but no locally installed .NET SDK satisfies the '${this.version}' request. Falling back to online installation.`);
         }
-        const versionResolver = new DotnetVersionResolver(this.version, this.quality, this.dotnetChannel);
+        const versionResolver = new DotnetVersionResolver(this.version, this.quality, this.dotnetChannel, this.rollForward);
         const dotnetVersion = await versionResolver.createDotnetVersion();
         const architectureArguments = isCrossArch
             ? [
@@ -44589,7 +44591,14 @@ class DotnetCoreInstaller {
         if (dotnetInstallOutput.exitCode) {
             throw new Error(`Failed to install dotnet, exit code: ${dotnetInstallOutput.exitCode}. ${dotnetInstallOutput.stderr}`);
         }
-        return this.parseInstalledVersion(dotnetInstallOutput.stdout);
+        const installedVersion = this.parseInstalledVersion(dotnetInstallOutput.stdout);
+        if (installedVersion &&
+            this.minimumVersion &&
+            semver_default().valid(installedVersion) &&
+            semver_default().lt(installedVersion, this.minimumVersion)) {
+            throw new Error(`The installed .NET SDK ${installedVersion} is older than the global.json minimum version ${this.minimumVersion}.`);
+        }
+        return installedVersion;
     }
     parseInstalledVersion(stdout) {
         const regex = /(?<version>\d+\.\d+\.\d+[a-z0-9._-]*)/gm;

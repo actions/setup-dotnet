@@ -175,7 +175,7 @@ steps:
   working-directory: csharp
 ```
 
-> **Note**: The action supports `latest*` variants of the [rollForward](https://learn.microsoft.com/en-us/dotnet/core/tools/global-json#rollforward) field in `global.json`. When set to `latestPatch`, `latestFeature`, `latestMinor`, or `latestMajor`, the action installs the appropriate SDK version. For prerelease versions, the exact pinned version is always installed regardless of the `rollForward` setting.
+> **Note**: The action supports `latest*` variants of the [rollForward](https://learn.microsoft.com/en-us/dotnet/core/tools/global-json#rollforward) field in `global.json`. When set to `latestPatch`, `latestFeature`, `latestMinor`, or `latestMajor`, the action installs the appropriate SDK version. With `latestMajor`, the action installs the newest active GA release, which can be an STS release rather than LTS; `dotnet-quality` is not applied. If the installed SDK is older than the `sdk.version` declared in `global.json`, the action fails. For prerelease versions, the exact pinned version is always installed regardless of the `rollForward` setting.
 
 > **Important**: When using `rollForward` in `global.json`, the `sdk.version` field must be a fully-qualified SDK version (e.g., `8.0.100`, `10.0.100`). Wildcard versions (e.g., `10.0.*`) and runtime-style versions (e.g., `8.0.0`) are not supported. See the [.NET SDK version specification](https://learn.microsoft.com/en-us/dotnet/core/tools/global-json#version) for details.
 
